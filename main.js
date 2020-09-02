@@ -58,7 +58,13 @@ let main_commands = {
       permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg, cmd) => {
         msg.delete();
-        await (await msg.channel.send(cmd.text)).pin();
+        try {
+          await (await msg.channel.send(cmd.text)).pin();
+        } catch (e) {
+          await msg.channel.send(
+            util_functions.desc_embed('Failed to pin: ' + e)
+          );
+        }
       },
     },
     {
@@ -1433,11 +1439,14 @@ client.on('messageReactionAdd', async (reaction, user) => {
       try {
         reaction.message
           .pin()
-          .catch(
-            async (e) =>
-              await reaction.message.channel.send(
-                util_functions.desc_embed(`Failed to pin: ${e}`)
-              )
+          .catch((e) =>
+            setTimeout(
+              () =>
+                reaction.message.channel.send(
+                  util_functions.desc_embed(`Failed to pin: ${e}`)
+                ),
+              2000
+            )
           );
         let pm = await reaction.message.channel.awaitMessages(
           (n) => true, //n.content.includes('pinned a message to this channel'),
