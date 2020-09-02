@@ -1,6 +1,5 @@
 node_modules
 bot.zip
-database.json
 commands.js
 discord_elements.js
 perms.db3
