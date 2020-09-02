@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.4"
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.4.2"
   }
 }

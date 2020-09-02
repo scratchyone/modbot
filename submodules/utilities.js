@@ -79,7 +79,7 @@ let ping = {
   matcher: (cmd) => cmd.command == 'ping',
   permissions: (msg) => true,
   responder: async (msg, cmd) => {
-    msg.channel.send(
+    await msg.channel.send(
       `Pong! Took ${new Date().getTime() - msg.createdAt.getTime()}ms`
     );
   },
@@ -124,10 +124,6 @@ let cat = {
     ctx.fillStyle = '#ffffff';
     // Actually fill the text with a solid color
     ctx.textAlign = 'center';
-    let name = msg.member.displayName;
-    let get_random = function (list) {
-      return list[Math.floor(Math.random() * list.length)];
-    };
 
     let message = (await (await fetch('https://catfact.ninja/fact')).json())
       .fact;
@@ -143,7 +139,7 @@ let cat = {
       canvas.toBuffer(),
       'image.png'
     );
-    msg.channel.send(attachment);
+    await msg.channel.send(attachment);
   },
 };
 exports.commandModule = {

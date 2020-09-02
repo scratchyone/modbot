@@ -1430,15 +1430,23 @@ client.on('messageReactionAdd', async (reaction, user) => {
       reaction.emoji.name == '📌' &&
       !reaction.message.pinned
     ) {
-      reaction.message.pin();
-      let pm = await reaction.message.channel.awaitMessages(
-        (n) => true, //n.content.includes('pinned a message to this channel'),
-        { max: 1, time: 1000 }
-      );
-      if (pm.first()) {
-        await pm.first().delete();
+      try {
+        await reaction.message.pin();
+        let pm = await reaction.message.channel.awaitMessages(
+          (n) => true, //n.content.includes('pinned a message to this channel'),
+          { max: 1, time: 1000 }
+        );
+        if (pm.first()) {
+          await pm.first().delete();
+          await reaction.message.channel.send(
+            util_functions.desc_embed(
+              `${user} pinned a message to this channel`
+            )
+          );
+        }
+      } catch (e) {
         await reaction.message.channel.send(
-          util_functions.desc_embed(`${user} pinned a message to this channel`)
+          util_functions.desc_embed(`Failed to pin: ${e}`)
         );
       }
     }
@@ -1726,7 +1734,12 @@ client.on('message', async (msg) => {
           if (registered_command.matcher(results[0][0])) {
             try {
               if (registered_command.permissions(msg))
-                await registered_command.responder(msg, results[0][0], client);
+                await registered_command.responder(
+                  msg,
+                  results[0][0],
+                  client,
+                  db
+                );
             } catch (e) {
               if (e.type == 'user')
                 await msg.channel.send(
