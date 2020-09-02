@@ -1431,7 +1431,14 @@ client.on('messageReactionAdd', async (reaction, user) => {
       !reaction.message.pinned
     ) {
       try {
-        await reaction.message.pin();
+        reaction.message
+          .pin()
+          .catch(
+            async (e) =>
+              await reaction.message.channel.send(
+                util_functions.desc_embed(`Failed to pin: ${e}`)
+              )
+          );
         let pm = await reaction.message.channel.awaitMessages(
           (n) => true, //n.content.includes('pinned a message to this channel'),
           { max: 1, time: 1000 }
