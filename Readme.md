@@ -2,7 +2,7 @@
 
 Create .env and fill in the tokens and port:
 
-```env
+```powershell
 DISCORD_TOKEN=token # Required
 SENTRY_TOKEN=token # Optional
 PORT=port # Optional
