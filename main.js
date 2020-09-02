@@ -1567,11 +1567,11 @@ let all_command_modules = [
 client.on('guildMemberAdd', async (member) => {
   if (
     db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
-  );
-  member.roles.add(
-    db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
-      .role
-  );
+  )
+    member.roles.add(
+      db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
+        .role
+    );
 });
 client.on('message', async (msg) => {
   try {
