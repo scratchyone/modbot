@@ -4,8 +4,7 @@ var isEmoji = require('is-standard-emoji');
 const Sentry = require('@sentry/node');
 require('dotenv').config();
 Sentry.init({
-  dsn:
-    process.env.SENTRY_TOKEN,
+  dsn: process.env.SENTRY_TOKEN,
 });
 moment.relativeTimeThreshold('ss', 15);
 var parse_duration = require('parse-duration');
@@ -1948,6 +1947,6 @@ app.get('/servers/:server/channels/', async (req, res, next) => {
       }),
   });
 });
-app.listen(80, function () {
+app.listen(process.env.PORT, function () {
   console.log('CORS-enabled web server listening on port 80');
 });
