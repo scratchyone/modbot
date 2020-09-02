@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sentry/node": "^5.20.1",
+    "@sentry/node": "^5.22.3",
     "better-sqlite3": "^7.1.0",
     "body-parser": "^1.19.0",
     "canvas": "^2.6.1",
@@ -20,11 +20,11 @@
     "is-standard-emoji": "^1.0.0",
     "moment": "^2.27.0",
     "nanoid": "^3.1.12",
-    "nearley": "^2.19.5",
+    "nearley": "^2.19.6",
     "node-fetch": "^2.6.0",
     "node-wolfram-alpha": "^1.2.5",
     "parse-duration": "^0.4.4",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.1",
     "shortid": "^2.2.15",
     "sweetalert2": "^9.17.1"
   },
