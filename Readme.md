@@ -13,6 +13,7 @@ Then start the bot with:
 ```powershell
 npm install -g nearley
 npm install -g db-migrate
+npm install -g db-migrate-sqlite3
 db-migrate up # Runs all DB migrations
 nearleyc .\commands.ne -o .\commands.js # Compile parsing grammar
 node main.js # This will also start a web server if PORT is set
