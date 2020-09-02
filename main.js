@@ -5,6 +5,13 @@ const Sentry = require('@sentry/node');
 require('dotenv').config();
 Sentry.init({
   dsn: process.env.SENTRY_TOKEN,
+  beforeSend: (event) => {
+    if (!process.env.SENTRY_TOKEN) {
+      console.error(event);
+      return null; // this drops the event and nothing will be send to sentry
+    }
+    return event;
+  },
 });
 moment.relativeTimeThreshold('ss', 15);
 var parse_duration = require('parse-duration');
@@ -1947,6 +1954,8 @@ app.get('/servers/:server/channels/', async (req, res, next) => {
       }),
   });
 });
-app.listen(process.env.PORT, function () {
-  console.log('CORS-enabled web server listening on port 80');
-});
+if (process.env.PORT) {
+  app.listen(process.env.PORT, function () {
+    console.log('CORS-enabled web server listening on port 80');
+  });
+}
