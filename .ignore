@@ -1,0 +1,11 @@
+migrations
+bot.zip
+commands.js
+discord_elements.js
+perms.db3
+.eslintrc.json
+node_modules
+package.json
+package-lock.json
+.ignore
+.gitignore

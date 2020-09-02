@@ -1,0 +1,1 @@
+DROP TABLE mute_roles;
