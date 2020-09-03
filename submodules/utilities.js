@@ -124,6 +124,37 @@ let eval_cmd = {
     }
   },
 };
+let update_cmd = {
+  name: 'update',
+  syntax: 'm: update <ID>',
+  explanation: 'Update bot',
+  matcher: (cmd) => cmd.command == 'update',
+  permissions: (msg) => msg.author.id === '234020040830091265',
+  responder: async (msg, cmd) => {
+    const { exec } = require('child_process');
+    try {
+      await msg.channel.send('Running!');
+      exec(
+        process.env.UPDATE_COMMAND.replace('__ID__', cmd.id),
+        (error, stdout, stderr) => {
+          if (error) {
+            msg.channel.send(
+              util_functions.desc_embed(`Error: ${error.message}`)
+            );
+            return;
+          }
+          if (stderr) {
+            msg.channel.send(util_functions.desc_embed(`Error: ${stderr}`));
+            return;
+          }
+          msg.channel
+            .send(util_functions.desc_embed(`${stdout}`))
+            .then(() => process.exit(0));
+        }
+      );
+    } catch (e) {}
+  },
+};
 let cat = {
   name: 'cat',
   syntax: 'm: cat',
@@ -163,7 +194,7 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [eval_cmd, invite, userpic, ping, cat, stats],
+  commands: [eval_cmd, invite, userpic, ping, cat, stats, update_cmd],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');
