@@ -418,30 +418,38 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'tmpchannel',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
-        let channel = await msg.guild.channels.create(cmd.name, {
-          type: 'text',
-          permissionOverwrites: cmd.public
-            ? [
-                {
-                  id: client.user.id,
-                  allow: ['VIEW_CHANNEL'],
-                },
-              ]
-            : [
-                {
-                  id: msg.guild.id,
-                  deny: ['VIEW_CHANNEL'],
-                },
-                {
-                  id: msg.author.id,
-                  allow: ['VIEW_CHANNEL'],
-                },
-                {
-                  id: client.user.id,
-                  allow: ['VIEW_CHANNEL'],
-                },
-              ],
-        });
+        let channel;
+        try {
+          channel = await msg.guild.channels.create(cmd.name, {
+            type: 'text',
+            permissionOverwrites: cmd.public
+              ? [
+                  {
+                    id: client.user.id,
+                    allow: ['VIEW_CHANNEL'],
+                  },
+                ]
+              : [
+                  {
+                    id: msg.guild.id,
+                    deny: ['VIEW_CHANNEL'],
+                  },
+                  {
+                    id: msg.author.id,
+                    allow: ['VIEW_CHANNEL'],
+                  },
+                  {
+                    id: client.user.id,
+                    allow: ['VIEW_CHANNEL'],
+                  },
+                ],
+          });
+        } catch (e) {
+          await msg.channel.send(
+            util_functions.desc_embed('Failed to create channel: ' + e)
+          );
+          return;
+        }
         util_functions.schedule_event(
           { type: 'deletechannel', channel: channel.id },
           cmd.duration
