@@ -129,7 +129,8 @@ let update_cmd = {
   syntax: 'm: update <ID>',
   explanation: 'Update bot',
   matcher: (cmd) => cmd.command == 'update',
-  permissions: (msg) => msg.author.id === '234020040830091265',
+  permissions: (msg) =>
+    msg.author.id === '234020040830091265' && process.env.UPDATE_COMMAND,
   responder: async (msg, cmd) => {
     const { exec } = require('child_process');
     try {

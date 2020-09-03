@@ -6,7 +6,7 @@ Create .env and fill in the tokens and port:
 DISCORD_TOKEN=token # Required
 SENTRY_TOKEN=token # Optional
 PORT=port # Optional
-UPDATE_COMMAND # Command(s) used to update and restart the bot, optional
+UPDATE_COMMAND # Command(s) used to update and restart the bot, __ID__ will be replaced with the id given in the command, optional
 ```
 
 Then start the bot with:
