@@ -133,7 +133,7 @@ let update_cmd = {
   responder: async (msg, cmd) => {
     const { exec } = require('child_process');
     try {
-      await msg.channel.send('Running!');
+      await msg.channel.send('Updating!');
       exec(
         process.env.UPDATE_COMMAND.replace('__ID__', cmd.id),
         (error, stdout, stderr) => {
