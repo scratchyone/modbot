@@ -84,6 +84,24 @@ let ping = {
     );
   },
 };
+let stats = {
+  name: 'stats',
+  syntax: 'm: stats',
+  explanation: 'Get bot stats',
+  matcher: (cmd) => cmd.command == 'stats',
+  permissions: (msg) => true,
+  responder: async (msg, cmd, client) => {
+    await msg.channel.send(
+      util_functions.desc_embed(
+        `ModBot is in ${client.guilds.cache.array().length} servers, with ${
+          client.channels.cache
+            .array()
+            .filter((channel) => channel.type === 'text').length
+        } channels, and ${client.users.cache.array().length} users`
+      )
+    );
+  },
+};
 let eval_cmd = {
   name: 'eval',
   syntax: 'm: eval <CODE>',
@@ -145,7 +163,7 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [eval_cmd, invite, userpic, ping, cat],
+  commands: [eval_cmd, invite, userpic, ping, cat, stats],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');
