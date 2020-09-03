@@ -110,7 +110,7 @@ let eval_cmd = {
   permissions: (msg) =>
     msg.author.id === '234020040830091265' &&
     msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd) => {
+  responder: async (msg, cmd, client) => {
     try {
       let res = eval(
         `(async () => {${cmd.code
