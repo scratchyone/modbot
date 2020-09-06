@@ -1,6 +1,7 @@
 @include "./discord_elements.ne"
 all_commands ->  prefix __ (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
-| purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | stats | update | lockdown 
+| purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | stats | update | lockdown | 
+unlockdown
 ) {% n => n.slice(2)[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -41,3 +42,4 @@ cat -> "cat" {% (n)=>{return {command: "cat"}}%}
 stats -> "stats" {% (n)=>{return {command: "stats"}}%}
 update -> "update" __ anything {% (n)=>{return {command: "update", id: n[2]}}%}
 lockdown -> "lockdown" __ word {% (n)=>{return {command: "lockdown", time: n[2]}}%}
+unlockdown -> "unlockdown" __ channel {% (n)=>{return {command: "unlockdown", channel: n[2]}}%}

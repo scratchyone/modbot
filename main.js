@@ -1412,13 +1412,17 @@ client.on('ready', async () => {
           console.log(e);
         }
       }
-      if (event.type == 'overwriteChannelPermissions') {
+      if (event.type == 'unlockdown') {
         try {
           let channel = client.channels.cache.get(event.channel);
-          await channel.overwritePermissions(event.overrides);
-          if (event.message) {
-            await channel.send(util_functions.desc_embed(event.message));
-          }
+          let perm = db
+            .prepare('SELECT * FROM locked_channels WHERE channel=?')
+            .get(channel.id);
+          await channel.overwritePermissions(JSON.parse(perm.permissions));
+          await channel.send('Unlocked!');
+          db.prepare('DELETE FROM locked_channels WHERE channel=?').run(
+            channel.id
+          );
         } catch (e) {
           console.log(e);
         }
@@ -1741,7 +1745,7 @@ client.on('message', async (msg) => {
             chosen_module.commands.map((n) => {
               return {
                 name: n.name,
-                value: `\`${n.syntax}\`\n${n.long_explanation}`,
+                value: `\`${n.syntax}\`\n${n.explanation}`,
                 inline: false,
               };
             })
