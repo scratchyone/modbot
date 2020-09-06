@@ -2,18 +2,19 @@ let util_functions = require('../util_functions.js');
 const db = require('better-sqlite3')('perms.db3', {});
 let lockdown = {
   name: 'lockdown',
-  syntax: 'm: lockdown <TIME>',
+  syntax: 'm: lockdown [TIME]',
   explanation: 'Prevent everyone for sending messages in this channel',
   matcher: (cmd) => cmd.command == 'lockdown',
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
-    util_functions.schedule_event(
-      {
-        type: 'unlockdown',
-        channel: msg.channel.id,
-      },
-      cmd.time
-    );
+    if (cmd.time)
+      util_functions.schedule_event(
+        {
+          type: 'unlockdown',
+          channel: msg.channel.id,
+        },
+        cmd.time
+      );
     db.prepare('INSERT INTO locked_channels VALUES (?, ?)').run(
       msg.channel.id,
       JSON.stringify(msg.channel.permissionOverwrites)
@@ -46,7 +47,7 @@ let unlockdown = {
     }
     await channel.overwritePermissions(JSON.parse(perm.permissions));
     await channel.send('Unlocked!');
-    await msg.channel.send('Unlocked!');
+    if (channel.id !== msg.channel.id) await msg.channel.send('Unlocked!');
     db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
   },
 };

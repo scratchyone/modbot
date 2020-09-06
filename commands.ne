@@ -41,5 +41,5 @@ eval -> "eval" __ anything {% (n)=>{return {command: "eval", code: n[2]}}%}
 cat -> "cat" {% (n)=>{return {command: "cat"}}%}
 stats -> "stats" {% (n)=>{return {command: "stats"}}%}
 update -> "update" __ anything {% (n)=>{return {command: "update", id: n[2]}}%}
-lockdown -> "lockdown" __ word {% (n)=>{return {command: "lockdown", time: n[2]}}%}
+lockdown -> "lockdown" (__ word):? {% (n)=>{return {command: "lockdown", time: n[1] ? n[1][1] : null}}%}
 unlockdown -> "unlockdown" __ channel {% (n)=>{return {command: "unlockdown", channel: n[2]}}%}
