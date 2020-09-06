@@ -23,6 +23,7 @@ const nearley = require('nearley');
 const commands = require('./commands.js');
 const mutes = require('./submodules/mutes.js');
 const utilities = require('./submodules/utilities.js');
+const moderation = require('./submodules/moderation.js');
 const starboard = require('./submodules/starboard.js');
 const alertchannels = require('./submodules/alertchannels.js');
 let nanoid = require('nanoid');
@@ -1411,6 +1412,17 @@ client.on('ready', async () => {
           console.log(e);
         }
       }
+      if (event.type == 'overwriteChannelPermissions') {
+        try {
+          let channel = client.channels.cache.get(event.channel);
+          await channel.overwritePermissions(event.overrides);
+          if (event.message) {
+            await channel.send(util_functions.desc_embed(event.message));
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
     }
     db.prepare('DELETE FROM timerevents WHERE timestamp<=?').run(ts);
   }, 2000);
@@ -1595,6 +1607,7 @@ let all_command_modules = [
   starboard.commandModule,
   utilities.commandModule,
   alertchannels.commandModule,
+  moderation.commandModule,
 ];
 client.on('guildMemberAdd', async (member) => {
   if (
@@ -1991,6 +2004,33 @@ app.get('/servers/:server/channels/', async (req, res, next) => {
       }),
   });
 });
+if (process.env.STATUSTRACKER_URL) {
+  let reportStatus = async () => {
+    try {
+      let res = await (
+        await fetch(process.env.STATUSTRACKER_URL + '/ping', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'ModBot',
+            secret: process.env.STATUSTRACKER_SECRET,
+          }),
+        })
+      ).json();
+      if (res.error) {
+        console.error('Failed to update statustracker: ' + res.error);
+      }
+    } catch (e) {
+      console.error('Failed to update statustracker: ' + e);
+    }
+  };
+  reportStatus();
+  setInterval(async () => {
+    await reportStatus();
+  }, process.env.STATUSTRACKER_TIME_MS);
+}
 if (process.env.PORT) {
   app.listen(process.env.PORT, function () {
     console.log('CORS-enabled web server listening on port 80');
