@@ -22,6 +22,7 @@ let lockdown = {
     for (let perm of msg.channel.permissionOverwrites) {
       await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
     }
+    await msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
     await msg.channel.updateOverwrite(client.user.id, { SEND_MESSAGES: true });
     await msg.channel.send('Locked!');
   },
