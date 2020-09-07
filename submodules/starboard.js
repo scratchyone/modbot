@@ -69,6 +69,15 @@ exports.onStarReactAdd = async (reaction, client) => {
             desc += '**' + reaction.message.embeds[0].title + '**\n';
           desc += reaction.message.embeds[0].description || '';
         }
+        let image;
+        if (reaction.message.attachments.array().length) {
+          image = reaction.message.attachments.array().map((n) => n.url)[0];
+        } else if (
+          reaction.message.embeds.length > 0 &&
+          reaction.message.embeds[0].type === 'image'
+        ) {
+          image = reaction.message.embeds[0].url;
+        }
         let sb_msg = await sb_chan.send(
           new Discord.MessageEmbed()
             .setAuthor(
@@ -78,11 +87,7 @@ exports.onStarReactAdd = async (reaction, client) => {
             .setDescription(
               desc + '\n\n**[Source](' + reaction.message.url + ')**'
             )
-            .setImage(
-              reaction.message.attachments.array()
-                ? reaction.message.attachments.array().map((n) => n.url)[0]
-                : null
-            )
+            .setImage(image)
         );
 
         //files: reaction.message.attachments.array().map((n) => n.url),
