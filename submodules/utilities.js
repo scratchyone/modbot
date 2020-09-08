@@ -59,6 +59,7 @@ let autoping = {
           'Autoping is not setup here. You can enable it with `m: autoping enable`'
         );
       db.prepare('DELETE FROM autopings WHERE channel = ?').run(msg.channel.id);
+      await msg.channel.send('Disabled');
     }
   },
 };
