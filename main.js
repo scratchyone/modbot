@@ -1717,7 +1717,7 @@ client.on('message', async (msg) => {
       //.chunk_inefficient(25);
       msg.channel.send(
         new Discord.MessageEmbed()
-          .setTitle('Help for RachModBot')
+          .setTitle(util_functions.fillStringVars('Help for __botName__'))
           .setDescription(
             '<> means required, [] means optional. Type `m: help <NAME>` to get help for a specific command module'
           )
@@ -1736,7 +1736,7 @@ client.on('message', async (msg) => {
       }
       msg.channel.send(
         new Discord.MessageEmbed()
-          .setTitle('Help for RachModBot')
+          .setTitle(util_functions.fillStringVars('Help for __botName__'))
           .setDescription(
             '**' +
               chosen_module.title +

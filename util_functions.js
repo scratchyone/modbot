@@ -151,3 +151,17 @@ exports.ask = async (question, time, msg) => {
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
   return sb_name.array()[0].content;
 };
+let stringVars = {
+  botName: 'ModBot',
+};
+exports.fillStringVars = (text) => {
+  const regex = /__.*__/g;
+  const found = text.match(regex);
+  for (let item of found) {
+    text = text.replace(
+      item,
+      stringVars[item.replace('__', '').replace('__', '')]
+    );
+  }
+  return text;
+};

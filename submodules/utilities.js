@@ -3,11 +3,11 @@ let util_functions = require('../util_functions.js');
 const Discord = require('discord.js');
 const Canvas = require('canvas');
 const fetch = require('node-fetch');
+const { util } = require('prettier');
 let invite = {
   name: 'invite',
   syntax: 'm: invite',
-  explanation: 'Get a ModBot server invite',
-  long_explanation: 'Get a ModBot server invite',
+  explanation: util_functions.fillStringVars('Get a __botName__ server invite'),
   matcher: (cmd) => cmd.command == 'invite',
   permissions: (msg) => true,
   responder: async (msg, cmd) => {
@@ -19,7 +19,9 @@ let invite = {
 let autoping = {
   name: 'autoping',
   syntax: 'm: autoping <enable/disable>',
-  explanation: 'Make modbot ping a user/role on every new message in a channel',
+  explanation: util_functions.fillStringVars(
+    'Make __botName__ ping a user/role on every new message in a channel'
+  ),
   matcher: (cmd) => cmd.command == 'autoping',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd) => {
@@ -39,7 +41,9 @@ let autoping = {
           'Autoping is already setup here. You can disable it with `m: autoping disable`'
         );
       let res = await util_functions.ask(
-        'Please ping the user(s) and/or role(s) you would like to be pinged on every message',
+        util_functions.fillStringVars(
+          'Please ping the user(s) and/or role(s) you would like to be pinged on every message. __botName__ will resend and then delete whatever you write next on every message'
+        ),
         20000,
         msg
       );
@@ -140,11 +144,15 @@ let stats = {
   responder: async (msg, cmd, client) => {
     await msg.channel.send(
       util_functions.desc_embed(
-        `ModBot is in ${client.guilds.cache.array().length} servers, with ${
-          client.channels.cache
-            .array()
-            .filter((channel) => channel.type === 'text').length
-        } channels, and ${client.users.cache.array().length} users`
+        util_functions.fillStringVars(
+          `__botName__ is in ${
+            client.guilds.cache.array().length
+          } servers, with ${
+            client.channels.cache
+              .array()
+              .filter((channel) => channel.type === 'text').length
+          } channels, and ${client.users.cache.array().length} users`
+        )
       )
     );
   },
