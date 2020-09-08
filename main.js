@@ -1622,9 +1622,12 @@ client.on('guildMemberAdd', async (member) => {
         .role
     );
 });
+let check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
 client.on('message', async (msg) => {
   try {
     if (msg.author.bot) return;
+    let ap = check_autopings.get(msg.channel.id);
+    if (ap) await (await msg.channel.send(ap.message)).delete();
     /*if (msg.author.id == '671486892457590846') {
       const Canvas = require('canvas');
       const canvas = Canvas.createCanvas(502, 453);
@@ -1783,13 +1786,7 @@ client.on('message', async (msg) => {
                 );
             } catch (e) {
               if (e.type == 'user')
-                await msg.channel.send(
-                  util_functions.desc_embed(
-                    "There's been an error! And it's likely your fault:\n```" +
-                      e.message +
-                      '```'
-                  )
-                );
+                await msg.channel.send(util_functions.desc_embed(e.message));
               else if (e.type == 'bot') {
                 await msg.channel.send(
                   'An error has occurred. Would you please explain what you were trying to do?'

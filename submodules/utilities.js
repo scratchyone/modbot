@@ -16,6 +16,52 @@ let invite = {
     );
   },
 };
+let autoping = {
+  name: 'autoping',
+  syntax: 'm: autoping <enable/disable>',
+  explanation: 'Make modbot ping a user/role on every new message in a channel',
+  matcher: (cmd) => cmd.command == 'autoping',
+  permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
+  responder: async (msg, cmd) => {
+    if (!msg.member.hasPermission('MENTION_EVERYONE'))
+      throw new util_functions.BotError(
+        'user',
+        'You need MENTION_EVERYONE perms to be able to run this command'
+      );
+    if (cmd.action === 'enable') {
+      if (
+        db
+          .prepare('SELECT * FROM autopings WHERE channel=?')
+          .get(msg.channel.id)
+      )
+        throw new util_functions.BotError(
+          'user',
+          'Autoping is already setup here. You can disable it with `m: autoping disable`'
+        );
+      let res = await util_functions.ask(
+        'Please ping the user(s) and/or role(s) you would like to be pinged on every message',
+        20000,
+        msg
+      );
+      db.prepare('INSERT INTO autopings VALUES (?, ?)').run(
+        msg.channel.id,
+        res
+      );
+      await msg.channel.send('Done!');
+    } else {
+      if (
+        !db
+          .prepare('SELECT * FROM autopings WHERE channel=?')
+          .get(msg.channel.id)
+      )
+        throw new util_functions.BotError(
+          'user',
+          'Autoping is not setup here. You can enable it with `m: autoping enable`'
+        );
+      db.prepare('DELETE FROM autopings WHERE channel = ?').run(msg.channel.id);
+    }
+  },
+};
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -195,7 +241,7 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [eval_cmd, invite, userpic, ping, cat, stats, update_cmd],
+  commands: [eval_cmd, invite, userpic, ping, cat, stats, update_cmd, autoping],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');

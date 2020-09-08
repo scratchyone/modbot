@@ -122,7 +122,7 @@ class BotError extends Error {
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, CustomError);
+      Error.captureStackTrace(this, BotError);
     }
 
     this.name = 'BotError';
@@ -139,3 +139,15 @@ exports.confirm = confirm;
 exports.cleanPings = cleanPings;
 exports.checkSelfPermissions = checkSelfPermissions;
 exports.BotError = BotError;
+exports.ask = async (question, time, msg) => {
+  await msg.channel.send(question);
+  let sb_name = await msg.channel.awaitMessages(
+    (m) => m.author.id == msg.author.id,
+    {
+      max: 1,
+      time: time,
+    }
+  );
+  if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
+  return sb_name.array()[0].content;
+};
