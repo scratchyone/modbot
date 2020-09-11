@@ -1593,6 +1593,26 @@ client.on('messageReactionRemove', async (reaction, user) => {
         );
       if (!t.length) await utilities.reRenderPoll(reaction.message, client);
     }
+    let member = reaction.message.guild.member(user);
+    let roles_that_can_pin = check_if_can_pin.all();
+    if (
+      member.roles.cache.find(
+        (n) =>
+          roles_that_can_pin.filter(
+            (rcp) =>
+              rcp.roleid == n.id && rcp.guild == reaction.message.guild.id
+          ).length > 0
+      ) &&
+      reaction.emoji.name == '📌' &&
+      reaction.message.pinned
+    ) {
+      await reaction.message.unpin();
+      await reaction.message.channel.send(
+        util_functions.desc_embed(
+          `${user} unpinned [a message](${reaction.message.url}) from this channel`
+        )
+      );
+    }
     let rr =
       check_for_reactionrole.get(
         reaction.emoji.name,
