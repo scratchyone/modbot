@@ -1496,7 +1496,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
           await pm.first().delete();
           await reaction.message.channel.send(
             util_functions.desc_embed(
-              `${user} pinned a message to this channel`
+              `${user} pinned [a message](${reaction.message.url}) to this channel`
             )
           );
         }
