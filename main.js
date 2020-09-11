@@ -70,6 +70,31 @@ let main_commands = {
       },
     },
     {
+      name: 'eval',
+      syntax: 'm: eval <CODE>',
+      explanation: 'Run code',
+      matcher: (cmd) => cmd.command == 'eval',
+      permissions: (msg) =>
+        msg.author.id === '234020040830091265' &&
+        msg.member.hasPermission('MANAGE_MESSAGES'),
+      responder: async (msg, cmd, client) => {
+        try {
+          let res = eval(
+            `(async () => {${cmd.code
+              .replace('```js', '')
+              .replace('```javascript', '')
+              .replace(
+                '```',
+                ''
+              )}})().catch(e=>msg.channel.send(\`Error: \${e}\`))`
+          );
+          await msg.channel.send('Ran!');
+        } catch (e) {
+          msg.channel.send(util_functions.desc_embed(`Error: ${e}`));
+        }
+      },
+    },
+    {
       name: 'say',
       syntax: 'm: say [CHANNEL] <keep/remove> <TEXT>',
       explanation: 'Make the bot say something in a channel',

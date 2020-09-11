@@ -295,28 +295,6 @@ let stats = {
     );
   },
 };
-let eval_cmd = {
-  name: 'eval',
-  syntax: 'm: eval <CODE>',
-  explanation: 'Run code',
-  matcher: (cmd) => cmd.command == 'eval',
-  permissions: (msg) =>
-    msg.author.id === '234020040830091265' &&
-    msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd, client) => {
-    try {
-      let res = eval(
-        `(async () => {${cmd.code
-          .replace('```js', '')
-          .replace('```javascript', '')
-          .replace('```', '')}})().catch(e=>msg.channel.send(\`Error: \${e}\`))`
-      );
-      await msg.channel.send('Ran!');
-    } catch (e) {
-      msg.channel.send(util_functions.desc_embed(`Error: ${e}`));
-    }
-  },
-};
 let update_cmd = {
   name: 'update',
   syntax: 'm: update <ID>',
@@ -388,17 +366,7 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [
-    eval_cmd,
-    invite,
-    userpic,
-    ping,
-    cat,
-    stats,
-    update_cmd,
-    autoping,
-    poll,
-  ],
+  commands: [invite, userpic, ping, cat, stats, update_cmd, autoping, poll],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');
