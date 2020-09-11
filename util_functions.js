@@ -131,6 +131,11 @@ class BotError extends Error {
     this.message = message;
   }
 }
+exports.attachmentToUrl = async (attachment, client) => {
+  let uploadChannel = client.channels.cache.get(process.env.UPLOAD_CHANNEL);
+  let imageMessage = await uploadChannel.send(attachment);
+  return [imageMessage.attachments.array()[0].url, imageMessage];
+};
 exports.desc_embed = desc_embed;
 exports.shuffle = shuffle;
 exports.schedule_event = schedule_event;

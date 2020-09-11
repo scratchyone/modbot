@@ -1431,6 +1431,7 @@ client.on('ready', async () => {
     db.prepare('DELETE FROM timerevents WHERE timestamp<=?').run(ts);
   }, 2000);
 });
+let check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
 client.on('messageReactionAdd', async (reaction, user) => {
   try {
     // When we receive a reaction we check if the reaction is partial or not
@@ -1443,6 +1444,18 @@ client.on('messageReactionAdd', async (reaction, user) => {
         // Return as `reaction.message.author` may be undefined/null
         return;
       }
+    }
+    if (check_poll.get(reaction.message.id)) {
+      let t = reaction.message.reactions.cache
+        .array()
+        .filter(
+          (r) =>
+            (r.emoji.name == '👍' || r.emoji.name == '👎') &&
+            r.users.cache.array().filter((u) => u.id == user.id).length &&
+            r.emoji.name != reaction.emoji.name
+        );
+      if (t.length) reaction.users.remove(user);
+      else await utilities.reRenderPoll(reaction.message, client);
     }
     if (reaction.emoji.name == '⭐') {
       await starboard.onStarReactAdd(reaction, client);
@@ -1561,6 +1574,9 @@ client.on('messageReactionRemove', async (reaction, user) => {
     }
     if (reaction.emoji.name == '⭐') {
       await starboard.onStarReactRemove(reaction, client);
+    }
+    if (check_poll.get(reaction.message.id)) {
+      await utilities.reRenderPoll(reaction.message, client);
     }
     let rr =
       check_for_reactionrole.get(
@@ -1685,10 +1701,6 @@ client.on('message', async (msg) => {
             .setTitle(ar.embed_title)
             .setDescription(ar.embed_description)
         );
-    }
-    if (msg.content.startsWith('Poll: ')) {
-      await msg.react('👍');
-      await msg.react('👎');
     }
     if (!msg.content.startsWith('m: ') || msg.author.bot) return;
     if (

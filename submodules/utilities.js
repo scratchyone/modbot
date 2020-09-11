@@ -16,6 +16,103 @@ let invite = {
     );
   },
 };
+function createPollAttachment(votes) {
+  const canvas = Canvas.createCanvas(320, 194);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'white';
+  ctx.rect(0, 0, 320, 194);
+  ctx.fill();
+  if (votes.up == 0 && votes.down == 0) {
+    ctx.fillStyle = '#4397C7';
+    roundRect(ctx, 40, 74, 240, 46, 5, true, false);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '500 27px Roboto';
+    ctx.fillText('No Votes', 320 / 2, 107);
+  } else {
+    ctx.fillStyle = '#45CE39';
+    roundRect(ctx, 40, 74, 240, 46, 5, true, false);
+    if (votes.down) {
+      ctx.fillStyle = '#CE3939';
+      roundRect(
+        ctx,
+        40,
+        74,
+        240 * (votes.down / (votes.down + votes.up)),
+        46,
+        5,
+        true,
+        false
+      );
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#535353';
+    ctx.font = '600 20px Roboto';
+    if (votes.up >= votes.down)
+      ctx.fillText(
+        Math.round((votes.up / (votes.down + votes.up)) * 100) + '% In Favor',
+        320 / 2,
+        60
+      );
+    else
+      ctx.fillText(
+        Math.round((votes.down / (votes.down + votes.up)) * 100) + '% Against',
+        320 / 2,
+        60
+      );
+    ctx.textAlign = 'left';
+    ctx.fillText(votes.down + ' Against', 40, 145);
+    ctx.textAlign = 'right';
+    ctx.fillText(votes.up + ' In Favor', 278, 145);
+  }
+  const attachment = new Discord.MessageAttachment(
+    canvas.toBuffer(),
+    'image.png'
+  );
+  return attachment;
+}
+exports.createPollAttachment = createPollAttachment;
+exports.reRenderPoll = async (message, client) => {
+  try {
+    let attachment = createPollAttachment({
+      up:
+        message.reactions.cache.array().filter((r) => r.emoji.name == '👍')[0]
+          .count - 1,
+      down:
+        message.reactions.cache.array().filter((r) => r.emoji.name == '👎')[0]
+          .count - 1,
+    });
+    let [iurl, im] = await util_functions.attachmentToUrl(attachment, client);
+    await message.edit({
+      embed: message.embeds[0].setImage(iurl),
+    });
+    //await im.delete();
+  } catch (e) {
+    console.log(e);
+  }
+};
+let poll = {
+  name: 'poll',
+  syntax: 'm: poll <TEXT>',
+  explanation: 'Run a yes/no poll',
+  matcher: (cmd) => cmd.command == 'poll',
+  permissions: (msg) => true,
+  responder: async (msg, cmd, client) => {
+    await msg.delete();
+    let attachment = createPollAttachment({ up: 0, down: 0 });
+    let [iurl, im] = await util_functions.attachmentToUrl(attachment, client);
+    let pollMsg = await msg.channel.send(
+      new Discord.MessageEmbed()
+        .setAuthor(msg.member.displayName, await msg.author.displayAvatarURL())
+        .setTitle(cmd.text)
+        .setImage(iurl)
+    );
+    //await im.delete();
+    await pollMsg.react('👍');
+    await pollMsg.react('👎');
+    db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);
+  },
+};
 let autoping = {
   name: 'autoping',
   syntax: 'm: autoping <enable/disable>',
@@ -70,6 +167,45 @@ let autoping = {
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
+function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+  if (typeof stroke === 'undefined') {
+    stroke = true;
+  }
+  if (typeof radius === 'undefined') {
+    radius = 5;
+  }
+  if (typeof radius === 'number') {
+    radius = { tl: radius, tr: radius, br: radius, bl: radius };
+  } else {
+    var defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
+    for (var side in defaultRadius) {
+      radius[side] = radius[side] || defaultRadius[side];
+    }
+  }
+  ctx.beginPath();
+  ctx.moveTo(x + radius.tl, y);
+  ctx.lineTo(x + width - radius.tr, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+  ctx.lineTo(x + width, y + height - radius.br);
+  ctx.quadraticCurveTo(
+    x + width,
+    y + height,
+    x + width - radius.br,
+    y + height
+  );
+  ctx.lineTo(x + radius.bl, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+  ctx.lineTo(x, y + radius.tl);
+  ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+  ctx.closePath();
+  if (fill) {
+    ctx.fill();
+  }
+  if (stroke) {
+    ctx.stroke();
+  }
+}
+
 let userpic = {
   name: 'userpic',
   syntax: 'm: userpic',
@@ -250,7 +386,17 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [eval_cmd, invite, userpic, ping, cat, stats, update_cmd, autoping],
+  commands: [
+    eval_cmd,
+    invite,
+    userpic,
+    ping,
+    cat,
+    stats,
+    update_cmd,
+    autoping,
+    poll,
+  ],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');

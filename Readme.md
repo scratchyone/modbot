@@ -3,10 +3,11 @@
 Create .env and fill in the tokens and port:
 
 ```powershell
-DISCORD_TOKEN=token # Required
-SENTRY_TOKEN=token # Optional
-PORT=port # Optional
+DISCORD_TOKEN # Required
+SENTRY_TOKEN # Optional
+PORT # Optional
 UPDATE_COMMAND # Command(s) used to update and restart the bot, __ID__ will be replaced with the id given in the command, optional
+UPLOAD_CHANNEL #ID of channel used to upload images to discord cdn
 ```
 
 Then start the bot with:
