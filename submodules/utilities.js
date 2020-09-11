@@ -86,7 +86,6 @@ exports.reRenderPoll = async (message, client) => {
     await message.edit({
       embed: message.embeds[0].setImage(iurl),
     });
-    //await im.delete();
   } catch (e) {
     console.log(e);
   }
@@ -107,7 +106,6 @@ let poll = {
         .setTitle(cmd.text)
         .setImage(iurl)
     );
-    //await im.delete();
     await pollMsg.react('👍');
     await pollMsg.react('👎');
     db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);
