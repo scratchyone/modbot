@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sentry/node": "^5.22.3",
+    "@sentry/node": "^5.23.0",
     "better-sqlite3": "^7.1.0",
     "canvas": "^2.6.1",
     "cors": "^2.8.5",
