@@ -170,3 +170,26 @@ exports.fillStringVars = (text) => {
   }
   return text;
 };
+const { Structures } = require('discord.js');
+const { check } = require('prettier');
+Structures.extend('Guild', (Guild) => {
+  return class EGuild extends Guild {
+    constructor(client, guild) {
+      super(client, guild);
+    }
+    get starboard() {
+      return db.prepare('SELECT * FROM starboards WHERE server=?').get(this.id);
+    }
+  };
+});
+let check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
+Structures.extend('Message', (Message) => {
+  return class EMessage extends Message {
+    constructor(client, message, channel) {
+      super(client, message, channel);
+    }
+    get isPoll() {
+      return !!check_poll.get(this.id);
+    }
+  };
+});
