@@ -98,6 +98,10 @@ let poll = {
   permissions: (msg) => true,
   responder: async (msg, cmd, client) => {
     await msg.delete();
+    let warning = await msg.channel.send(
+      'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
+    );
+    setTimeout(() => warning.delete(), 8000);
     let attachment = createPollAttachment({ up: 0, down: 0 });
     let [iurl, im] = await util_functions.attachmentToUrl(attachment, client);
     let pollMsg = await msg.channel.send(
