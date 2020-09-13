@@ -1380,16 +1380,28 @@ client.on('ready', async () => {
   //
   let pj = require('./package.json');
   if (!db.prepare('SELECT * FROM updates WHERE version=?').get(pj.version)) {
+    let changes = pj.changelogs.filter(
+      (change) =>
+        !db.prepare('SELECT * FROM updates WHERE version=?').get(change.version)
+    );
+    console.log(changes);
+
     for (let alertchannel of db.prepare('SELECT * FROM alert_channels').all()) {
       ralertchannel = client.channels.cache.get(alertchannel.channel);
       if (!ralertchannel) continue;
       await ralertchannel.send(
         new Discord.MessageEmbed()
           .setTitle(`ModBot has been updated to v${pj.version}`)
-          .setDescription(pj.changelog && `**Changes:**\n${pj.changelog}`)
+          .setDescription(
+            `**Changes:**\n${changes
+              .map((change) => change.changelog)
+              .join('\n')}`
+          )
       );
     }
-    db.prepare('INSERT INTO updates VALUES (?)').run(pj.version);
+    for (let change of changes) {
+      db.prepare('INSERT INTO updates VALUES (?)').run(change.version);
+    }
   }
   setInterval(async () => {
     let ts = Math.round(Date.now() / 1000);
