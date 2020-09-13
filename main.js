@@ -1217,9 +1217,7 @@ let main_commands = {
       permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg, cmd) => {
         let mentioned_member = await msg.guild.members.cache.get(cmd.user);
-        let mm_nick = mentioned_member.nickname
-          ? mentioned_member.nickname
-          : mentioned_member.username;
+        let mm_nick = mentioned_member.displayName;
         let mute_role = mutes.getMuteRole.get(msg.guild.id);
         let desc = [];
         let use_pronouns = false;
@@ -1367,6 +1365,17 @@ client.on('ready', async () => {
   //
   //
   //
+  let pj = require('./package.json');
+  for (let alertchannel of db.prepare('SELECT * FROM alert_channels').all()) {
+    ralertchannel = client.channels.cache.get(alertchannel.channel);
+    if (!ralertchannel) continue;
+
+    await ralertchannel.send(
+      new Discord.MessageEmbed()
+        .setTitle(`ModBot has been updated to v${pj.version}`)
+        .setDescription(pj.changelog && `**Changes:**\n${pj.changelog}`)
+    );
+  }
   setInterval(async () => {
     let ts = Math.round(Date.now() / 1000);
     let events = db

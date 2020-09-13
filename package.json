@@ -1,6 +1,7 @@
 {
   "name": "js_version",
   "version": "1.0.0",
+  "changelog": "Mods will now be alerted whenever ModBot gets a new update, and will also be given a short explanation of the changes",
   "description": "",
   "main": "main.js",
   "scripts": {
