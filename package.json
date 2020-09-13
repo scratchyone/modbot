@@ -1,7 +1,7 @@
 {
   "name": "js_version",
-  "version": "1.0.1",
-  "changelog": "The `m: purge` command now properly shows an error if you try to delete messages older than 14 days",
+  "version": "1.1.0",
+  "changelog": "Archiving a channel now sets it to read-only",
   "description": "",
   "main": "main.js",
   "scripts": {

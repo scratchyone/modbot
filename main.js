@@ -278,7 +278,7 @@ let main_commands = {
               await msg.channel.overwritePermissions([
                 {
                   id: msg.guild.id,
-                  deny: ['VIEW_CHANNEL'],
+                  deny: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
                 },
                 {
                   id: msg.author.id,
@@ -381,7 +381,7 @@ let main_commands = {
         await msg.channel.overwritePermissions([
           {
             id: msg.guild.id,
-            deny: ['VIEW_CHANNEL'],
+            deny: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
           {
             id: cmd.role,
