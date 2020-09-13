@@ -1200,13 +1200,18 @@ let main_commands = {
           );
           return;
         }
-        let purged_msg_num = await msg.channel.bulkDelete(count + 1);
-        let purged_info_msg = await msg.channel.send(
-          `Purged ${purged_msg_num.array().length - 1} messages`
-        );
-        setTimeout(() => {
-          purged_info_msg.delete();
-        }, 2000);
+        try {
+          let purged_msg_num = await msg.channel.bulkDelete(count + 1);
+
+          let purged_info_msg = await msg.channel.send(
+            `Purged ${purged_msg_num.array().length - 1} messages`
+          );
+          setTimeout(() => {
+            purged_info_msg.delete();
+          }, 2000);
+        } catch (e) {
+          await msg.channel.send(util_functions.desc_embed(e));
+        }
       },
     },
     {

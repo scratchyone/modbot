@@ -1,7 +1,7 @@
 {
   "name": "js_version",
-  "version": "1.0.0",
-  "changelog": "Mods will now be alerted whenever ModBot gets a new update, and will also be given a short explanation of the changes",
+  "version": "1.0.1",
+  "changelog": "The `m: purge` command now properly shows an error if you try to delete messages older than 14 days",
   "description": "",
   "main": "main.js",
   "scripts": {
