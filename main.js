@@ -859,8 +859,12 @@ let main_commands = {
             .content.split('\n')
             .map((n) => {
               return {
-                emoji: n.split(' ')[0],
-                role: n.split(' ')[1].replace('<@&', '').replace('>', ''),
+                emoji: n.split(' ').filter((n) => n)[0],
+                role: n
+                  .split(' ')
+                  .filter((n) => n)[1]
+                  .replace('<@&', '')
+                  .replace('>', ''),
               };
             });
           for (react of reacts_formatted) {
@@ -1003,8 +1007,12 @@ let main_commands = {
             .content.split('\n')
             .map((n) => {
               return {
-                emoji: n.split(' ')[0],
-                role: n.split(' ')[1].replace('<@&', '').replace('>', ''),
+                emoji: n.split(' ').filter((n) => n)[0],
+                role: n
+                  .split(' ')
+                  .filter((n) => n)[1]
+                  .replace('<@&', '')
+                  .replace('>', ''),
               };
             });
           for (react of reacts_formatted) {

@@ -1,7 +1,7 @@
 {
   "name": "js_version",
-  "version": "1.2.1",
-  "changelog": "Fixed error caused when user replies to a warn DM",
+  "version": "1.2.2",
+  "changelog": "`m: reactionroles` will no longer cause an error if the user accidentally adds extra spaces",
   "description": "",
   "main": "main.js",
   "scripts": {
