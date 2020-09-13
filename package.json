@@ -1,7 +1,7 @@
 {
   "name": "js_version",
-  "version": "1.2.0",
-  "changelog": "ModBot will now avoid resending the update message if the bot is restarted for an unrelated reason",
+  "version": "1.2.1",
+  "changelog": "Fixed error caused when user replies to a warn DM",
   "description": "",
   "main": "main.js",
   "scripts": {

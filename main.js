@@ -1752,7 +1752,10 @@ client.on('message', async (msg) => {
     );
     return;
   }*/
-    if (anonchannels.check_anon_channel.get(msg.channel.id, msg.guild.id)) {
+    if (
+      msg.guild &&
+      anonchannels.check_anon_channel.get(msg.channel.id, msg.guild.id)
+    ) {
       if (
         !anonchannels.check_anon_ban.get({
           user: msg.author.id,
