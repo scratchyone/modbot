@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "changelogs": [
+    {
+      "version": "1.6.8",
+      "changelog": "AutoMod now works correctly with pluralkit"
+    },
     {
       "version": "1.6.7",
       "changelog": "Log now includes tag of user who's message was removed"

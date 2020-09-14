@@ -201,7 +201,7 @@ let check_for_triggers = db.prepare(
 let check_for_automod = db.prepare('SELECT * FROM automods WHERE server=?');
 exports.checkForTriggers = async (msg) => {
   let am = check_for_automod.get(msg.guild.id);
-  if (am) {
+  if (am && msg.channel.id != am.channel) {
     let triggers = check_for_triggers.all(msg.guild.id);
     for (let trigger of triggers) {
       let match = trigger.regex.match(new RegExp('^/(.*?)/([gimy]*)$'));
@@ -219,7 +219,11 @@ exports.checkForTriggers = async (msg) => {
           );
           return;
         }
-        if (msg.member && msg.member.roles.highest.position < role.position) {
+        if (
+          !!msg.member
+            ? msg.member.roles.highest.position < role.position
+            : true
+        ) {
           let channel = msg.guild.channels.cache.get(am.channel);
           if (!channel) {
             msg.channel.send(
@@ -227,9 +231,12 @@ exports.checkForTriggers = async (msg) => {
             );
             return;
           }
-          let loghook = await channel.createWebhook(msg.member.displayName, {
-            avatar: msg.author.displayAvatarURL(),
-          });
+          let loghook = await channel.createWebhook(
+            msg.member ? msg.member.displayName : msg.author.username,
+            {
+              avatar: msg.author.displayAvatarURL(),
+            }
+          );
           await loghook.send(
             await util_functions.cleanPings(msg.content, msg.guild),
             {
