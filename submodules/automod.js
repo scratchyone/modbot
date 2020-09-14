@@ -193,7 +193,11 @@ exports.checkForTriggers = async (msg) => {
   if (am) {
     let triggers = check_for_triggers.all(msg.guild.id);
     for (let trigger of triggers) {
-      let re = new RegExp(trigger.regex);
+      let match = trigger.regex.match(new RegExp('^/(.*?)/([gimy]*)$'));
+      // sanity check here
+      let re = match
+        ? new RegExp(match[1], match[2])
+        : new RegExp(trigger.regex);
       if (re.test(msg.content)) {
         let role = msg.guild.roles.cache.get(trigger.setuprole);
         if (!role) {

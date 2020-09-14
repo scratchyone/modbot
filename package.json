@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "changelogs": [
+    {
+      "version": "1.6.1",
+      "changelog": "Added ability to use flags in AutoMod regex triggers"
+    },
     {
       "version": "1.6.0",
       "changelog": "Added brand new automod system! AutoMod includes punishment logging, powerful rule support with regex, and can automatically mute users and delete messages when they hit an automod trigger. It's highly customizable"
