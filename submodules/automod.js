@@ -270,7 +270,7 @@ exports.checkForTriggers = async (msg) => {
             if (punishment.action === 'reply') {
               await msg.reply(punishment.message);
             }
-            if (punishment.action === 'mute') {
+            if (punishment.action === 'mute' && msg.member) {
               if (
                 db
                   .prepare('SELECT * FROM mute_roles WHERE server=?')
