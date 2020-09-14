@@ -16,7 +16,7 @@ let automod = {
           'AutoMod is already enabled, you can disable it with `m: automod disable`'
         );
       let channelname = await util_functions.ask(
-        'What should the deletion log channel be named?',
+        'What should the AutoMod punishment log channel be named?',
         10000,
         msg
       );
@@ -74,6 +74,13 @@ let automod = {
         util_functions.desc_embed(`Disabled AutoMod and deleted all triggers!`)
       );
     } else if (cmd.action === 'add') {
+      if (
+        !db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id)
+      )
+        throw new util_functions.BotError(
+          'user',
+          'AutoMod is not enabled, you can enable it with `m: automod enable`'
+        );
       let triggerName = await util_functions.ask(
         'What should the trigger be named?',
         10000,

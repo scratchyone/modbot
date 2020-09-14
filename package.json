@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "changelogs": [
+    {
+      "version": "1.6.2",
+      "changelog": "Triggers can no longer be added with AutoMod disabled"
+    },
     {
       "version": "1.6.1",
       "changelog": "Added ability to use flags in AutoMod regex triggers"
