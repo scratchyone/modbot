@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "changelogs": [
+    {
+      "version": "1.6.4",
+      "changelog": "AutoMod now works even if ModBot doesn't have admin permissions"
+    },
     {
       "version": "1.6.3",
       "changelog": "Fixed permissions on AutoMod log channel"

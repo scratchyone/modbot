@@ -8,7 +8,7 @@ let automod = {
     'Enable/Disable the automod, Add/Remove automod triggers, and list all configured triggers. You can use m: inspect to view more info about a specific trigger',
   matcher: (cmd) => cmd.command == 'automod',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd) => {
+  responder: async (msg, cmd, client) => {
     if (cmd.action === 'enable') {
       if (db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id))
         throw new util_functions.BotError(
@@ -43,6 +43,10 @@ let automod = {
           {
             id: channelViewRole,
             allow: ['VIEW_CHANNEL'],
+          },
+          {
+            id: client.user.id,
+            allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
         ],
       });
