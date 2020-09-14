@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "changelogs": [
+    {
+      "version": "1.5.2",
+      "changelog": "Changed `m: color` font size to align with linux font differences"
+    },
     {
       "version": "1.5.1",
       "changelog": "Fixed bug in purge command permission checking caused by previous update"

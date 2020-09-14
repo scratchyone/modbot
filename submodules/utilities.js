@@ -296,7 +296,7 @@ let color = {
         ctx.fillRect(0, 0, 200, 100);
         // Write username
         ctx.fillStyle = Color(cmd.color);
-        ctx.font = 'semibold 17px Whitney';
+        ctx.font = 'Semibold 15px Whitney';
         ctx.fillText('Example User', 10, 27);
         // Use helpful Attachment class structure to process the file for you
         attachment = new Discord.MessageAttachment(
