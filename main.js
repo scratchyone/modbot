@@ -1197,7 +1197,8 @@ let main_commands = {
       syntax: 'm: purge <COUNT>',
       explanation: 'Purge messages',
       matcher: (cmd) => cmd.command == 'purge',
-      permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
+      permissions: (msg) =>
+        msg.channel.permissionsFor(msg.member).hasPermission('MANAGE_MESSAGES'),
       responder: async (msg, cmd) => {
         let count = parseInt(cmd.count);
         if (count > 50) {

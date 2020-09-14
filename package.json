@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "changelogs": [
+    {
+      "version": "1.5.0",
+      "changelog": "`m: purge` now uses channel permissions instead of server-wide permissions"
+    },
     {
       "version": "1.4.0",
       "changelog": "Added `m: color` command to get information about a color"
