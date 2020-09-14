@@ -38,7 +38,7 @@ let automod = {
         permissionOverwrites: [
           {
             id: msg.guild.id,
-            deny: ['VIEW_CHANNEL'],
+            deny: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
           {
             id: channelViewRole,

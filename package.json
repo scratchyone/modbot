@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "changelogs": [
+    {
+      "version": "1.6.3",
+      "changelog": "Fixed permissions on AutoMod log channel"
+    },
     {
       "version": "1.6.2",
       "changelog": "Triggers can no longer be added with AutoMod disabled"
