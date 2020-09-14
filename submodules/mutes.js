@@ -32,8 +32,9 @@ let setupmute = {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
+        let mute_role;
         try {
-          let mute_role = await msg.guild.roles.create({
+          mute_role = await msg.guild.roles.create({
             data: {
               name: rolename.array()[0].content,
             },

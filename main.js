@@ -24,6 +24,7 @@ const utilities = require('./submodules/utilities.js');
 const moderation = require('./submodules/moderation.js');
 const starboard = require('./submodules/starboard.js');
 const alertchannels = require('./submodules/alertchannels.js');
+const automod = require('./submodules/automod.js');
 let nanoid = require('nanoid');
 const db = require('better-sqlite3')('perms.db3', {});
 let check_if_can_pin = db.prepare('SELECT * FROM pinners');
@@ -1725,6 +1726,7 @@ let all_command_modules = [
   utilities.commandModule,
   alertchannels.commandModule,
   moderation.commandModule,
+  automod.commandModule,
 ];
 client.on('guildMemberAdd', async (member) => {
   if (
@@ -1738,6 +1740,8 @@ client.on('guildMemberAdd', async (member) => {
 let check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
 client.on('message', async (msg) => {
   try {
+    if (msg.author.id === client.user.id) return;
+    await automod.checkForTriggers(msg);
     if (msg.author.bot) return;
     let ap = check_autopings.get(msg.channel.id);
     if (ap) await (await msg.channel.send(ap.message)).delete();
@@ -1964,6 +1968,7 @@ client.on('message', async (msg) => {
         }
     }
   } catch (e) {
+    console.error(e);
     Sentry.configureScope(function (scope) {
       scope.setUser({
         id: msg.author.id.toString(),
