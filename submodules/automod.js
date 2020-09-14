@@ -235,19 +235,20 @@ exports.checkForTriggers = async (msg) => {
             {
               embeds: [
                 new Discord.MessageEmbed().setTitle('Punished').setDescription(
-                  JSON.parse(trigger.punishments)
-                    .map((p) => {
-                      if (p.action === 'delete') {
-                        return 'Deleted message';
-                      }
-                      if (p.action === 'reply') {
-                        return `Replied to message saying "${p.message}"`;
-                      }
-                      if (p.action === 'mute') {
-                        return `Muted user for ${p.time}`;
-                      }
-                    })
-                    .join(', ')
+                  `Author: ${msg.author}\n` +
+                    JSON.parse(trigger.punishments)
+                      .map((p) => {
+                        if (p.action === 'delete') {
+                          return 'Deleted message';
+                        }
+                        if (p.action === 'reply') {
+                          return `Replied to message saying "${p.message}"`;
+                        }
+                        if (p.action === 'mute') {
+                          return `Muted user for ${p.time}`;
+                        }
+                      })
+                      .join(', ')
                 ),
               ],
             }

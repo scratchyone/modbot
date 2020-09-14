@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "changelogs": [
+    {
+      "version": "1.6.7",
+      "changelog": "Log now includes tag of user who's message was removed"
+    },
     {
       "version": "1.6.6",
       "changelog": "Fixed profile picture not appearing in AutoMod log"
