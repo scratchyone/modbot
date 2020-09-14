@@ -97,7 +97,7 @@ let automod = {
       );
       let triggerMessage = await util_functions.ask(
         'What should AutoMod say when this trigger is activated?',
-        10000,
+        40000,
         msg
       );
       let punishment = await util_functions.embed_options(

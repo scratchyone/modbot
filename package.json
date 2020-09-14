@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "changelogs": [
+    {
+      "version": "1.6.5",
+      "changelog": "Raised time limit when setting up trigger"
+    },
     {
       "version": "1.6.4",
       "changelog": "AutoMod now works even if ModBot doesn't have admin permissions"
