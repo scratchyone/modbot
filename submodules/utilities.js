@@ -261,6 +261,59 @@ let userpic = {
     msg.channel.send('', attachment);
   },
 };
+let color = {
+  name: 'color',
+  syntax: 'm: color <COLOR>',
+  explanation: 'Get info about a color',
+  matcher: (cmd) => cmd.command == 'color',
+  permissions: (msg) => true,
+  responder: async (msg, cmd) => {
+    var Color = require('color');
+    try {
+      let canvas = Canvas.createCanvas(100, 100);
+      let ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = Color(cmd.color);
+
+      ctx.fillRect(0, 0, 500, 500);
+      // Use helpful Attachment class structure to process the file for you
+      let attachment = new Discord.MessageAttachment(
+        canvas.toBuffer(),
+        'image.png'
+      );
+      await msg.channel.send(
+        new Discord.MessageEmbed()
+          .setTitle(cmd.color)
+          .attachFiles(attachment)
+          .setImage('attachment://image.png')
+      );
+      // Run for each discord background color
+      for (let color of ['#36393F', '#FFFFFF']) {
+        canvas = Canvas.createCanvas(120, 40);
+        ctx = canvas.getContext('2d');
+        // Fill discord background color
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 200, 100);
+        // Write username
+        ctx.fillStyle = Color(cmd.color);
+        ctx.font = 'semibold 17px Whitney';
+        ctx.fillText('Example User', 10, 27);
+        // Use helpful Attachment class structure to process the file for you
+        attachment = new Discord.MessageAttachment(
+          canvas.toBuffer(),
+          'image.png'
+        );
+        await msg.channel.send(
+          new Discord.MessageEmbed()
+            .attachFiles(attachment)
+            .setImage('attachment://image.png')
+        );
+      }
+    } catch (e) {
+      msg.channel.send(e.toString());
+    }
+  },
+};
 let ping = {
   name: 'ping',
   syntax: 'm: ping',
@@ -366,7 +419,17 @@ let cat = {
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
-  commands: [invite, userpic, ping, cat, stats, update_cmd, autoping, poll],
+  commands: [
+    invite,
+    userpic,
+    ping,
+    cat,
+    stats,
+    update_cmd,
+    autoping,
+    poll,
+    color,
+  ],
 };
 function getLines(ctx, text, maxWidth) {
   var words = text.split(' ');
