@@ -227,11 +227,12 @@ exports.checkForTriggers = async (msg) => {
             );
             return;
           }
-          let loghook = await channel.createWebhook(msg.member.displayName);
+          let loghook = await channel.createWebhook(msg.member.displayName, {
+            avatar: msg.author.displayAvatarURL(),
+          });
           await loghook.send(
             await util_functions.cleanPings(msg.content, msg.guild),
             {
-              avatar: msg.author.displayAvatarURL(),
               embeds: [
                 new Discord.MessageEmbed().setTitle('Punished').setDescription(
                   JSON.parse(trigger.punishments)

@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "changelogs": [
+    {
+      "version": "1.6.6",
+      "changelog": "Fixed profile picture not appearing in AutoMod log"
+    },
     {
       "version": "1.6.5",
       "changelog": "Raised time limit when setting up trigger"
