@@ -97,7 +97,9 @@ let poll = {
   matcher: (cmd) => cmd.command == 'poll',
   permissions: (msg) => true,
   responder: async (msg, cmd, client) => {
-    await msg.delete();
+    try {
+      await msg.delete();
+    } catch (e) {}
     let warning = await msg.channel.send(
       'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
     );

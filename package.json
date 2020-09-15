@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "changelogs": [
+    {
+      "version": "1.6.9",
+      "changelog": "`m: poll` now works with anon channels"
+    },
     {
       "version": "1.6.8",
       "changelog": "AutoMod now works correctly with pluralkit"
