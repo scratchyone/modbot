@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "changelogs": [
+    {
+      "version": "1.8.1",
+      "changelog": "Gave more time to name alertchannel when setting one up"
+    },
     {
       "version": "1.8.0",
       "changelog": "Added even better error messages for when ModBot doesn't have administrator permissions"

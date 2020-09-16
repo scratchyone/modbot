@@ -33,7 +33,7 @@ let alertchannel = {
           (m) => m.author.id == msg.author.id,
           {
             max: 1,
-            time: 10000,
+            time: 20000,
           }
         );
         if (!channel_name.array().length) {
