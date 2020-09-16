@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "changelogs": [
+    {
+      "version": "1.8.2",
+      "changelog": "`m: lockdown` will no longer throw an error if the channel is already locked"
+    },
     {
       "version": "1.8.1",
       "changelog": "Gave more time to name alertchannel when setting one up"

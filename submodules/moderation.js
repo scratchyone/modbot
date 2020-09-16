@@ -8,6 +8,17 @@ let lockdown = {
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
+    if (
+      db
+        .prepare('SELECT * FROM locked_channels WHERE channel=?')
+        .get(msg.channel.id)
+    )
+      throw new util_functions.BotError(
+        'user',
+        'Channel is already locked! run `m: unlockdown ' +
+          msg.channel +
+          '` to unlock'
+      );
     if (cmd.time)
       util_functions.schedule_event(
         {
