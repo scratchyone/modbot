@@ -237,6 +237,13 @@ Structures.extend('Message', (Message) => {
         return null;
       }
     }
+    async getAnonSender() {
+      await sleep(200);
+      let tmp = db
+        .prepare('SELECT * FROM anonmessages WHERE id=?')
+        .get(this.id);
+      return tmp ? this.guild.members.cache.get(tmp.user) : null;
+    }
     async isPluralKitMessage() {
       if (this.webhookID && this.guild.hasPluralKit) {
         return !!(await this.getPluralKitSender());
@@ -244,7 +251,20 @@ Structures.extend('Message', (Message) => {
         return false;
       }
     }
+    async isAnonMessage() {
+      if (this.webhookID) {
+        return !!(await this.getAnonSender());
+      } else {
+        return false;
+      }
+    }
     async getRealMember() {
+      if (this.webhookID) {
+        let anonsender = await this.getAnonSender();
+        if (anonsender) {
+          return anonsender;
+        }
+      }
       if (this.webhookID && this.guild.hasPluralKit) {
         return await this.getPluralKitSender();
       } else {
@@ -253,3 +273,6 @@ Structures.extend('Message', (Message) => {
     }
   };
 });
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

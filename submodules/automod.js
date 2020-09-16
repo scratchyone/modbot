@@ -203,10 +203,8 @@ let automod = {
 let check_for_triggers = db.prepare(
   'SELECT * FROM automod_triggers WHERE server=?'
 );
-var present = require('present');
 let check_for_automod = db.prepare('SELECT * FROM automods WHERE server=?');
 exports.checkForTriggers = async (msg) => {
-  let funcstart = present();
   let am = check_for_automod.get(msg.guild.id);
   if (am && msg.channel.id != am.channel) {
     let triggers = check_for_triggers.all(msg.guild.id);
@@ -238,11 +236,17 @@ exports.checkForTriggers = async (msg) => {
                 await msg.delete();
               } catch (e) {}
             }
-            if (!(await msg.isPluralKitMessage()))
+            if (
+              !(await msg.isPluralKitMessage()) &&
+              !(await msg.isAnonMessage())
+            )
               if (punishment.action === 'reply') {
                 await msg.reply(punishment.message);
               }
-            if (!(await msg.isPluralKitMessage()))
+            if (
+              !(await msg.isPluralKitMessage()) &&
+              !(await msg.isAnonMessage())
+            )
               if (punishment.action === 'mute' && msg.member) {
                 if (
                   db

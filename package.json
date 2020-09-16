@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "changelogs": [
+    {
+      "version": "1.9.2",
+      "changelog": "AutoMod permissions now work correctly with anon channels"
+    },
     {
       "version": "1.9.1",
       "changelog": "AutoMod is now significantly faster"

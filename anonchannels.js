@@ -21,7 +21,9 @@ async function handle_anon_message(msg) {
   }*/
   let nd = true;
   if (!msg.attachments || msg.attachments.array().length == 0) {
-    await msg.delete();
+    try {
+      await msg.delete();
+    } catch (e) {}
     nd = false;
   }
   //let hooks = await msg.channel.fetchWebhooks();
@@ -43,7 +45,10 @@ async function handle_anon_message(msg) {
     user: msg.author.id,
     server: msg.guild.id,
   });
-  if (nd) await msg.delete();
+  if (nd)
+    try {
+      await msg.delete();
+    } catch (e) {}
   await anonhook.delete();
 }
 exports.handle_anon_message = handle_anon_message;
