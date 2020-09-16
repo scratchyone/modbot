@@ -203,8 +203,10 @@ let automod = {
 let check_for_triggers = db.prepare(
   'SELECT * FROM automod_triggers WHERE server=?'
 );
+var present = require('present');
 let check_for_automod = db.prepare('SELECT * FROM automods WHERE server=?');
 exports.checkForTriggers = async (msg) => {
+  let funcstart = present();
   let am = check_for_automod.get(msg.guild.id);
   if (am && msg.channel.id != am.channel) {
     let triggers = check_for_triggers.all(msg.guild.id);
@@ -228,43 +230,8 @@ exports.checkForTriggers = async (msg) => {
         if (
           realMember ? realMember.roles.highest.position < role.position : true
         ) {
-          let channel = msg.guild.channels.cache.get(am.channel);
-          if (!channel) {
-            msg.channel.send(
-              util_functions.desc_embed(`Error: Log channel doesn't exist`)
-            );
-            return;
-          }
-          let loghook = await channel.createWebhook(
-            msg.member ? msg.member.displayName : msg.author.username,
-            {
-              avatar: msg.author.displayAvatarURL(),
-            }
-          );
-          await loghook.send(
-            await util_functions.cleanPings(msg.content, msg.guild),
-            {
-              embeds: [
-                new Discord.MessageEmbed().setTitle('Punished').setDescription(
-                  `Author: ${msg.author}\n` +
-                    JSON.parse(trigger.punishments)
-                      .map((p) => {
-                        if (p.action === 'delete') {
-                          return 'Deleted message';
-                        }
-                        if (p.action === 'reply') {
-                          return `Replied to message saying "${p.message}"`;
-                        }
-                        if (p.action === 'mute') {
-                          return `Muted user for ${p.time}`;
-                        }
-                      })
-                      .join(', ')
-                ),
-              ],
-            }
-          );
-          await loghook.delete();
+          let punishments_sorted = JSON.parse(trigger.punishments);
+          punishments_sorted.sort((x, y) => (x.action === 'delete' ? -1 : 0));
           for (let punishment of JSON.parse(trigger.punishments)) {
             if (punishment.action === 'delete') {
               try {
@@ -313,6 +280,43 @@ exports.checkForTriggers = async (msg) => {
                 }
               }
           }
+          let channel = msg.guild.channels.cache.get(am.channel);
+          if (!channel) {
+            msg.channel.send(
+              util_functions.desc_embed(`Error: Log channel doesn't exist`)
+            );
+            return;
+          }
+          let loghook = await channel.createWebhook(
+            msg.member ? msg.member.displayName : msg.author.username,
+            {
+              avatar: msg.author.displayAvatarURL(),
+            }
+          );
+          await loghook.send(
+            await util_functions.cleanPings(msg.content, msg.guild),
+            {
+              embeds: [
+                new Discord.MessageEmbed().setTitle('Punished').setDescription(
+                  `Author: ${msg.author}\n` +
+                    JSON.parse(trigger.punishments)
+                      .map((p) => {
+                        if (p.action === 'delete') {
+                          return 'Deleted message';
+                        }
+                        if (p.action === 'reply') {
+                          return `Replied to message saying "${p.message}"`;
+                        }
+                        if (p.action === 'mute') {
+                          return `Muted user for ${p.time}`;
+                        }
+                      })
+                      .join(', ')
+                ),
+              ],
+            }
+          );
+          await loghook.delete();
         }
       }
     }

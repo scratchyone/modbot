@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "changelogs": [
+    {
+      "version": "1.9.1",
+      "changelog": "AutoMod is now significantly faster"
+    },
     {
       "version": "1.9.0",
       "changelog": "ModBot will now map PluralKit webhook messages to the account that sent them for AutoMod. Also renamed `m: stats` to `m: about`"
@@ -106,6 +110,7 @@
     "nearley": "^2.19.6",
     "node-fetch": ">=2.6.1",
     "parse-duration": "^0.4.4",
+    "present": "^1.0.0",
     "prettier": "^2.1.1"
   },
   "devDependencies": {
