@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "changelogs": [
+    {
+      "version": "1.8.0",
+      "changelog": "Added even better error messages for when ModBot doesn't have administrator permissions"
+    },
     {
       "version": "1.7.0",
       "changelog": "ModBot permissions errors are now way more helpful"

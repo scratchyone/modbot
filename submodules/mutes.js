@@ -20,6 +20,10 @@ let setupmute = {
         msg
       );
       if (res === 0) {
+        util_functions.assertHasPerms(msg.guild, [
+          'MANAGE_ROLES',
+          'MANAGE_CHANNELS',
+        ]);
         await msg.channel.send('What should the mute role be named?');
         let rolename = await msg.channel.awaitMessages(
           (m) => m.author.id == msg.author.id,
@@ -51,7 +55,15 @@ let setupmute = {
         );
         let guild_channels = msg.guild.channels.cache.array();
         for (channel of guild_channels) {
-          await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+          try {
+            await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+          } catch (e) {
+            await msg.channel.send(
+              util_functions.desc_embed(
+                `Warning: Could not setup mute role in ${channel}. This likely means ModBot's permissions have an issue`
+              )
+            );
+          }
         }
         db.prepare('INSERT INTO mute_roles VALUES (?, ?)').run(
           mute_role.id,
@@ -69,6 +81,7 @@ let setupmute = {
         msg
       );
       if (res === 0) {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         let conf = await util_functions.confirm(msg);
         if (conf) {
           let mute_role_db = db
@@ -84,13 +97,22 @@ let setupmute = {
           );
         }
       } else if (res === 1) {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         let mute_role_db = db
           .prepare('SELECT * FROM mute_roles WHERE server=?')
           .get(msg.guild.id);
         let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
         let guild_channels = msg.guild.channels.cache.array();
         for (channel of guild_channels) {
-          await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+          try {
+            await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+          } catch (e) {
+            await msg.channel.send(
+              util_functions.desc_embed(
+                `Warning: Could not setup mute role in ${channel}. This likely means ModBot's permissions have an issue`
+              )
+            );
+          }
         }
         await msg.channel.send(
           util_functions.desc_embed(`Updated permissions for ${mute_role}`)
@@ -123,6 +145,7 @@ let mute = {
   matcher: (cmd) => cmd.command == 'mute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
     if (
       db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
     ) {
@@ -229,6 +252,7 @@ let unmute = {
   matcher: (cmd) => cmd.command == 'unmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
     if (
       db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
     ) {

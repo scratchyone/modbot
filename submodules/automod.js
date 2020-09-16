@@ -9,6 +9,11 @@ let automod = {
   matcher: (cmd) => cmd.command == 'automod',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd, client) => {
+    util_functions.assertHasPerms(msg.guild, [
+      'MANAGE_CHANNELS',
+      'MANAGE_MESSAGES',
+      'MANAGE_ROLES',
+    ]);
     if (cmd.action === 'enable') {
       if (db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id))
         throw new util_functions.BotError(

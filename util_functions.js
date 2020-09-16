@@ -82,7 +82,15 @@ async function embed_options(title, options, set, message) {
       max: 1,
     }
   );
-  await msg.reactions.removeAll();
+  try {
+    await msg.reactions.removeAll();
+  } catch (e) {
+    await message.channel.send(
+      desc_embed(
+        "Warning: Failed to remove reactions. This likely means ModBot's permissions are setup incorrectly"
+      )
+    );
+  }
   try {
     await msg.react(reactions.array()[0].emoji.name);
   } catch (e) {}
@@ -115,6 +123,27 @@ async function cleanPings(text, guild) {
 async function checkSelfPermissions(client, guild) {
   return guild.members.cache.get(client.user.id).hasPermission('ADMINISTRATOR');
 }
+function assertHasPerms(guild, perms) {
+  for (let perm of perms) {
+    if (!guild.me.hasPermission(perm))
+      throw new BotError(
+        'user',
+        `ModBot needs the ${perm} permission to do this`
+      );
+  }
+}
+function warnIfNoPerms(msg, perms) {
+  for (let perm of perms) {
+    if (!msg.guild.me.hasPermission(perm))
+      msg.channel.send(
+        desc_embed(
+          `ModBot should have the ${perm} permission for best results, continuing anyways`
+        )
+      );
+  }
+}
+exports.warnIfNoPerms = warnIfNoPerms;
+exports.assertHasPerms = assertHasPerms;
 class BotError extends Error {
   constructor(type, message, ...params) {
     // Pass remaining arguments (including vendor specific ones) to parent constructor

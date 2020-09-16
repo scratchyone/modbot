@@ -114,6 +114,7 @@ let starboardCommand = {
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     if (cmd.action === 'enable') {
+      util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
       if (
         db.prepare('SELECT * FROM starboards WHERE server=?').get(msg.guild.id)
       ) {

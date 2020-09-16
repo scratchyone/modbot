@@ -22,6 +22,7 @@ let alertchannel = {
         `Disabled alert channel warning message. I strongly encourage you to setup an alert channel, it is very important`
       );
     } else if (cmd.action === 'enable') {
+      util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
       if (exports.check_for_alert_channel.get(msg.guild.id)) {
         msg.channel.send(
           `An alert channel already exists! You can remove it with \`m: alertchannel disable\``

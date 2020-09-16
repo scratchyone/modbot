@@ -97,6 +97,7 @@ let poll = {
   matcher: (cmd) => cmd.command == 'poll',
   permissions: (msg) => true,
   responder: async (msg, cmd, client) => {
+    util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     try {
       await msg.delete();
     } catch (e) {}

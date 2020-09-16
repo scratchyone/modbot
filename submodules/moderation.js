@@ -7,6 +7,7 @@ let lockdown = {
   matcher: (cmd) => cmd.command == 'lockdown',
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     if (cmd.time)
       util_functions.schedule_event(
         {
@@ -43,6 +44,7 @@ let unlockdown = {
   matcher: (cmd) => cmd.command == 'unlockdown',
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     let channel = msg.guild.channels.cache.get(cmd.channel);
     if (!channel) {
       await msg.channel.send("Channel doesn't exist!");

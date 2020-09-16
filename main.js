@@ -102,6 +102,8 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'say',
       permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg, cmd) => {
+        if (!cmd.keep)
+          util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (
           anonchannels.check_anon_channel.get(
             cmd.channel ? cmd.channel : msg.channel.id,
@@ -134,6 +136,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'setanonchannel',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         let channel = cmd.channel ? cmd.channel : msg.channel.id;
         if (cmd.enabled) {
           db.prepare('INSERT INTO anonchannels VALUES (@channel, @server)').run(
@@ -221,6 +224,10 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'clonepurge',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, [
+          'MANAGE_MESSAGES',
+          'MANAGE_CHANNELS',
+        ]);
         let type = await util_functions.embed_options(
           'What should I do to the original channel?',
           ['Delete', 'Archive', 'Nothing'],
@@ -319,6 +326,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'deletechannel',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         if (msg.channel.id == '707361413894504489') return;
         if (await util_functions.confirm(msg)) {
           msg.channel.send(
@@ -336,6 +344,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'channeluser',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         let channel = client.channels.cache.get(
           cmd.channel ? cmd.channel : msg.channel.id
         );
@@ -370,6 +379,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'archivechannel',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         let deleted_catergory = msg.guild.channels.cache.find(
           (n) => n.type == 'category' && n.name == 'archived'
         );
@@ -399,6 +409,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'anonban',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         anonchannels.insert_anon_ban.run({
           user: cmd.user,
           server: msg.guild.id,
@@ -446,6 +457,10 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'tmpchannel',
       permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, [
+          'MANAGE_CHANNELS',
+          'MANAGE_MESSAGES',
+        ]);
         let channel;
         try {
           channel = await msg.guild.channels.create(cmd.name, {
@@ -511,6 +526,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'setpinperms',
       permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (cmd.allowed) {
           db.prepare('INSERT INTO pinners VALUES (?, ?)').run(
             cmd.role,
@@ -726,6 +742,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'joinroles',
       permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
           if (
             db
@@ -783,6 +800,10 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'reactionroles',
       permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, [
+          'MANAGE_ROLES',
+          'MANAGE_MESSAGES',
+        ]);
         if (cmd.action === 'add') {
           await msg.channel.send(
             'What channel would you like the message to be in?'
@@ -1097,6 +1118,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'kick',
       permissions: (msg) => msg.member.hasPermission('KICK_MEMBERS'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['KICK_MEMBERS']);
         let hp = msg.member.roles.highest.position;
         let kickee = msg.guild.members.cache.get(cmd.user);
         let kickee_hp = kickee.roles.highest.position;
@@ -1122,6 +1144,7 @@ let main_commands = {
       matcher: (cmd) => cmd.command == 'tmprole',
       permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         let hp = msg.member.roles.highest.position;
         let kickee = msg.guild.members.cache.get(cmd.user);
         let kickee_hp = kickee.roles.highest.position;
@@ -1201,6 +1224,7 @@ let main_commands = {
       permissions: (msg) =>
         msg.channel.permissionsFor(msg.member).has('MANAGE_MESSAGES'),
       responder: async (msg, cmd) => {
+        util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         let count = parseInt(cmd.count);
         if (count > 50) {
           await msg.channel.send(
@@ -1936,7 +1960,7 @@ client.on('message', async (msg) => {
                 if (e.httpStatus === 403) {
                   await msg.channel.send(
                     util_functions.desc_embed(
-                      `**Sorry! ModBot doesn't have permission to do that! Maybe check on my permission settings? Currently ModBot needs to have the Administrator permission and be as close to the top of the role list as possible**\nError: ${e}`
+                      `**Sorry! ModBot doesn't have permission to do that! Maybe check on my permission settings? Currently ModBot works best with the Administrator permission and must be as close to the top of the role list as possible**\nError: ${e}`
                     )
                   );
                 } else {
