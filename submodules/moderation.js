@@ -15,15 +15,24 @@ let lockdown = {
         },
         cmd.time
       );
+    try {
+      for (let perm of msg.channel.permissionOverwrites) {
+        await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
+      }
+      await msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
+      await msg.channel.updateOverwrite(client.user.id, {
+        SEND_MESSAGES: true,
+      });
+    } catch (e) {
+      await msg.channel.send(
+        'Warning: An error has occured. Channel permissions might be messed up!'
+      );
+      throw e;
+    }
     db.prepare('INSERT INTO locked_channels VALUES (?, ?)').run(
       msg.channel.id,
       JSON.stringify(msg.channel.permissionOverwrites)
     );
-    for (let perm of msg.channel.permissionOverwrites) {
-      await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
-    }
-    await msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
-    await msg.channel.updateOverwrite(client.user.id, { SEND_MESSAGES: true });
     await msg.channel.send('Locked!');
   },
 };

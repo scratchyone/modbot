@@ -1933,33 +1933,41 @@ client.on('message', async (msg) => {
                 );
               } else {
                 console.log(e);
-                await msg.channel.send(
-                  'An error has occurred. Would you please explain what you were trying to do?'
-                );
-                let feedback = await msg.channel.awaitMessages(
-                  (n) => n.author.id == msg.author.id,
-                  { max: 1, time: 30000 }
-                );
-                Sentry.configureScope(function (scope) {
-                  scope.setTag('command', results[0][0].command);
-                  scope.setUser({
-                    id: msg.author.id.toString(),
-                    username: msg.author.tag.toString(),
+                if (e.httpStatus === 403) {
+                  await msg.channel.send(
+                    util_functions.desc_embed(
+                      `**Sorry! ModBot doesn't have permission to do that! Maybe check on my permission settings? Currently ModBot needs to have the Administrator permission and be as close to the top of the role list as possible**\nError: ${e}`
+                    )
+                  );
+                } else {
+                  await msg.channel.send(
+                    'An error has occurred. Would you please explain what you were trying to do?'
+                  );
+                  let feedback = await msg.channel.awaitMessages(
+                    (n) => n.author.id == msg.author.id,
+                    { max: 1, time: 30000 }
+                  );
+                  Sentry.configureScope(function (scope) {
+                    scope.setTag('command', results[0][0].command);
+                    scope.setUser({
+                      id: msg.author.id.toString(),
+                      username: msg.author.tag.toString(),
+                    });
+                    scope.setContext('Info', {
+                      'Message Text': msg.content,
+                      'Parse Result': results[0][0],
+                      Feedback: feedback.array()[0]
+                        ? feedback.array()[0].content
+                        : null,
+                    });
                   });
-                  scope.setContext('Info', {
-                    'Message Text': msg.content,
-                    'Parse Result': results[0][0],
-                    Feedback: feedback.array()[0]
-                      ? feedback.array()[0].content
-                      : null,
-                  });
-                });
-                await msg.channel.send(
-                  util_functions.desc_embed(
-                    'This error is likely not your fault. Please give the bot owner this ID: ' +
-                      Sentry.captureException(e)
-                  )
-                );
+                  await msg.channel.send(
+                    util_functions.desc_embed(
+                      'This error is likely not your fault. Please give the bot owner this ID: ' +
+                        Sentry.captureException(e)
+                    )
+                  );
+                }
               }
             }
           }

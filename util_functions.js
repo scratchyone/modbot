@@ -82,7 +82,7 @@ async function embed_options(title, options, set, message) {
       max: 1,
     }
   );
-  msg.reactions.removeAll();
+  await msg.reactions.removeAll();
   try {
     await msg.react(reactions.array()[0].emoji.name);
   } catch (e) {}

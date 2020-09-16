@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.6.9",
+  "version": "1.7.0",
   "changelogs": [
+    {
+      "version": "1.7.0",
+      "changelog": "ModBot permissions errors are now way more helpful"
+    },
     {
       "version": "1.6.9",
       "changelog": "`m: poll` now works with anon channels"
