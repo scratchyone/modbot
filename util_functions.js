@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 var parse_duration = require('parse-duration');
 const db = require('better-sqlite3')('perms.db3', {});
+const fetch = require('node-fetch');
 let captcha_emojis = [
   '⏺️',
   '🟠',
@@ -209,6 +210,9 @@ Structures.extend('Guild', (Guild) => {
     get starboard() {
       return db.prepare('SELECT * FROM starboards WHERE server=?').get(this.id);
     }
+    get hasPluralKit() {
+      return !!this.members.cache.get('466378653216014359');
+    }
   };
 });
 let check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
@@ -219,6 +223,33 @@ Structures.extend('Message', (Message) => {
     }
     get isPoll() {
       return !!check_poll.get(this.id);
+    }
+    async getPluralKitSender() {
+      try {
+        return this.guild.members.cache.get(
+          (
+            await (
+              await fetch('https://api.pluralkit.me/v1/msg/' + this.id)
+            ).json()
+          ).sender
+        );
+      } catch (e) {
+        return null;
+      }
+    }
+    async isPluralKitMessage() {
+      if (this.webhookID && this.guild.hasPluralKit) {
+        return !!(await this.getPluralKitSender());
+      } else {
+        return false;
+      }
+    }
+    async getRealMember() {
+      if (this.webhookID && this.guild.hasPluralKit) {
+        return await this.getPluralKitSender();
+      } else {
+        return this.member;
+      }
     }
   };
 });

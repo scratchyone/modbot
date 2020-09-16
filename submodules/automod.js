@@ -224,10 +224,9 @@ exports.checkForTriggers = async (msg) => {
           );
           return;
         }
+        let realMember = await msg.getRealMember();
         if (
-          !!msg.member
-            ? msg.member.roles.highest.position < role.position
-            : true
+          realMember ? realMember.roles.highest.position < role.position : true
         ) {
           let channel = msg.guild.channels.cache.get(am.channel);
           if (!channel) {
@@ -272,45 +271,47 @@ exports.checkForTriggers = async (msg) => {
                 await msg.delete();
               } catch (e) {}
             }
-            if (punishment.action === 'reply') {
-              await msg.reply(punishment.message);
-            }
-            if (punishment.action === 'mute' && msg.member) {
-              if (
-                db
-                  .prepare('SELECT * FROM mute_roles WHERE server=?')
-                  .get(msg.guild.id)
-              ) {
-                let mute_role_db = db
-                  .prepare('SELECT * FROM mute_roles WHERE server=?')
-                  .get(msg.guild.id);
-                let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
-                let mutee = msg.member;
-                mutee.roles.add(mute_role);
-
-                util_functions.schedule_event(
-                  {
-                    type: 'unmute',
-                    channel: msg.channel.id,
-                    user: mutee.id,
-                    server: msg.guild.id,
-                    role: mute_role.id,
-                  },
-                  punishment.time
-                );
-                await msg.channel.send(
-                  util_functions.desc_embed(
-                    `Muted ${mutee} for ${punishment.time}`
-                  )
-                );
-              } else {
-                msg.channel.send(
-                  util_functions.desc_embed(
-                    "Mute role doesn't exist, could not mute user"
-                  )
-                );
+            if (!(await msg.isPluralKitMessage()))
+              if (punishment.action === 'reply') {
+                await msg.reply(punishment.message);
               }
-            }
+            if (!(await msg.isPluralKitMessage()))
+              if (punishment.action === 'mute' && msg.member) {
+                if (
+                  db
+                    .prepare('SELECT * FROM mute_roles WHERE server=?')
+                    .get(msg.guild.id)
+                ) {
+                  let mute_role_db = db
+                    .prepare('SELECT * FROM mute_roles WHERE server=?')
+                    .get(msg.guild.id);
+                  let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
+                  let mutee = msg.member;
+                  mutee.roles.add(mute_role);
+
+                  util_functions.schedule_event(
+                    {
+                      type: 'unmute',
+                      channel: msg.channel.id,
+                      user: mutee.id,
+                      server: msg.guild.id,
+                      role: mute_role.id,
+                    },
+                    punishment.time
+                  );
+                  await msg.channel.send(
+                    util_functions.desc_embed(
+                      `Muted ${mutee} for ${punishment.time}`
+                    )
+                  );
+                } else {
+                  msg.channel.send(
+                    util_functions.desc_embed(
+                      "Mute role doesn't exist, could not mute user"
+                    )
+                  );
+                }
+              }
           }
         }
       }

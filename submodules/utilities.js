@@ -329,24 +329,24 @@ let ping = {
     );
   },
 };
-let stats = {
-  name: 'stats',
-  syntax: 'm: stats',
-  explanation: 'Get bot stats',
-  matcher: (cmd) => cmd.command == 'stats',
+let about = {
+  name: 'about',
+  syntax: 'm: about',
+  explanation: 'Get bot info',
+  matcher: (cmd) => cmd.command == 'about',
   permissions: (msg) => true,
   responder: async (msg, cmd, client) => {
     await msg.channel.send(
       util_functions.desc_embed(
-        util_functions.fillStringVars(
-          `__botName__ is in ${
-            client.guilds.cache.array().length
-          } servers, with ${
-            client.channels.cache
-              .array()
-              .filter((channel) => channel.type === 'text').length
-          } channels, and ${client.users.cache.array().length} users`
-        )
+        `ModBot is in ${client.guilds.cache.array().length} servers, with ${
+          client.channels.cache
+            .array()
+            .filter((channel) => channel.type === 'text').length
+        } channels, and ${client.users.cache.array().length} users.${
+          msg.guild.hasPluralKit
+            ? ` ModBot is designed to work well with PluralKit.`
+            : ''
+        }`
       )
     );
   },
@@ -427,7 +427,7 @@ exports.commandModule = {
     userpic,
     ping,
     cat,
-    stats,
+    about,
     update_cmd,
     autoping,
     poll,
