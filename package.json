@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "changelogs": [
+    {
+      "version": "1.10.0",
+      "changelog": "Improved starboard functionality"
+    },
     {
       "version": "1.9.2",
       "changelog": "AutoMod permissions now work correctly with anon channels"

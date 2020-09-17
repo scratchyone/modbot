@@ -33,7 +33,56 @@ exports.onStarReactRemove = async (reaction, client) => {
       console.log('no sb');
     }
   }
+  if (
+    db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(reaction.message.id) &&
+    !db
+      .prepare('SELECT * FROM starboards WHERE channel=?')
+      .get(reaction.message.channel.id)
+  ) {
+    let sb_msg = db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(reaction.message.id);
+    let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
+    let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
+    await sb_disc_msg.edit(
+      sb_disc_msg.edit(await genSBMessage(reaction.message))
+    );
+  }
 };
+async function genSBMessage(message) {
+  let msg_username = message.author.username;
+  try {
+    msg_username = (await message.guild.member(message.author)).displayName;
+  } catch (e) {
+    //
+  }
+  let desc = message.content;
+  if (message.embeds.length) {
+    if (desc) {
+      desc += '\n';
+    }
+    if (message.embeds[0].title)
+      desc += '**' + message.embeds[0].title + '**\n';
+    desc += message.embeds[0].description || '';
+  }
+  let image;
+  if (message.attachments.array().length) {
+    image = message.attachments.array().map((n) => n.url)[0];
+  } else if (message.embeds.length > 0 && message.embeds[0].type === 'image') {
+    image = message.embeds[0].url;
+  }
+  return {
+    content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
+      message.channel.name
+    } `,
+    embed: new Discord.MessageEmbed()
+      .setAuthor(msg_username, await message.author.displayAvatarURL())
+      .setDescription(desc + '\n\n**[Source](' + message.url + ')**')
+      .setImage(image),
+  };
+}
 exports.onStarReactAdd = async (reaction, client) => {
   if (
     !db
@@ -49,61 +98,63 @@ exports.onStarReactAdd = async (reaction, client) => {
         .get(reaction.message.guild.id, reaction.count);
       if (sb) {
         let sb_chan = client.channels.cache.get(sb.channel);
-        let msg_username = reaction.message.author.username;
-        try {
-          msg_username = (
-            await reaction.message.guild.member(reaction.message.author)
-          ).nickname;
-          if (!msg_username) {
-            msg_username = reaction.message.author.username;
-          }
-        } catch (e) {
-          //
-        }
-        let desc = reaction.message.content;
-        if (reaction.message.embeds.length) {
-          if (desc) {
-            desc += '\n';
-          }
-          if (reaction.message.embeds[0].title)
-            desc += '**' + reaction.message.embeds[0].title + '**\n';
-          desc += reaction.message.embeds[0].description || '';
-        }
-        let image;
-        if (reaction.message.attachments.array().length) {
-          image = reaction.message.attachments.array().map((n) => n.url)[0];
-        } else if (
-          reaction.message.embeds.length > 0 &&
-          reaction.message.embeds[0].type === 'image'
-        ) {
-          image = reaction.message.embeds[0].url;
-        }
-        let sb_msg = await sb_chan.send(
-          new Discord.MessageEmbed()
-            .setAuthor(
-              msg_username,
-              await reaction.message.author.displayAvatarURL()
-            )
-            .setDescription(
-              desc + '\n\n**[Source](' + reaction.message.url + ')**'
-            )
-            .setImage(image)
-        );
-
-        //files: reaction.message.attachments.array().map((n) => n.url),
-        //});
-        db.prepare('INSERT INTO starboard_messages VALUES (?, ?, ?)').run(
+        let sb_msg = await sb_chan.send(await genSBMessage(reaction.message));
+        db.prepare('INSERT INTO starboard_messages VALUES (?, ?, ?, ?, ?)').run(
           reaction.message.id,
           sb_msg.id,
-          reaction.message.guild.id
+          reaction.message.guild.id,
+          sb_msg.channel.id,
+          reaction.message.channel.id
         );
       }
     } catch (e) {
       console.log(e);
     }
+  } else if (
+    db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(reaction.message.id) &&
+    !db
+      .prepare('SELECT * FROM starboards WHERE channel=?')
+      .get(reaction.message.channel.id)
+  ) {
+    let sb_msg = db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(reaction.message.id);
+    let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
+    let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
+    await sb_disc_msg.edit(
+      sb_disc_msg.edit(await genSBMessage(reaction.message))
+    );
   }
 };
-
+async function starboardMessageToRealSBMsg(s, client) {
+  let sb_chan = client.channels.cache.get(s.starboard_message_channel);
+  let sb_disc_msg = await sb_chan.messages.fetch(s.starboard_message);
+  return sb_disc_msg;
+}
+exports.onMessageEdit = async (old, newm, client) => {
+  if (
+    db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(newm.id)
+  ) {
+    let sb_msg = db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(newm.id);
+    let real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
+    await real_msg.edit(await genSBMessage(newm));
+  }
+};
+exports.onMessageDelete = async (msg, client) => {
+  if (
+    db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(msg.id)
+  ) {
+    let sb_msg = db
+      .prepare('SELECT * FROM starboard_messages WHERE message=?')
+      .get(msg.id);
+    let real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
+    await real_msg.delete();
+  }
+};
 let starboardCommand = {
   name: 'starboard',
   syntax: 'm: starboard <enable/disable/configure/fixperms>',

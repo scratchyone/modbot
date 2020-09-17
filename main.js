@@ -1762,6 +1762,25 @@ client.on('guildMemberAdd', async (member) => {
     );
 });
 let check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
+client.on('messageUpdate', async (omsg, nmsg) => {
+  if (nmsg.partial) {
+    // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+    try {
+      await nmsg.fetch();
+    } catch (error) {
+      console.log('Something went wrong when fetching the message: ', error);
+      // Return as `reaction.message.author` may be undefined/null
+      return;
+    }
+  }
+  await starboard.onMessageEdit(omsg, nmsg, client);
+});
+client.on('messageDelete', async (msg) => {
+  await starboard.onMessageDelete(msg, client);
+});
+client.on('messageDeleteBulk', async (msgs) => {
+  for (let msg of msgs.array()) await starboard.onMessageDelete(msg, client);
+});
 client.on('message', async (msg) => {
   try {
     if (msg.author.id === client.user.id) return;
