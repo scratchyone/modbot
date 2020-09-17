@@ -153,6 +153,7 @@ exports.onMessageDelete = async (msg, client) => {
       .get(msg.id);
     let real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
     await real_msg.delete();
+    db.prepare('DELETE FROM starboard_messages WHERE message=?').run(msg.id);
   }
 };
 let starboardCommand = {
@@ -329,6 +330,10 @@ let starGetCommand = {
             'SELECT * FROM starboard_messages WHERE server=? ORDER BY RANDOM()'
           )
           .get(msg.guild.id);
+        if (!star) {
+          msg.channel.send('No Stars!');
+          return;
+        }
         let sb_msg;
         try {
           sb_msg = await client.channels.cache
