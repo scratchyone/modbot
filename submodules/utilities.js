@@ -338,7 +338,9 @@ let about = {
   responder: async (msg, cmd, client) => {
     await msg.channel.send(
       util_functions.desc_embed(
-        `ModBot is in ${client.guilds.cache.array().length} servers, with ${
+        `ModBot v${require('../package.json').version} is in ${
+          client.guilds.cache.array().length
+        } servers, with ${
           client.channels.cache
             .array()
             .filter((channel) => channel.type === 'text').length
