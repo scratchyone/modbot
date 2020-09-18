@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "changelogs": [
+    {
+      "version": "1.10.1",
+      "changelog": "Fixed lockdown bug"
+    },
     {
       "version": "1.10.0",
       "changelog": "Improved starboard functionality"

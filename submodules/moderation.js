@@ -27,6 +27,10 @@ let lockdown = {
         },
         cmd.time
       );
+    db.prepare('INSERT INTO locked_channels VALUES (?, ?)').run(
+      msg.channel.id,
+      JSON.stringify(msg.channel.permissionOverwrites)
+    );
     try {
       for (let perm of msg.channel.permissionOverwrites) {
         await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
@@ -41,10 +45,6 @@ let lockdown = {
       );
       throw e;
     }
-    db.prepare('INSERT INTO locked_channels VALUES (?, ?)').run(
-      msg.channel.id,
-      JSON.stringify(msg.channel.permissionOverwrites)
-    );
     await msg.channel.send('Locked!');
   },
 };
