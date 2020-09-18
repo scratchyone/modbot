@@ -21,6 +21,7 @@ const nearley = require('nearley');
 const commands = require('./commands.js');
 const mutes = require('./submodules/mutes.js');
 const utilities = require('./submodules/utilities.js');
+const slowmode = require('./submodules/slowmode.js');
 const moderation = require('./submodules/moderation.js');
 const starboard = require('./submodules/starboard.js');
 const alertchannels = require('./submodules/alertchannels.js');
@@ -1458,6 +1459,16 @@ client.on('ready', async () => {
           //
         }
       }
+      if (event.type == 'removeSlowmodePerm') {
+        try {
+          let channel = client.channels.cache.get(event.channel);
+          channel.updateOverwrite(event.user, {
+            SEND_MESSAGES: true,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
       if (event.type == 'deletechannel') {
         try {
           let channel = client.channels.cache.get(event.channel);
@@ -1751,6 +1762,7 @@ let all_command_modules = [
   alertchannels.commandModule,
   moderation.commandModule,
   automod.commandModule,
+  slowmode.commandModule,
 ];
 client.on('guildMemberAdd', async (member) => {
   if (
@@ -1788,6 +1800,7 @@ client.on('message', async (msg) => {
     if (msg.author.bot) return;
     let ap = check_autopings.get(msg.channel.id);
     if (ap) await (await msg.channel.send(ap.message)).delete();
+    await slowmode.onMessage(msg);
     /*if (msg.author.id == '671486892457590846') {
       const Canvas = require('canvas');
       const canvas = Canvas.createCanvas(502, 453);

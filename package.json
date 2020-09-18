@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.10.2",
+  "version": "1.11.0",
   "changelogs": [
+    {
+      "version": "1.11.0",
+      "changelog": "Added new custom slowmode. Unlike the official slowmode, it can go >6hours and can also apply to users with manage message permissions"
+    },
     {
       "version": "1.10.2",
       "changelog": "Added version to `m: about`"
