@@ -46,9 +46,9 @@ exports.onStarReactRemove = async (reaction, client) => {
       .get(reaction.message.id);
     let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
     let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
-    await sb_disc_msg.edit(
-      sb_disc_msg.edit(await genSBMessage(reaction.message))
-    );
+    await
+      sb_disc_msg.edit(await genSBMessage(reaction.message));
+    
   }
 };
 async function genSBMessage(message) {
