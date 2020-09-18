@@ -54,7 +54,16 @@ let slowmodeCommand = {
         !db.prepare('SELECT * FROM slowmodes WHERE channel=?').get(cmd.channel)
       )
         throw new util_functions.BotError('user', "Slowmode isn't enabled");
+      for (let sm_user of db
+        .prepare('SELECT * FROM slowmoded_users WHERE channel=?')
+        .all(cmd.channel))
+        channel.updateOverwrite(sm_user.user, {
+          SEND_MESSAGES: true,
+        });
       db.prepare('DELETE FROM slowmodes WHERE channel=?').run(cmd.channel);
+      db.prepare('DELETE FROM slowmoded_users WHERE channel=?').run(
+        cmd.channel
+      );
       await msg.channel.send(util_functions.desc_embed('Disabled!'));
     }
   },
@@ -71,6 +80,14 @@ exports.onMessage = async (msg) => {
         msg.channel.updateOverwrite(msg.member, {
           SEND_MESSAGES: false,
         });
+        try {
+          db.prepare('INSERT INTO slowmoded_users VALUES (?, ?)').run(
+            msg.channel.id,
+            msg.author.id
+          );
+        } catch (e) {
+          console.log(e);
+        }
         util_functions.schedule_event(
           {
             type: 'removeSlowmodePerm',

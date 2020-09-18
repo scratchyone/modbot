@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "changelogs": [
+    {
+      "version": "1.11.1",
+      "changelog": "Disabling a slowmode will now fix permissions"
+    },
     {
       "version": "1.11.0",
       "changelog": "Added new custom slowmode. Unlike the official slowmode, it can go >6hours and can also apply to users with manage message permissions"

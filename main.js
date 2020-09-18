@@ -1465,6 +1465,9 @@ client.on('ready', async () => {
           channel.updateOverwrite(event.user, {
             SEND_MESSAGES: true,
           });
+          db.prepare(
+            'DELETE FROM slowmoded_users WHERE user=? AND channel=?'
+          ).run(event.user, event.channel);
         } catch (e) {
           console.log(e);
         }
