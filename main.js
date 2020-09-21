@@ -81,6 +81,14 @@ let main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg, cmd, client) => {
         try {
+          let cloneUser = async (user, text) => {
+            let uuser = msg.guild.members.cache.get(user);
+            let loghook = await msg.channel.createWebhook(uuser.displayName, {
+              avatar: uuser.user.displayAvatarURL(),
+            });
+            await loghook.send(text);
+            await loghook.delete();
+          };
           let res = eval(
             `(async () => {${cmd.code
               .replace('```js', '')
