@@ -96,9 +96,8 @@ let main_commands = {
               .replace(
                 '```',
                 ''
-              )}})().catch(e=>msg.channel.send(\`Error: \${e}\`)).then(r=>r && msg.channel.send(r))`
+              )}})().catch(e=>msg.channel.send(\`Error: \${e}\`)).then(r=>r ? msg.channel.send(r) : 'Ran')`
           );
-          await msg.channel.send('Ran!');
         } catch (e) {
           msg.channel.send(util_functions.desc_embed(`Error: ${e}`));
         }
