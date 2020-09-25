@@ -1805,6 +1805,8 @@ client.on('messageDeleteBulk', async (msgs) => {
 });
 client.on('message', async (msg) => {
   try {
+    if (msg.mentions.has(client.user, { ignoreEveryone: true }))
+      msg.react('759186176094765057');
     if (msg.author.id === client.user.id) return;
     await automod.checkForTriggers(msg);
     if (msg.author.bot) return;
