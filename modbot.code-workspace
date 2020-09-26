@@ -4,5 +4,11 @@
       "path": "."
     }
   ],
-  "settings": {}
+  "settings": {
+    "eslint.workingDirectories": [
+      {
+        "mode": "auto"
+      }
+    ]
+  }
 }

@@ -19,7 +19,6 @@
     "indent": "off",
     "quotes": "off",
     "semi": ["error", "always"],
-    "no-unused-vars": ["warn"],
-    "no-floating-promises": true
+    "no-unused-vars": ["warn"]
   }
 }

@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "changelogs": [
+    {
+      "version": "2.0.1",
+      "changelog": "Rewrote moderation submodule into typescript"
+    },
     {
       "version": "2.0.0",
       "changelog": "Rewrote 2.5 thousand lines of code into typescript. Vastly reduced the number of unexplained errors that will be displayed"
@@ -140,6 +144,7 @@
     "db-migrate-sqlite3": "^0.4.0",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
+    "eslint": "^7.9.0",
     "express": "^4.17.1",
     "is-standard-emoji": "^1.0.0",
     "moment": "^2.27.0",

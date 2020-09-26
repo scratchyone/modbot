@@ -1,6 +1,7 @@
-let util_functions = require('../util_functions.js');
+/* eslint-disable @typescript-eslint/no-var-requires */
+const util_functions = require('../util_functions.js');
 const db = require('better-sqlite3')('perms.db3', {});
-let lockdown = {
+const lockdown = {
   name: 'lockdown',
   syntax: 'm: lockdown [TIME]',
   explanation: 'Prevent everyone for sending messages in this channel',

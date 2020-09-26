@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import Discord from 'discord.js';
-var moment = require('moment');
-var isEmoji = require('is-standard-emoji');
+const moment = require('moment');
+const isEmoji = require('is-standard-emoji');
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
 require('dotenv').config();
@@ -15,7 +16,7 @@ Sentry.init({
   },
 });
 moment.relativeTimeThreshold('ss', 15);
-var parse_duration = require('parse-duration');
+const parse_duration = require('parse-duration');
 
 const nodefetch = require('node-fetch');
 const nearley = require('nearley');
@@ -23,29 +24,29 @@ const commands = require('./commands.js');
 const mutes = require('./submodules/mutes.js');
 const utilities = require('./submodules/utilities.js');
 const slowmode = require('./submodules/slowmode.js');
-const moderation = require('./submodules/moderation.js');
+const moderation = require('./submodules/moderation.ts');
 const starboard = require('./submodules/starboard.js');
 const alertchannels = require('./submodules/alertchannels.js');
 const automod = require('./submodules/automod.js');
-let nanoid = require('nanoid');
+const nanoid = require('nanoid');
 const db = require('better-sqlite3')('perms.db3', {});
-let check_if_can_pin = db.prepare('SELECT * FROM pinners');
-let check_for_ar = db.prepare(
+const check_if_can_pin = db.prepare('SELECT * FROM pinners');
+const check_for_ar = db.prepare(
   'SELECT * FROM autoresponders WHERE prompt=? AND server=?'
 );
-let check_for_reactionrole = db.prepare(
+const check_for_reactionrole = db.prepare(
   'SELECT * FROM reactionroles WHERE emoji=? AND message=? AND server=?'
 );
-let check_for_reactionrole_msg = db.prepare(
+const check_for_reactionrole_msg = db.prepare(
   'SELECT * FROM reactionroles WHERE message=? AND server=?'
 );
-let numbers = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+const numbers = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 const assert = require('assert');
-let anonchannels = require('./anonchannels.js');
-let util_functions = require('./util_functions.js');
+const anonchannels = require('./anonchannels.js');
+const util_functions = require('./util_functions.js');
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
 });
@@ -54,7 +55,7 @@ const { default: parse } = require('parse-duration');
 interface MatcherCommand {
   command: string;
 }
-let main_commands = {
+const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
   commands: [
@@ -88,18 +89,21 @@ let main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd, client: Discord.Client) => {
         try {
-          let cloneUser = async (user: string, text: string) => {
+          const cloneUser = async (user: string, text: string) => {
             if (msg.guild !== null && msg.channel.type == 'text') {
-              let uuser = msg.guild.members.cache.get(user);
+              const uuser = msg.guild.members.cache.get(user);
               if (!uuser) throw new Error('User not found');
-              let loghook = await msg.channel.createWebhook(uuser.displayName, {
-                avatar: uuser.user.displayAvatarURL(),
-              });
+              const loghook = await msg.channel.createWebhook(
+                uuser.displayName,
+                {
+                  avatar: uuser.user.displayAvatarURL(),
+                }
+              );
               await loghook.send(text);
               await loghook.delete();
             }
           };
-          let res = eval(
+          const res = eval(
             `(async () => {${cmd.code
               .replace('```js', '')
               .replace('```javascript', '')
@@ -135,7 +139,7 @@ let main_commands = {
             server: msg.guild.id,
           })
         ) {
-          let bm = await msg.channel.send(
+          const bm = await msg.channel.send(
             util_functions.desc_embed(
               `${msg.author}, you're banned from sending messages there!`
             )
@@ -143,7 +147,7 @@ let main_commands = {
           setTimeout(async () => await bm.delete(), 2000);
         } else {
           if (!cmd.keep) await msg.delete();
-          let chan = msg.guild.channels.cache.find(
+          const chan = msg.guild.channels.cache.find(
             (n) => n.id == (cmd.channel ? cmd.channel : msg.channel.id)
           );
           if (!chan || chan.type !== 'text')
@@ -163,7 +167,7 @@ let main_commands = {
       responder: async (msg: Discord.Message, cmd) => {
         if (!msg.guild || !msg.guild.id) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-        let channel = cmd.channel ? cmd.channel : msg.channel.id;
+        const channel = cmd.channel ? cmd.channel : msg.channel.id;
         if (!msg.guild)
           if (cmd.enabled) {
             db.prepare(
@@ -194,7 +198,7 @@ let main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
         if (!msg.guild || !msg.guild.id) return;
-        let channels = db
+        const channels = db
           .prepare('SELECT * FROM anonchannels WHERE server=?')
           .all(msg.guild.id);
         if (channels.length == 0) {
@@ -219,7 +223,7 @@ let main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
         if (!msg.guild || !msg.guild.id) return;
-        let author = db
+        const author = db
           .prepare('SELECT * FROM anonmessages WHERE id=? AND server=?')
           .get(cmd.id, msg.guild.id);
         if (author) {
@@ -262,30 +266,30 @@ let main_commands = {
           'MANAGE_MESSAGES',
           'MANAGE_CHANNELS',
         ]);
-        let type = await util_functions.embed_options(
+        const type = await util_functions.embed_options(
           'What should I do to the original channel?',
           ['Delete', 'Archive', 'Nothing'],
           ['🗑️', '📂', '💾'],
           msg
         );
-        let clone = async (type: 0 | 1 | 2 | null) => {
+        const clone = async (type: 0 | 1 | 2 | null) => {
           if (!msg.guild || !msg.guild.id) return;
           if (msg.channel.type !== 'text')
             throw new util_functions.BotError('user', 'Not a text channel!');
           await msg.channel.send(
             util_functions.desc_embed('Running clonepurge')
           );
-          let new_channel = await msg.channel.clone();
+          const new_channel = await msg.channel.clone();
           await new_channel.setPosition(msg.channel.position);
           await new_channel.setTopic(msg.channel.topic || '');
           await new_channel.send(util_functions.desc_embed('CLONING PINS'));
-          let pins = (await msg.channel.messages.fetchPinned()).array();
+          const pins = (await msg.channel.messages.fetchPinned()).array();
           pins.reverse();
-          let anonhook = await new_channel.createWebhook('ClonePurgeHook');
+          const anonhook = await new_channel.createWebhook('ClonePurgeHook');
           try {
-            for (let pin of pins) {
+            for (const pin of pins) {
               //console.log(pin);
-              let msg_username = pin.member
+              const msg_username = pin.member
                 ? pin.member.displayName
                 : pin.author.username;
               await (
@@ -385,14 +389,14 @@ let main_commands = {
             'Something is seriously broken'
           );
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-        let channel = client.channels.cache.get(
+        const channel = client.channels.cache.get(
           cmd.channel ? cmd.channel : msg.channel.id
         );
         if (!channel)
           throw new util_functions.BotError('user', 'Channel not found');
         if (channel.type != 'text')
           throw new util_functions.BotError('user', 'Not a text channel');
-        let realchannel: Discord.TextChannel = channel as Discord.TextChannel;
+        const realchannel: Discord.TextChannel = channel as Discord.TextChannel;
         if (cmd.user == client.user.id && !cmd.allowed) {
           await msg.channel.send('Fuck you');
           return;
@@ -410,7 +414,7 @@ let main_commands = {
           await msg.channel.send("Sorry, you can't access that channel");
           return;
         }
-        let user = msg.guild.member(cmd.user);
+        const user = msg.guild.member(cmd.user);
         if (!user) throw new util_functions.BotError('user', 'User not found');
         if (!cmd.allowed) {
           await realchannel.updateOverwrite(user, { VIEW_CHANNEL: false });
@@ -436,7 +440,7 @@ let main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd) => {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-        let deleted_category = (msg.guild!.channels.cache.find(
+        const deleted_category = (msg.guild!.channels.cache.find(
           (n) => n.type == 'category' && n.name == 'archived'
         ) ||
           (await msg.guild!.channels.create('archived', {
@@ -562,13 +566,13 @@ let main_commands = {
           { type: 'deletechannel', channel: channel.id },
           cmd.duration
         );
-        let deletion_time = moment().add(parse_duration(cmd.duration));
+        const deletion_time = moment().add(parse_duration(cmd.duration));
         let tm_text = `Deleting channel ${deletion_time.fromNow()}`;
-        let time_message = await channel.send(
+        const time_message = await channel.send(
           util_functions.desc_embed(tm_text)
         );
         await time_message.pin();
-        let ei = setInterval(async () => {
+        const ei = setInterval(async () => {
           if (tm_text != `Deleting channel ${deletion_time.fromNow()}`) {
             tm_text = `Deleting channel ${deletion_time.fromNow()}`;
             try {
@@ -624,7 +628,7 @@ let main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd) => {
-        let roles = db
+        const roles = db
           .prepare('SELECT * FROM pinners WHERE guild=?')
           .all(msg.guild!.id);
         msg.channel.send(
@@ -649,7 +653,7 @@ let main_commands = {
             await msg.channel.send(
               'What message should this AutoResponder reply to?'
             );
-            let prompt = await msg.channel.awaitMessages(
+            const prompt = await msg.channel.awaitMessages(
               (m) => m.author.id == msg.author.id,
               {
                 max: 1,
@@ -660,7 +664,7 @@ let main_commands = {
               await msg.channel.send(util_functions.desc_embed('Timed out'));
               return;
             }
-            let message_type = await util_functions.embed_options(
+            const message_type = await util_functions.embed_options(
               'Message type?',
               ['Text', 'Embed'],
               ['📝', '🔗'],
@@ -668,7 +672,7 @@ let main_commands = {
             );
             if (message_type === 0) {
               await msg.channel.send('What should I reply with?');
-              let response = await msg.channel.awaitMessages(
+              const response = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
@@ -695,7 +699,7 @@ let main_commands = {
               );
             } else if (message_type === 1) {
               await msg.channel.send('What should the embed title be?');
-              let embed_title = await msg.channel.awaitMessages(
+              const embed_title = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
@@ -707,7 +711,7 @@ let main_commands = {
                 return;
               }
               await msg.channel.send('What should the embed description be?');
-              let embed_desc = await msg.channel.awaitMessages(
+              const embed_desc = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
@@ -743,7 +747,7 @@ let main_commands = {
           await msg.channel.send(
             'What AutoResponder would you like to remove?'
           );
-          let prompt = await msg.channel.awaitMessages(
+          const prompt = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -754,7 +758,7 @@ let main_commands = {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          let rc = db
+          const rc = db
             .prepare('DELETE FROM autoresponders WHERE prompt=? AND server=?')
             .run(prompt.array()[0].content, msg.guild!.id);
           if (rc.changes)
@@ -766,7 +770,7 @@ let main_commands = {
               util_functions.desc_embed("Couldn't find AutoResponder")
             );
         } else if (cmd.action === 'list') {
-          let ars = db
+          const ars = db
             .prepare('SELECT * FROM autoresponders WHERE server=?')
             .all(msg.guild!.id);
           await msg.channel.send(
@@ -785,7 +789,7 @@ let main_commands = {
       permissions: (msg: Discord.Message) => true,
       responder: async (msg: Discord.Message, cmd) => {
         try {
-          let res = await (
+          const res = await (
             await nodefetch(
               'http://api.wolframalpha.com/v2/query?appid=KGQK9K-5TT39X9VQ8&input=' +
                 encodeURIComponent(cmd.text) +
@@ -827,7 +831,7 @@ let main_commands = {
           await msg.channel.send(
             'What role would you like to set as the join role?'
           );
-          let role = await msg.channel.awaitMessages(
+          const role = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -838,11 +842,11 @@ let main_commands = {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          let rrole = role
+          const rrole = role
             .array()[0]
             .content.replace('<@&', '')
             .replace('>', '');
-          let disc_role = msg.guild!.roles.cache.get(rrole);
+          const disc_role = msg.guild!.roles.cache.get(rrole);
           if (!disc_role) {
             await msg.channel.send("Role doesn't exist!");
             return;
@@ -885,7 +889,7 @@ let main_commands = {
             'What channel would you like the message to be in?'
           );
 
-          let chan = await msg.channel.awaitMessages(
+          const chan = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -896,12 +900,12 @@ let main_commands = {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          let cchan = chan
+          const cchan = chan
             .array()[0]
             .content.replace('<#', '')
             .replace('>', '');
           await msg.channel.send('What should the embed title be?');
-          let embed_title = await msg.channel.awaitMessages(
+          const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -913,7 +917,7 @@ let main_commands = {
             return;
           }
           await msg.channel.send('What should the embed description be?');
-          let embed_description = await msg.channel.awaitMessages(
+          const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -927,7 +931,7 @@ let main_commands = {
           await msg.channel.send(
             'What should the reactions be?\nFormat:\n```:grinning: @happy\n:sad: @unhappy```'
           );
-          let reacts = await msg.channel.awaitMessages(
+          const reacts = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -940,7 +944,7 @@ let main_commands = {
           }
           let rr_mes;
           try {
-            let tmp_chan = msg.guild!.channels.cache.get(cchan);
+            const tmp_chan = msg.guild!.channels.cache.get(cchan);
             if (!tmp_chan || tmp_chan.type !== 'text') {
               await msg.channel.send(
                 util_functions.desc_embed("Channel doesn't exist!")
@@ -958,9 +962,9 @@ let main_commands = {
             );
             return;
           }
-          let hp = msg.member!.roles.highest.position;
+          const hp = msg.member!.roles.highest.position;
           console.log(hp);
-          let reacts_formatted = reacts
+          const reacts_formatted = reacts
             .array()[0]
             .content.split('\n')
             .map((n) => {
@@ -973,9 +977,9 @@ let main_commands = {
                   .replace('>', ''),
               };
             });
-          for (let react of reacts_formatted) {
+          for (const react of reacts_formatted) {
             // Check role levels
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (!serv_role)
               throw new util_functions.BotError(
                 'user',
@@ -990,10 +994,10 @@ let main_commands = {
               return;
             }
           }
-          for (let react of reacts_formatted) {
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+          for (const react of reacts_formatted) {
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (react.emoji.includes('<')) {
-              let em = msg.guild!.emojis.cache.find(
+              const em = msg.guild!.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               if (!em) {
@@ -1007,8 +1011,8 @@ let main_commands = {
               }
             }
           }
-          for (let react of reacts_formatted) {
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+          for (const react of reacts_formatted) {
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
               db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
@@ -1018,7 +1022,7 @@ let main_commands = {
                 react.role
               );
             } else {
-              let em = msg.guild!.emojis.cache.find(
+              const em = msg.guild!.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
@@ -1033,7 +1037,7 @@ let main_commands = {
           await msg.channel.send(util_functions.desc_embed('Added!'));
         } else if (cmd.action === 'edit') {
           await msg.channel.send('What channel is the message in?');
-          let chan = await msg.channel.awaitMessages(
+          const chan = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -1044,12 +1048,12 @@ let main_commands = {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          let cchan = chan
+          const cchan = chan
             .array()[0]
             .content.replace('<#', '')
             .replace('>', '');
           await msg.channel.send('What is the message ID?');
-          let mid = await msg.channel.awaitMessages(
+          const mid = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -1072,7 +1076,7 @@ let main_commands = {
             return;
           }
           await msg.channel.send('What should the embed title be?');
-          let embed_title = await msg.channel.awaitMessages(
+          const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -1084,7 +1088,7 @@ let main_commands = {
             return;
           }
           await msg.channel.send('What should the embed description be?');
-          let embed_description = await msg.channel.awaitMessages(
+          const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -1103,7 +1107,7 @@ let main_commands = {
           await msg.channel.send(
             'What should the reactions be?\nFormat:\n```:grinning: @happy\n:sad: @unhappy```'
           );
-          let reacts = await msg.channel.awaitMessages(
+          const reacts = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
@@ -1114,9 +1118,9 @@ let main_commands = {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          let hp = msg.member!.roles.highest.position;
+          const hp = msg.member!.roles.highest.position;
           console.log(hp);
-          let reacts_formatted = reacts
+          const reacts_formatted = reacts
             .array()[0]
             .content.split('\n')
             .map((n) => {
@@ -1129,9 +1133,9 @@ let main_commands = {
                   .replace('>', ''),
               };
             });
-          for (let react of reacts_formatted) {
+          for (const react of reacts_formatted) {
             // Check role levels
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (!serv_role)
               throw new util_functions.BotError(
                 'user',
@@ -1146,10 +1150,10 @@ let main_commands = {
               return;
             }
           }
-          for (let react of reacts_formatted) {
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+          for (const react of reacts_formatted) {
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (react.emoji.includes('<')) {
-              let em = msg.guild!.emojis.cache.find(
+              const em = msg.guild!.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               if (!em) {
@@ -1165,8 +1169,8 @@ let main_commands = {
           db.prepare('DELETE FROM reactionroles WHERE message=?').run(
             rr_mes.id
           );
-          for (let react of reacts_formatted) {
-            let serv_role = msg.guild!.roles.cache.get(react.role);
+          for (const react of reacts_formatted) {
+            const serv_role = msg.guild!.roles.cache.get(react.role);
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
               db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
@@ -1176,7 +1180,7 @@ let main_commands = {
                 react.role
               );
             } else {
-              let em = msg.guild!.emojis.cache.find(
+              const em = msg.guild!.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
@@ -1188,7 +1192,7 @@ let main_commands = {
               await rr_mes.react(em!.id);
             }
           }
-          for (let reaction of rr_mes.reactions.cache.array()) {
+          for (const reaction of rr_mes.reactions.cache.array()) {
             let rr = check_for_reactionrole.get(
               reaction.emoji.name,
               reaction.message.id,
@@ -1217,14 +1221,14 @@ let main_commands = {
         msg.member && msg.member.hasPermission('KICK_MEMBERS'),
       responder: async (msg: Discord.Message, cmd) => {
         util_functions.assertHasPerms(msg.guild, ['KICK_MEMBERS']);
-        let hp = msg.member!.roles.highest.position;
-        let kickee = msg.guild!.members.cache.get(cmd.user);
+        const hp = msg.member!.roles.highest.position;
+        const kickee = msg.guild!.members.cache.get(cmd.user);
         if (!kickee)
           throw new util_functions.BotError(
             'user',
             'User not found\nHelp: Have they left the server?'
           );
-        let kickee_hp = kickee.roles.highest.position;
+        const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp) {
           await msg.channel.send(
             util_functions.desc_embed(
@@ -1232,7 +1236,7 @@ let main_commands = {
             )
           );
         } else {
-          let conf = await util_functions.confirm(msg);
+          const conf = await util_functions.confirm(msg);
           if (conf) {
             await kickee.kick();
             await msg.channel.send(util_functions.desc_embed('Kicked'));
@@ -1249,14 +1253,14 @@ let main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd) => {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
-        let hp = msg.member!.roles.highest.position;
-        let kickee = msg.guild!.members.cache.get(cmd.user);
+        const hp = msg.member!.roles.highest.position;
+        const kickee = msg.guild!.members.cache.get(cmd.user);
         if (!kickee)
           throw new util_functions.BotError(
             'user',
             'User not found\nHelp: Have they left the server?'
           );
-        let kickee_hp = kickee.roles.highest.position;
+        const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp && kickee.id != msg.author.id) {
           await msg.channel.send(
             util_functions.desc_embed(
@@ -1290,7 +1294,7 @@ let main_commands = {
               )
             );
           } else if (cmd.action === 'add') {
-            let role_to_be_added = msg.guild!.roles.cache.get(cmd.role);
+            const role_to_be_added = msg.guild!.roles.cache.get(cmd.role);
             if (!role_to_be_added) {
               await msg.channel.send(
                 util_functions.desc_embed(`<@&${cmd.role}> doesn't exist`)
@@ -1337,7 +1341,7 @@ let main_commands = {
         msg.channel.permissionsFor(msg.member)!.has('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-        let count = parseInt(cmd.count);
+        const count = parseInt(cmd.count);
         if (count > 50) {
           await msg.channel.send(
             util_functions.desc_embed(
@@ -1347,10 +1351,10 @@ let main_commands = {
           return;
         }
         try {
-          let purged_msg_num = await (msg.channel as Discord.TextChannel).bulkDelete(
+          const purged_msg_num = await (msg.channel as Discord.TextChannel).bulkDelete(
             count + 1
           );
-          let purged_info_msg = await msg.channel.send(
+          const purged_info_msg = await msg.channel.send(
             `Purged ${purged_msg_num.array().length - 1} messages`
           );
           setTimeout(() => {
@@ -1369,15 +1373,15 @@ let main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
-        let mentioned_member = msg.guild!.members.cache.get(cmd.user);
+        const mentioned_member = msg.guild!.members.cache.get(cmd.user);
         if (!mentioned_member)
           throw new util_functions.BotError(
             'user',
             'User not found! Have they left the server?'
           );
-        let mm_nick = mentioned_member.displayName;
-        let mute_role = mutes.getMuteRole.get(msg.guild!.id);
-        let desc: Array<string> = [];
+        const mm_nick = mentioned_member.displayName;
+        const mute_role = mutes.getMuteRole.get(msg.guild!.id);
+        const desc: Array<string> = [];
         let use_pronouns = false;
         if (mute_role) {
           if (mentioned_member.roles.cache.get(mute_role.role)) {
@@ -1388,17 +1392,17 @@ let main_commands = {
             use_pronouns = true;
           }
         }
-        let time_in_server = moment(mentioned_member.joinedAt).fromNow();
+        const time_in_server = moment(mentioned_member.joinedAt).fromNow();
         desc.push(
           `${
             use_pronouns ? 'They' : mentioned_member
           } joined this server ${time_in_server}.`
         );
-        let usernotes = db
+        const usernotes = db
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
           .all(mentioned_member.id, msg.guild!.id, 'note')
           .map((n: { message: string }) => n.message);
-        let userwarns = db
+        const userwarns = db
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
           .all(mentioned_member.id, msg.guild!.id, 'warn')
           .map((n: { message: string }) => n.message);
@@ -1433,7 +1437,7 @@ let main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
-        let id = nanoid.nanoid(5);
+        const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
           'note',
           cmd.text,
@@ -1456,7 +1460,7 @@ let main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
-        let id = nanoid.nanoid(5);
+        const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
           'warn',
           cmd.text,
@@ -1464,7 +1468,7 @@ let main_commands = {
           msg.guild!.id,
           id
         );
-        let mentioned_member = msg.guild!.members.cache.get(cmd.user);
+        const mentioned_member = msg.guild!.members.cache.get(cmd.user);
         if (!mentioned_member)
           throw new util_functions.BotError(
             'user',
@@ -1497,7 +1501,7 @@ let main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd) => {
-        let warn_item = db
+        const warn_item = db
           .prepare('SELECT * FROM notes WHERE server=? AND id=? ')
           .get(msg.guild!.id, cmd.id);
         if (!warn_item) {
@@ -1531,16 +1535,18 @@ client.on('ready', async () => {
   //
   //
   //
-  let pj = require('./package.json');
+  const pj = require('./package.json');
   if (!db.prepare('SELECT * FROM updates WHERE version=?').get(pj.version)) {
-    let changes = pj.changelogs.filter(
+    const changes = pj.changelogs.filter(
       (change: { version: string }) =>
         !db.prepare('SELECT * FROM updates WHERE version=?').get(change.version)
     );
     console.log(changes);
 
-    for (let alertchannel of db.prepare('SELECT * FROM alert_channels').all()) {
-      let ralertchannel = client.channels.cache.get(alertchannel.channel);
+    for (const alertchannel of db
+      .prepare('SELECT * FROM alert_channels')
+      .all()) {
+      const ralertchannel = client.channels.cache.get(alertchannel.channel);
       if (!ralertchannel || ralertchannel.type !== 'text') continue;
       await (ralertchannel as Discord.TextChannel).send(
         new Discord.MessageEmbed()
@@ -1552,17 +1558,17 @@ client.on('ready', async () => {
           )
       );
     }
-    for (let change of changes) {
+    for (const change of changes) {
       db.prepare('INSERT INTO updates VALUES (?)').run(change.version);
     }
   }
   setInterval(async () => {
-    let ts = Math.round(Date.now() / 1000);
-    let events = db
+    const ts = Math.round(Date.now() / 1000);
+    const events = db
       .prepare('SELECT * FROM timerevents WHERE timestamp<=?')
       .all(ts);
-    for (let event_item of events) {
-      let event = JSON.parse(event_item.event);
+    for (const event_item of events) {
+      const event = JSON.parse(event_item.event);
       if (event.type == 'reminder') {
         try {
           await (client.channels.cache.get(
@@ -1591,7 +1597,7 @@ client.on('ready', async () => {
       }
       if (event.type == 'removeSlowmodePerm') {
         try {
-          let channel = client.channels.cache.get(
+          const channel = client.channels.cache.get(
             event.channel
           )! as Discord.TextChannel;
           channel.updateOverwrite(event.user, {
@@ -1606,7 +1612,7 @@ client.on('ready', async () => {
       }
       if (event.type == 'deletechannel') {
         try {
-          let channel = client.channels.cache.get(
+          const channel = client.channels.cache.get(
             event.channel
           )! as Discord.TextChannel;
           await channel.send('Deleting channel in 5 seconds');
@@ -1619,10 +1625,10 @@ client.on('ready', async () => {
       }
       if (event.type == 'tmprole') {
         try {
-          let channel = client.channels.cache.get(
+          const channel = client.channels.cache.get(
             event.channel
           )! as Discord.TextChannel;
-          let user = channel.guild.members.cache.get(event.user)!;
+          const user = channel.guild.members.cache.get(event.user)!;
           if (event.action === 'add') {
             await user.roles.add(event.role);
             await channel.send(
@@ -1642,10 +1648,10 @@ client.on('ready', async () => {
       }
       if (event.type == 'unmute') {
         try {
-          let channel = client.channels.cache.get(
+          const channel = client.channels.cache.get(
             event.channel
           )! as Discord.TextChannel;
-          let user = channel.guild.members.cache.get(event.user)!;
+          const user = channel.guild.members.cache.get(event.user)!;
           await user.roles.remove(event.role);
           await channel.send(util_functions.desc_embed(`Unmuted ${user}`));
         } catch (e) {
@@ -1654,10 +1660,10 @@ client.on('ready', async () => {
       }
       if (event.type == 'unlockdown') {
         try {
-          let channel = client.channels.cache.get(
+          const channel = client.channels.cache.get(
             event.channel
           )! as Discord.TextChannel;
-          let perm = db
+          const perm = db
             .prepare('SELECT * FROM locked_channels WHERE channel=?')
             .get(channel.id);
           await channel.overwritePermissions(JSON.parse(perm.permissions));
@@ -1677,7 +1683,7 @@ interface EMessage extends Discord.Message {
   isPoll: boolean;
 }
 client.on('messageReactionAdd', async (reaction, user) => {
-  let message = reaction.message as EMessage;
+  const message = reaction.message as EMessage;
   try {
     // When we receive a reaction we check if the reaction is partial or not
     if (reaction.partial) {
@@ -1695,7 +1701,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
       (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
       message.isPoll
     ) {
-      let t = reaction.message.reactions.cache
+      const t = reaction.message.reactions.cache
         .array()
         .filter(
           (r) =>
@@ -1709,8 +1715,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
     if (reaction.emoji.name == '⭐') {
       await starboard.onStarReactAdd(reaction, client);
     }
-    let member = reaction.message.guild.member(user as Discord.User);
-    let roles_that_can_pin = check_if_can_pin.all();
+    const member = reaction.message.guild.member(user as Discord.User);
+    const roles_that_can_pin = check_if_can_pin.all();
     if (
       member &&
       member.roles.cache.find(
@@ -1735,7 +1741,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
               2000
             )
           );
-        let pm = await reaction.message.channel.awaitMessages(
+        const pm = await reaction.message.channel.awaitMessages(
           (n) => true, //n.content.includes('pinned a message to this channel'),
           { max: 1, time: 1000 }
         );
@@ -1765,14 +1771,14 @@ client.on('messageReactionAdd', async (reaction, user) => {
         reaction.message.guild.id
       );
     if (!user.bot && rr) {
-      let member = reaction.message.guild.member(user as Discord.User);
+      const member = reaction.message.guild.member(user as Discord.User);
       try {
         await member!.roles.add(rr.role);
       } catch (e) {
         if (
           alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
         ) {
-          let tmp = reaction.message.guild.channels.cache.get(
+          const tmp = reaction.message.guild.channels.cache.get(
             alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
               .channel
           );
@@ -1810,7 +1816,7 @@ client.on('channelCreate', async (channel) => {
   } catch (e) {}
 });
 client.on('messageReactionRemove', async (reaction, user) => {
-  let message = reaction.message as EMessage;
+  const message = reaction.message as EMessage;
   if (!reaction.message.guild) return;
   try {
     // When we receive a reaction we check if the reaction is partial or not
@@ -1831,7 +1837,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
       (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
       message.isPoll
     ) {
-      let t = reaction.message.reactions.cache
+      const t = reaction.message.reactions.cache
         .array()
         .filter(
           (r) =>
@@ -1841,8 +1847,8 @@ client.on('messageReactionRemove', async (reaction, user) => {
         );
       if (!t.length) await utilities.reRenderPoll(reaction.message, client);
     }
-    let member = reaction.message.guild.member(user as Discord.User);
-    let roles_that_can_pin = check_if_can_pin.all();
+    const member = reaction.message.guild.member(user as Discord.User);
+    const roles_that_can_pin = check_if_can_pin.all();
     if (
       member &&
       member.roles.cache.find(
@@ -1862,7 +1868,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
         )
       );
     }
-    let rr =
+    const rr =
       check_for_reactionrole.get(
         reaction.emoji.name,
         reaction.message.id,
@@ -1874,14 +1880,14 @@ client.on('messageReactionRemove', async (reaction, user) => {
         reaction.message.guild.id
       );
     if (!user.bot && rr) {
-      let member = reaction.message.guild.member(user as Discord.User);
+      const member = reaction.message.guild.member(user as Discord.User);
       try {
         await member!.roles.remove(rr.role);
       } catch (e) {
         if (
           alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
         ) {
-          let tmp = reaction.message.guild.channels.cache.get(
+          const tmp = reaction.message.guild.channels.cache.get(
             alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
               .channel
           );
@@ -1904,7 +1910,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
     Sentry.captureException(e);
   }
 });
-let all_command_modules = [
+const all_command_modules = [
   main_commands,
   mutes.commandModule,
   starboard.commandModule,
@@ -1923,7 +1929,7 @@ client.on('guildMemberAdd', async (member) => {
         .role
     );
 });
-let check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
+const check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
 client.on('messageUpdate', async (omsg, nmsg) => {
   if (nmsg.partial) {
     // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
@@ -1961,7 +1967,7 @@ client.on(
       Discord.Message | Discord.PartialMessage
     >
   ) => {
-    for (let msg of msgs.array()) {
+    for (const msg of msgs.array()) {
       if (msg.partial) {
         // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
         try {
@@ -1988,7 +1994,7 @@ client.on('message', async (msg: Discord.Message) => {
     if (msg.author.id === client.user.id) return;
     await automod.checkForTriggers(msg);
     if (msg.author.bot) return;
-    let ap = check_autopings.get(msg.channel.id);
+    const ap = check_autopings.get(msg.channel.id);
     if (ap) await (await msg.channel.send(ap.message)).delete();
     await slowmode.onMessage(msg);
     /*if (msg.author.id == '671486892457590846') {
@@ -2036,13 +2042,13 @@ client.on('message', async (msg: Discord.Message) => {
         await anonchannels.handle_anon_message(msg);
       else {
         await msg.delete();
-        let bm = await msg.channel.send(
+        const bm = await msg.channel.send(
           util_functions.desc_embed(`${msg.author}, you're banned!`)
         );
         setTimeout(async () => await bm.delete(), 2000);
       }
     }
-    let ar = check_for_ar.get(msg.content, msg.guild.id);
+    const ar = check_for_ar.get(msg.content, msg.guild.id);
     if (ar) {
       if (ar.type == 'text') msg.channel.send(ar.text_response);
       else if (ar.type == 'embed')
@@ -2066,8 +2072,8 @@ client.on('message', async (msg: Discord.Message) => {
       );
     }
     if (msg.content == 'm: help') {
-      let chunks = all_command_modules.map((mod) => {
-        let cmds = mod.commands
+      const chunks = all_command_modules.map((mod) => {
+        const cmds = mod.commands
           .filter((command) => command.permissions(msg))
           .map((cmd) => `\`${cmd.syntax}\``)
           .join('\n');
@@ -2088,7 +2094,7 @@ client.on('message', async (msg: Discord.Message) => {
       );
       return;
     } else if (msg.content.startsWith('m: help ')) {
-      let chosen_module = all_command_modules.find(
+      const chosen_module = all_command_modules.find(
         (mod) =>
           mod.title.toLowerCase() ==
           msg.content.replace('m: help ', '').toLowerCase()
@@ -2131,12 +2137,12 @@ client.on('message', async (msg: Discord.Message) => {
         )
       );
     }
-    let results = parser.results;
+    const results = parser.results;
     /*await msg.channel.send(util_functions.desc_embed(
     'Parsed command as:\n```json\n' + JSON.stringify(results[0][0]) + '```'
  ));*/
-    for (let module of all_command_modules) {
-      for (let registered_command of module.commands)
+    for (const module of all_command_modules) {
+      for (const registered_command of module.commands)
         try {
           if (registered_command.matcher(results[0][0])) {
             try {
@@ -2154,7 +2160,7 @@ client.on('message', async (msg: Discord.Message) => {
                 await msg.channel.send(
                   'An error has occurred. Would you please explain what you were trying to do?'
                 );
-                let feedback = await msg.channel.awaitMessages(
+                const feedback = await msg.channel.awaitMessages(
                   (n) => n.author.id == msg.author.id,
                   { max: 1, time: 20000 }
                 );
@@ -2190,7 +2196,7 @@ client.on('message', async (msg: Discord.Message) => {
                   await msg.channel.send(
                     'An error has occurred. Would you please explain what you were trying to do?'
                   );
-                  let feedback = await msg.channel.awaitMessages(
+                  const feedback = await msg.channel.awaitMessages(
                     (n) => n.author.id == msg.author.id,
                     { max: 1, time: 30000 }
                   );
@@ -2255,7 +2261,7 @@ client.on('message', async (msg: Discord.Message) => {
 client.login(process.env.DISCORD_TOKEN);
 Object.defineProperty(Array.prototype, 'chunk_inefficient', {
   value: function (chunkSize) {
-    var array = this;
+    const array = this;
     return [].concat.apply(
       [],
       array.map(function (elem, i) {
@@ -2384,9 +2390,9 @@ if (process.env.PORT) {
 }
 */
 if (process.env.STATUSTRACKER_URL) {
-  let reportStatus = async () => {
+  const reportStatus = async () => {
     try {
-      let res = await (
+      const res = await (
         await nodefetch(process.env.STATUSTRACKER_URL + '/ping', {
           method: 'POST',
           headers: {
