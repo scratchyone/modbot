@@ -33,7 +33,7 @@ const lockdown = {
       JSON.stringify(msg.channel.permissionOverwrites)
     );
     try {
-      for (let perm of msg.channel.permissionOverwrites) {
+      for (const perm of msg.channel.permissionOverwrites) {
         await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
       }
       await msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
@@ -49,7 +49,7 @@ const lockdown = {
     await msg.channel.send('Locked!');
   },
 };
-let unlockdown = {
+const unlockdown = {
   name: 'lockdown',
   syntax: 'm: unlockdown <CHANNEL>',
   explanation: 'Unlockdown a channel',
@@ -57,12 +57,12 @@ let unlockdown = {
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-    let channel = msg.guild.channels.cache.get(cmd.channel);
+    const channel = msg.guild.channels.cache.get(cmd.channel);
     if (!channel) {
       await msg.channel.send("Channel doesn't exist!");
       return;
     }
-    let perm = db
+    const perm = db
       .prepare('SELECT * FROM locked_channels WHERE channel=?')
       .get(channel.id);
     if (!perm) {
