@@ -5,3 +5,4 @@ discord_elements.js
 perms.db3
 .env
 main.js
+submodules/moderation.js
