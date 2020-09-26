@@ -11,11 +11,15 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   "rules": {
     "linebreak-style": ["error", "windows"],
     "indent": "off",
     "quotes": "off",
     "semi": ["error", "always"],
-    "no-unused-vars": ["warn"]
+    "no-unused-vars": ["warn"],
+    "no-floating-promises": true
   }
 }

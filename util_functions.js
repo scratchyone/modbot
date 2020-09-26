@@ -216,62 +216,61 @@ Structures.extend('Guild', (Guild) => {
   };
 });
 let check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
+exports.EMessage = class EMessage extends Discord.Message {
+  constructor(client, message, channel) {
+    super(client, message, channel);
+  }
+  get isPoll() {
+    return !!check_poll.get(this.id);
+  }
+  async getPluralKitSender() {
+    try {
+      return this.guild.members.cache.get(
+        (
+          await (
+            await fetch('https://api.pluralkit.me/v1/msg/' + this.id)
+          ).json()
+        ).sender
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+  async getAnonSender() {
+    await sleep(200);
+    let tmp = db.prepare('SELECT * FROM anonmessages WHERE id=?').get(this.id);
+    return tmp ? this.guild.members.cache.get(tmp.user) : null;
+  }
+  async isPluralKitMessage() {
+    if (this.webhookID && this.guild.hasPluralKit) {
+      return !!(await this.getPluralKitSender());
+    } else {
+      return false;
+    }
+  }
+  async isAnonMessage() {
+    if (this.webhookID) {
+      return !!(await this.getAnonSender());
+    } else {
+      return false;
+    }
+  }
+  async getRealMember() {
+    if (this.webhookID) {
+      let anonsender = await this.getAnonSender();
+      if (anonsender) {
+        return anonsender;
+      }
+    }
+    if (this.webhookID && this.guild.hasPluralKit) {
+      return await this.getPluralKitSender();
+    } else {
+      return this.member;
+    }
+  }
+};
 Structures.extend('Message', (Message) => {
-  return class EMessage extends Message {
-    constructor(client, message, channel) {
-      super(client, message, channel);
-    }
-    get isPoll() {
-      return !!check_poll.get(this.id);
-    }
-    async getPluralKitSender() {
-      try {
-        return this.guild.members.cache.get(
-          (
-            await (
-              await fetch('https://api.pluralkit.me/v1/msg/' + this.id)
-            ).json()
-          ).sender
-        );
-      } catch (e) {
-        return null;
-      }
-    }
-    async getAnonSender() {
-      await sleep(200);
-      let tmp = db
-        .prepare('SELECT * FROM anonmessages WHERE id=?')
-        .get(this.id);
-      return tmp ? this.guild.members.cache.get(tmp.user) : null;
-    }
-    async isPluralKitMessage() {
-      if (this.webhookID && this.guild.hasPluralKit) {
-        return !!(await this.getPluralKitSender());
-      } else {
-        return false;
-      }
-    }
-    async isAnonMessage() {
-      if (this.webhookID) {
-        return !!(await this.getAnonSender());
-      } else {
-        return false;
-      }
-    }
-    async getRealMember() {
-      if (this.webhookID) {
-        let anonsender = await this.getAnonSender();
-        if (anonsender) {
-          return anonsender;
-        }
-      }
-      if (this.webhookID && this.guild.hasPluralKit) {
-        return await this.getPluralKitSender();
-      } else {
-        return this.member;
-      }
-    }
-  };
+  return exports.EMessage;
 });
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

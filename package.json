@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "1.11.2",
+  "version": "2.0.0",
   "changelogs": [
+    {
+      "version": "2.0.0",
+      "changelog": "Rewrote 2.5 thousand lines of code into typescript. Vastly reduced the number of unexplained errors that will be displayed"
+    },
     {
       "version": "1.11.2",
       "changelog": "Vastly improved ModBot deploy process, downtime should be even less frequent now"
@@ -118,12 +122,17 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "tsc": "tsc",
+    "dev": "ts-node-dev --respawn ./main.ts",
+    "prod": "tsc && node ./main.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^5.23.0",
+    "@sentry/types": "^5.24.2",
+    "@types/node-fetch": "^2.5.7",
     "better-sqlite3": "^7.1.0",
     "canvas": "^2.6.1",
     "color": "^3.1.2",
@@ -139,11 +148,15 @@
     "node-fetch": ">=2.6.1",
     "parse-duration": "^0.4.4",
     "present": "^1.0.0",
-    "prettier": "^2.1.1"
+    "prettier": "^2.1.1",
+    "ts-node-dev": "^1.0.0-pre.63"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.2.0",
+    "@typescript-eslint/parser": "^4.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "jest": "^26.4.2"
+    "jest": "^26.4.2",
+    "typescript": "^4.0.3"
   }
 }
