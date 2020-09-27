@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import Discord from 'discord.js';
 const moment = require('moment');
-const isEmoji = require('is-standard-emoji');
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
 require('dotenv').config();
@@ -55,6 +54,7 @@ const { default: parse } = require('parse-duration');
 interface MatcherCommand {
   command: string;
 }
+import { Command, EMessage } from './types';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
@@ -67,7 +67,8 @@ const main_commands = {
       permissions: (msg: Discord.Message) => {
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES');
       },
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'pin') return;
         msg.delete();
         try {
           await (await msg.channel.send(cmd.text)).pin();
@@ -87,7 +88,12 @@ const main_commands = {
         msg.author.id === '234020040830091265' &&
         msg.member &&
         msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd, client: Discord.Client) => {
+      responder: async (
+        msg: Discord.Message,
+        cmd: Command,
+        client: Discord.Client
+      ) => {
+        if (cmd.command !== 'eval') return;
         try {
           const cloneUser = async (user: string, text: string) => {
             if (msg.guild !== null && msg.channel.type == 'text') {
@@ -124,7 +130,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'say',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'say') return;
         if (!msg.guild)
           throw new util_functions.BotError('user', 'No guild found');
         if (!cmd.keep)
@@ -164,7 +171,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'setanonchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'setanonchannel') return;
         if (!msg.guild || !msg.guild.id) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const channel = cmd.channel ? cmd.channel : msg.channel.id;
@@ -221,7 +229,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'whosaid',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'whosaid') return;
         if (!msg.guild || !msg.guild.id) return;
         const author = db
           .prepare('SELECT * FROM anonmessages WHERE id=? AND server=?')
@@ -241,7 +250,8 @@ const main_commands = {
       explanation: 'Set a reminder',
       matcher: (cmd: MatcherCommand) => cmd.command == 'reminder',
       permissions: (msg: Discord.Message) => true,
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'reminder') return;
         util_functions.schedule_event(
           {
             type: 'reminder',
@@ -363,7 +373,7 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'deletechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message) => {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         if (msg.channel.id == '707361413894504489') return;
         if (await util_functions.confirm(msg)) {
@@ -382,7 +392,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'channeluser',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'channeluser') return;
         if (!client.user || !msg.member || !msg.guild)
           throw new util_functions.BotError(
             'user',
@@ -438,7 +449,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'archivechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'archivechannel') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         const deleted_category = (msg.guild!.channels.cache.find(
           (n) => n.type == 'category' && n.name == 'archived'
@@ -470,7 +482,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'anonban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'anonban') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         anonchannels.insert_anon_ban.run({
           user: cmd.user,
@@ -503,7 +516,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'anonunban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'anonunban') return;
         anonchannels.remove_anon_ban.run({
           user: cmd.user,
           server: msg.guild!.id,
@@ -520,7 +534,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'tmpchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'tmpchannel') return;
         if (!client.user)
           throw new util_functions.BotError(
             'user',
@@ -595,7 +610,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'setpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'setpinperms') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (cmd.allowed) {
           db.prepare('INSERT INTO pinners VALUES (?, ?)').run(
@@ -627,7 +643,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'listpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'listpinperms') return;
         const roles = db
           .prepare('SELECT * FROM pinners WHERE guild=?')
           .all(msg.guild!.id);
@@ -647,7 +664,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'autoresponder',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'autoresponder') return;
         if (cmd.action === 'add') {
           try {
             await msg.channel.send(
@@ -775,7 +793,9 @@ const main_commands = {
             .all(msg.guild!.id);
           await msg.channel.send(
             util_functions.desc_embed(
-              ars ? ars.map((n) => `${n.prompt}`).join('\n') : 'None'
+              ars
+                ? ars.map((n: { prompt: string }) => `${n.prompt}`).join('\n')
+                : 'None'
             )
           );
         }
@@ -787,7 +807,8 @@ const main_commands = {
       explanation: 'Query Wolfram Alpha',
       matcher: (cmd: MatcherCommand) => cmd.command == 'alpha',
       permissions: (msg: Discord.Message) => true,
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'alpha') return;
         try {
           const res = await (
             await nodefetch(
@@ -815,7 +836,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'joinroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'joinroles') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
           if (
@@ -879,7 +901,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'reactionroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'reactionroles') return;
         util_functions.assertHasPerms(msg.guild, [
           'MANAGE_ROLES',
           'MANAGE_MESSAGES',
@@ -1219,7 +1242,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'kick',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('KICK_MEMBERS'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'kick') return;
         util_functions.assertHasPerms(msg.guild, ['KICK_MEMBERS']);
         const hp = msg.member!.roles.highest.position;
         const kickee = msg.guild!.members.cache.get(cmd.user);
@@ -1251,7 +1275,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'tmprole',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'tmprole') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         const hp = msg.member!.roles.highest.position;
         const kickee = msg.guild!.members.cache.get(cmd.user);
@@ -1337,9 +1362,9 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member &&
         msg.channel.type == 'text' &&
-        msg.channel.permissionsFor(msg.member) &&
-        msg.channel.permissionsFor(msg.member)!.has('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+        msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'purge') return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
         if (count > 50) {
@@ -1372,7 +1397,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'usercard',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'usercard') return;
         const mentioned_member = msg.guild!.members.cache.get(cmd.user);
         if (!mentioned_member)
           throw new util_functions.BotError(
@@ -1436,7 +1462,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'note',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'note') return;
         const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
           'note',
@@ -1459,7 +1486,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'warn',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'warn') return;
         const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
           'warn',
@@ -1500,7 +1528,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'forgive',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd) => {
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'forgive') return;
         const warn_item = db
           .prepare('SELECT * FROM notes WHERE server=? AND id=? ')
           .get(msg.guild!.id, cmd.id);
@@ -1679,9 +1708,7 @@ client.on('ready', async () => {
     db.prepare('DELETE FROM timerevents WHERE timestamp<=?').run(ts);
   }, 2000);
 });
-interface EMessage extends Discord.Message {
-  isPoll: boolean;
-}
+
 client.on('messageReactionAdd', async (reaction, user) => {
   const message = reaction.message as EMessage;
   try {
@@ -1722,7 +1749,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
       member.roles.cache.find(
         (n) =>
           roles_that_can_pin.filter(
-            (rcp) =>
+            (rcp: { roleid: string; id: string; guild: string }) =>
               rcp.roleid == n.id && rcp.guild == reaction.message.guild!.id
           ).length > 0
       ) &&
@@ -1801,7 +1828,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
   } catch (e) {
     console.log(e);
-    Sentry.configureScope(function (scope) {
+    Sentry.configureScope(function (scope: SentryTypes.Scope) {
       scope.setUser({
         id: user.id.toString(),
         username: user.tag!.toString(),
@@ -1813,7 +1840,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
 client.on('channelCreate', async (channel) => {
   try {
     await mutes.onChannelCreate(channel);
-  } catch (e) {}
+  } catch (e) {
+    //
+  }
 });
 client.on('messageReactionRemove', async (reaction, user) => {
   const message = reaction.message as EMessage;
@@ -1854,7 +1883,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
       member.roles.cache.find(
         (n) =>
           roles_that_can_pin.filter(
-            (rcp) =>
+            (rcp: { roleid: string; id: string; guild: string }) =>
               rcp.roleid == n.id && rcp.guild == reaction.message.guild!.id
           ).length > 0
       ) &&
@@ -1901,7 +1930,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
       }
     }
   } catch (e) {
-    Sentry.configureScope(function (scope) {
+    Sentry.configureScope(function (scope: SentryTypes.Scope) {
       scope.setUser({
         id: user.id.toString(),
         username: user.tag!.toString(),
@@ -2074,8 +2103,11 @@ client.on('message', async (msg: Discord.Message) => {
     if (msg.content == 'm: help') {
       const chunks = all_command_modules.map((mod) => {
         const cmds = mod.commands
-          .filter((command) => command.permissions(msg))
-          .map((cmd) => `\`${cmd.syntax}\``)
+          .filter(
+            (command: { permissions: (arg0: Discord.Message) => boolean }) =>
+              command.permissions(msg)
+          )
+          .map((cmd: { syntax: string }) => `\`${cmd.syntax}\``)
           .join('\n');
         return {
           name: mod.title,
@@ -2114,13 +2146,15 @@ client.on('message', async (msg: Discord.Message) => {
               '\n*<> means required, [] means optional.*'
           )
           .addFields(
-            chosen_module.commands.map((n) => {
-              return {
-                name: n.name,
-                value: `\`${n.syntax}\`\n${n.explanation}`,
-                inline: false,
-              };
-            })
+            chosen_module.commands.map(
+              (n: { name: string; syntax: string; explanation: string }) => {
+                return {
+                  name: n.name,
+                  value: `\`${n.syntax}\`\n${n.explanation}`,
+                  inline: false,
+                };
+              }
+            )
           )
       );
       return;
@@ -2164,7 +2198,7 @@ client.on('message', async (msg: Discord.Message) => {
                   (n) => n.author.id == msg.author.id,
                   { max: 1, time: 20000 }
                 );
-                Sentry.configureScope(function (scope) {
+                Sentry.configureScope(function (scope: SentryTypes.Scope) {
                   scope.setTag('command', results[0][0].command);
                   scope.setUser({
                     id: msg.author.id.toString(),
@@ -2200,7 +2234,7 @@ client.on('message', async (msg: Discord.Message) => {
                     (n) => n.author.id == msg.author.id,
                     { max: 1, time: 30000 }
                   );
-                  Sentry.configureScope(function (scope) {
+                  Sentry.configureScope(function (scope: SentryTypes.Scope) {
                     scope.setTag('command', results[0][0].command);
                     scope.setUser({
                       id: msg.author.id.toString(),
@@ -2230,7 +2264,7 @@ client.on('message', async (msg: Discord.Message) => {
     }
   } catch (e) {
     console.error(e);
-    Sentry.configureScope(function (scope) {
+    Sentry.configureScope(function (scope: SentryTypes.Scope) {
       scope.setUser({
         id: msg.author.id.toString(),
         username: msg.author.tag.toString(),

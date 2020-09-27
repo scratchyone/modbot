@@ -1,13 +1,24 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const util_functions = require('../util_functions.js');
 const db = require('better-sqlite3')('perms.db3', {});
+import Discord, { Channel } from 'discord.js';
+import { Command } from '../types';
 const lockdown = {
   name: 'lockdown',
   syntax: 'm: lockdown [TIME]',
   explanation: 'Prevent everyone for sending messages in this channel',
-  matcher: (cmd) => cmd.command == 'lockdown',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
-  responder: async (msg, cmd, client) => {
+  matcher: (cmd: Command) => cmd.command == 'lockdown',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_CHANNELS'),
+  responder: async (
+    msg: Discord.Message,
+    cmd: Command,
+    client: Discord.Client
+  ) => {
+    if (cmd.command !== 'lockdown') return;
+    if (msg.channel.type !== 'text') return;
+    if (!msg.guild) return;
+    if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     if (
       db
@@ -53,12 +64,20 @@ const unlockdown = {
   name: 'lockdown',
   syntax: 'm: unlockdown <CHANNEL>',
   explanation: 'Unlockdown a channel',
-  matcher: (cmd) => cmd.command == 'unlockdown',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
-  responder: async (msg, cmd, client) => {
+  matcher: (cmd: Command) => cmd.command == 'unlockdown',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_CHANNELS'),
+  responder: async (
+    msg: Discord.Message,
+    cmd: Command,
+    client: Discord.Client
+  ) => {
+    if (cmd.command !== 'unlockdown') return;
+    if (!msg.guild) return;
+    if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     const channel = msg.guild.channels.cache.get(cmd.channel);
-    if (!channel) {
+    if (!channel || channel.type !== 'text') {
       await msg.channel.send("Channel doesn't exist!");
       return;
     }
@@ -70,7 +89,7 @@ const unlockdown = {
       return;
     }
     await channel.overwritePermissions(JSON.parse(perm.permissions));
-    await channel.send('Unlocked!');
+    await (channel as Discord.TextChannel).send('Unlocked!');
     if (channel.id !== msg.channel.id) await msg.channel.send('Unlocked!');
     db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
   },

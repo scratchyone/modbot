@@ -40,7 +40,6 @@ joinroles -> "joinroles" __ ("enable" | "disable") {% (n)=>{return {command: "jo
 eval -> "eval" __ anything {% (n)=>{return {command: "eval", code: n[2]}}%}
 cat -> "cat" {% (n)=>{return {command: "cat"}}%}
 about -> "about" {% (n)=>{return {command: "about"}}%}
-update -> "update" __ anything {% (n)=>{return {command: "update", id: n[2]}}%}
 lockdown -> "lockdown" (__ word):? {% (n)=>{return {command: "lockdown", time: n[1] ? n[1][1] : null}}%}
 unlockdown -> "unlockdown" __ channel {% (n)=>{return {command: "unlockdown", channel: n[2]}}%}
 autoping -> "autoping" __ ("enable" | "disable") {% (n)=>{return {command: "autoping", action: n[2][0]}}%}

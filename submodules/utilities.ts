@@ -3,21 +3,22 @@
 const db = require('better-sqlite3')('perms.db3', {});
 const util_functions = require('../util_functions.js');
 import Discord from 'discord.js';
+import { Command, EGuild } from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
 const invite = {
   name: 'invite',
   syntax: 'm: invite',
   explanation: util_functions.fillStringVars('Get a __botName__ server invite'),
-  matcher: (cmd) => cmd.command == 'invite',
+  matcher: (cmd: Command) => cmd.command == 'invite',
   permissions: () => true,
-  responder: async (msg) => {
+  responder: async (msg: Discord.Message) => {
     await msg.channel.send(
       'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
     );
   },
 };
-function createPollAttachment(votes) {
+function createPollAttachment(votes: { up: number; down: number }) {
   const canvas = Canvas.createCanvas(320, 194);
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = 'white';
@@ -73,15 +74,18 @@ function createPollAttachment(votes) {
   return attachment;
 }
 exports.createPollAttachment = createPollAttachment;
-exports.reRenderPoll = async (message, client) => {
+exports.reRenderPoll = async (
+  message: Discord.Message,
+  client: Discord.Client
+) => {
   try {
     const attachment = createPollAttachment({
       up:
-        message.reactions.cache.array().filter((r) => r.emoji.name == '👍')[0]
-          .count - 1,
+        (message.reactions.cache.array().filter((r) => r.emoji.name == '👍')[0]
+          .count || 1) - 1,
       down:
-        message.reactions.cache.array().filter((r) => r.emoji.name == '👎')[0]
-          .count - 1,
+        (message.reactions.cache.array().filter((r) => r.emoji.name == '👎')[0]
+          .count || 1) - 1,
     });
     const [iurl] = await util_functions.attachmentToUrl(attachment, client);
     await message.edit({
@@ -95,9 +99,14 @@ const poll = {
   name: 'poll',
   syntax: 'm: poll <TEXT>',
   explanation: 'Run a yes/no poll',
-  matcher: (cmd) => cmd.command == 'poll',
+  matcher: (cmd: Command) => cmd.command == 'poll',
   permissions: () => true,
-  responder: async (msg, cmd, client) => {
+  responder: async (
+    msg: Discord.Message,
+    cmd: Command,
+    client: Discord.Client
+  ) => {
+    if (cmd.command !== 'poll') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     try {
       await msg.delete();
@@ -110,7 +119,10 @@ const poll = {
     const [iurl] = await util_functions.attachmentToUrl(attachment, client);
     const pollMsg = await msg.channel.send(
       new Discord.MessageEmbed()
-        .setAuthor(msg.member.displayName, await msg.author.displayAvatarURL())
+        .setAuthor(
+          msg.member?.displayName || msg.author.username,
+          await msg.author.displayAvatarURL()
+        )
         .setTitle(cmd.text)
         .setImage(iurl)
     );
@@ -123,7 +135,7 @@ const suggestion = {
   name: 'suggestion',
   syntax: 'm: suggestion',
   explanation: 'Submit a suggestion to ModBot',
-  matcher: (cmd) => cmd.command == 'suggestion',
+  matcher: (cmd: Command) => cmd.command == 'suggestion',
   permissions: () =>
     process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
   responder: async (msg: Discord.Message) => {
@@ -178,10 +190,12 @@ const autoping = {
   explanation: util_functions.fillStringVars(
     'Make __botName__ ping a user/role on every new message in a channel'
   ),
-  matcher: (cmd) => cmd.command == 'autoping',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd) => {
-    if (!msg.member.hasPermission('MENTION_EVERYONE'))
+  matcher: (cmd: Command) => cmd.command == 'autoping',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_MESSAGES'),
+  responder: async (msg: Discord.Message, cmd: Command) => {
+    if (cmd.command !== 'autoping') return;
+    if (!msg.member?.hasPermission('MENTION_EVERYONE'))
       throw new util_functions.BotError(
         'user',
         'You need MENTION_EVERYONE perms to be able to run this command'
@@ -223,24 +237,20 @@ const autoping = {
     }
   },
 };
-function randomIntFromInterval(min, max) {
+function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
-function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-  if (typeof stroke === 'undefined') {
-    stroke = true;
-  }
-  if (typeof radius === 'undefined') {
-    radius = 5;
-  }
-  if (typeof radius === 'number') {
-    radius = { tl: radius, tr: radius, br: radius, bl: radius };
-  } else {
-    const defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
-    for (const side in defaultRadius) {
-      radius[side] = radius[side] || defaultRadius[side];
-    }
-  }
+function roundRect(
+  ctx: Canvas.CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  rradius: number,
+  fill: boolean,
+  stroke: boolean
+) {
+  const radius = { tl: rradius, tr: rradius, br: rradius, bl: rradius };
   ctx.beginPath();
   ctx.moveTo(x + radius.tl, y);
   ctx.lineTo(x + width - radius.tr, y);
@@ -269,9 +279,9 @@ const userpic = {
   name: 'userpic',
   syntax: 'm: userpic',
   explanation: 'Get a nice message',
-  matcher: (cmd) => cmd.command == 'userpic',
+  matcher: (cmd: Command) => cmd.command == 'userpic',
   permissions: () => true,
-  responder: async (msg) => {
+  responder: async (msg: Discord.Message) => {
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://picsum.photos/700/250');
@@ -283,8 +293,8 @@ const userpic = {
     ctx.fillStyle = '#ffffff';
     // Actually fill the text with a solid color
     ctx.textAlign = 'center';
-    const name = msg.member.displayName;
-    const get_random = function (list) {
+    const name = msg.member?.displayName || msg.author.username;
+    const get_random = function (list: Array<string>) {
       return list[Math.floor(Math.random() * list.length)];
     };
     const messages = [
@@ -322,9 +332,10 @@ const color = {
   name: 'color',
   syntax: 'm: color <COLOR>',
   explanation: 'Get info about a color',
-  matcher: (cmd) => cmd.command == 'color',
+  matcher: (cmd: Command) => cmd.command == 'color',
   permissions: () => true,
-  responder: async (msg, cmd) => {
+  responder: async (msg: Discord.Message, cmd: Command) => {
+    if (cmd.command !== 'color') return;
     const Color = require('color');
     try {
       let canvas = Canvas.createCanvas(100, 100);
@@ -375,9 +386,9 @@ const ping = {
   name: 'ping',
   syntax: 'm: ping',
   explanation: 'Ping the bot',
-  matcher: (cmd) => cmd.command == 'ping',
+  matcher: (cmd: Command) => cmd.command == 'ping',
   permissions: () => true,
-  responder: async (msg) => {
+  responder: async (msg: Discord.Message) => {
     await msg.channel.send(
       `Pong! Took ${new Date().getTime() - msg.createdAt.getTime()}ms`
     );
@@ -387,9 +398,13 @@ const about = {
   name: 'about',
   syntax: 'm: about',
   explanation: 'Get bot info',
-  matcher: (cmd) => cmd.command == 'about',
+  matcher: (cmd: Command) => cmd.command == 'about',
   permissions: () => true,
-  responder: async (msg, _cmd, client) => {
+  responder: async (
+    msg: Discord.Message,
+    _cmd: Command,
+    client: Discord.Client
+  ) => {
     await msg.channel.send(
       util_functions.desc_embed(
         `ModBot v${require('../package.json').version} is in ${
@@ -399,7 +414,7 @@ const about = {
             .array()
             .filter((channel) => channel.type === 'text').length
         } channels, and ${client.users.cache.array().length} users.${
-          msg.guild.hasPluralKit
+          (msg.guild as EGuild).hasPluralKit
             ? ` ModBot is designed to work well with PluralKit.`
             : ''
         }`
@@ -443,9 +458,9 @@ const cat = {
   name: 'cat',
   syntax: 'm: cat',
   explanation: 'By special request, a photo of a cat',
-  matcher: (cmd) => cmd.command == 'cat',
+  matcher: (cmd: Command) => cmd.command == 'cat',
   permissions: () => true,
-  responder: async (msg) => {
+  responder: async (msg: Discord.Message) => {
     const canvas = Canvas.createCanvas(600, 600);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://cataas.com/cat');
@@ -491,7 +506,11 @@ exports.commandModule = {
     color,
   ],
 };
-function getLines(ctx, text, maxWidth) {
+function getLines(
+  ctx: Canvas.CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+) {
   const words = text.split(' ');
   const lines: Array<string> = [];
   let currentLine = words[0];
