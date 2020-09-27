@@ -17,8 +17,7 @@
     "test": "jest",
     "tsc": "tsc",
     "dev": "ts-node-dev --respawn ./main.ts",
-    "prod": "tsc && node ./main.js",
-    "del_ps": "del main.js; del submodules/utilities.js; del submodules/moderation.js"
+    "prod": "tsc && node ./main.js"
   },
   "author": "",
   "license": "ISC",
