@@ -1,15 +1,15 @@
 # To Use
-![Node.js CI](https://github.com/scratchyone/modbot/workflows/Node.js%20CI/badge.svg)
 
+![Node.js CI](https://github.com/scratchyone/modbot/workflows/Node.js%20CI/badge.svg)
 
 Create .env and fill in the tokens and port:
 
 ```powershell
 DISCORD_TOKEN # Required
 SENTRY_TOKEN # Optional
-PORT # Optional
-UPDATE_COMMAND # Command(s) used to update and restart the bot, __ID__ will be replaced with the id given in the command, optional
-UPLOAD_CHANNEL #ID of channel used to upload images to discord cdn
+UPLOAD_CHANNEL # ID of channel used to upload images to discord cdn
+SUGGESTIONMANAGER_URL # Base URL of suggestionmanager backend
+SUGGESTIONMANAGER_TOKEN # Token from url for submit suggestion page on suggestionmanager
 ```
 
 Then start the bot with:

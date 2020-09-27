@@ -1,3 +1,5 @@
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const db = require('better-sqlite3')('perms.db3', {});
 const Discord = require('discord.js');
 let util_functions = require('../util_functions.js');

@@ -1,16 +1,17 @@
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const db = require('better-sqlite3')('perms.db3', {});
-let util_functions = require('../util_functions.js');
-const Discord = require('discord.js');
-const Canvas = require('canvas');
-const fetch = require('node-fetch');
-const { util } = require('prettier');
-let invite = {
+const util_functions = require('../util_functions.js');
+import Discord from 'discord.js';
+import Canvas from 'canvas';
+import fetch from 'node-fetch';
+const invite = {
   name: 'invite',
   syntax: 'm: invite',
   explanation: util_functions.fillStringVars('Get a __botName__ server invite'),
   matcher: (cmd) => cmd.command == 'invite',
-  permissions: (msg) => true,
-  responder: async (msg, cmd) => {
+  permissions: () => true,
+  responder: async (msg) => {
     await msg.channel.send(
       'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
     );
@@ -74,7 +75,7 @@ function createPollAttachment(votes) {
 exports.createPollAttachment = createPollAttachment;
 exports.reRenderPoll = async (message, client) => {
   try {
-    let attachment = createPollAttachment({
+    const attachment = createPollAttachment({
       up:
         message.reactions.cache.array().filter((r) => r.emoji.name == '👍')[0]
           .count - 1,
@@ -82,7 +83,7 @@ exports.reRenderPoll = async (message, client) => {
         message.reactions.cache.array().filter((r) => r.emoji.name == '👎')[0]
           .count - 1,
     });
-    let [iurl, im] = await util_functions.attachmentToUrl(attachment, client);
+    const [iurl] = await util_functions.attachmentToUrl(attachment, client);
     await message.edit({
       embed: message.embeds[0].setImage(iurl),
     });
@@ -90,24 +91,24 @@ exports.reRenderPoll = async (message, client) => {
     console.log(e);
   }
 };
-let poll = {
+const poll = {
   name: 'poll',
   syntax: 'm: poll <TEXT>',
   explanation: 'Run a yes/no poll',
   matcher: (cmd) => cmd.command == 'poll',
-  permissions: (msg) => true,
+  permissions: () => true,
   responder: async (msg, cmd, client) => {
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     try {
       await msg.delete();
     } catch (e) {}
-    let warning = await msg.channel.send(
+    const warning = await msg.channel.send(
       'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
     );
     setTimeout(() => warning.delete(), 8000);
-    let attachment = createPollAttachment({ up: 0, down: 0 });
-    let [iurl, im] = await util_functions.attachmentToUrl(attachment, client);
-    let pollMsg = await msg.channel.send(
+    const attachment = createPollAttachment({ up: 0, down: 0 });
+    const [iurl] = await util_functions.attachmentToUrl(attachment, client);
+    const pollMsg = await msg.channel.send(
       new Discord.MessageEmbed()
         .setAuthor(msg.member.displayName, await msg.author.displayAvatarURL())
         .setTitle(cmd.text)
@@ -118,7 +119,60 @@ let poll = {
     db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);
   },
 };
-let autoping = {
+const suggestion = {
+  name: 'suggestion',
+  syntax: 'm: suggestion',
+  explanation: 'Submit a suggestion to ModBot',
+  matcher: (cmd) => cmd.command == 'suggestion',
+  permissions: () =>
+    process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
+  responder: async (msg: Discord.Message) => {
+    if (
+      process.env.SUGGESTIONMANAGER_URL &&
+      process.env.SUGGESTIONMANAGER_TOKEN
+    ) {
+      console.log(
+        await (
+          await fetch(
+            process.env.SUGGESTIONMANAGER_URL.split('/')[
+              process.env.SUGGESTIONMANAGER_URL.split('/').length - 1
+            ] === ''
+              ? process.env.SUGGESTIONMANAGER_URL.split('/').join('/') +
+                  'graphql'
+              : process.env.SUGGESTIONMANAGER_URL.split('/').join('/') +
+                  '/graphql',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                operationName: 'addSuggestion',
+                variables: {
+                  displayName: msg.member
+                    ? msg.member.displayName
+                    : msg.author.username,
+                  suggestionText: await util_functions.ask(
+                    'What is your suggestion?',
+                    120000,
+                    msg
+                  ),
+                  key: process.env.SUGGESTIONMANAGER_TOKEN,
+                },
+                query:
+                  'mutation addSuggestion($displayName: String!, $suggestionText: String!, $key: String!) {\n  addSuggestion(displayName: $displayName, suggestionText: $suggestionText, key: $key) {\n    project {\n      projectName\n      __typename\n    }\n    __typename\n  }\n}\n',
+              }),
+            }
+          )
+        ).json()
+      );
+      await msg.channel.send(
+        'Submitted, thank you! You can also submit suggestions at https://suggestionmanager.com/suggest/a621c969-5028-44f5-8482-74467e509639/'
+      );
+    }
+  },
+};
+const autoping = {
   name: 'autoping',
   syntax: 'm: autoping <enable/disable>',
   explanation: util_functions.fillStringVars(
@@ -142,7 +196,7 @@ let autoping = {
           'user',
           'Autoping is already setup here. You can disable it with `m: autoping disable`'
         );
-      let res = await util_functions.ask(
+      const res = await util_functions.ask(
         util_functions.fillStringVars(
           'Please ping the user(s) and/or role(s) you would like to be pinged on every message. __botName__ will resend and then delete whatever you write next on every message'
         ),
@@ -182,8 +236,8 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
   if (typeof radius === 'number') {
     radius = { tl: radius, tr: radius, br: radius, bl: radius };
   } else {
-    var defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
-    for (var side in defaultRadius) {
+    const defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
+    for (const side in defaultRadius) {
       radius[side] = radius[side] || defaultRadius[side];
     }
   }
@@ -211,13 +265,13 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
   }
 }
 
-let userpic = {
+const userpic = {
   name: 'userpic',
   syntax: 'm: userpic',
   explanation: 'Get a nice message',
   matcher: (cmd) => cmd.command == 'userpic',
-  permissions: (msg) => true,
-  responder: async (msg, cmd) => {
+  permissions: () => true,
+  responder: async (msg) => {
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://picsum.photos/700/250');
@@ -229,11 +283,11 @@ let userpic = {
     ctx.fillStyle = '#ffffff';
     // Actually fill the text with a solid color
     ctx.textAlign = 'center';
-    let name = msg.member.displayName;
-    let get_random = function (list) {
+    const name = msg.member.displayName;
+    const get_random = function (list) {
       return list[Math.floor(Math.random() * list.length)];
     };
-    let messages = [
+    const messages = [
       `${name}, you're cool`,
       `I like you, ${name}`,
       `I hope you have a good day, ${name}`,
@@ -253,7 +307,7 @@ let userpic = {
     if (randomIntFromInterval(0, 100) == 50) {
       message = `Fuck you, ${name}`;
     }
-    let size = 1100 / message.length;
+    const size = 1100 / message.length;
     ctx.font = size + 'px Consolas';
     ctx.fillText(message, canvas.width / 2, canvas.height / 1.8);
     // Use helpful Attachment class structure to process the file for you
@@ -264,14 +318,14 @@ let userpic = {
     msg.channel.send('', attachment);
   },
 };
-let color = {
+const color = {
   name: 'color',
   syntax: 'm: color <COLOR>',
   explanation: 'Get info about a color',
   matcher: (cmd) => cmd.command == 'color',
-  permissions: (msg) => true,
+  permissions: () => true,
   responder: async (msg, cmd) => {
-    var Color = require('color');
+    const Color = require('color');
     try {
       let canvas = Canvas.createCanvas(100, 100);
       let ctx = canvas.getContext('2d');
@@ -280,18 +334,18 @@ let color = {
 
       ctx.fillRect(0, 0, 500, 500);
       // Use helpful Attachment class structure to process the file for you
-      let attachment = new Discord.MessageAttachment(
+      let attachment: Discord.MessageAttachment = new Discord.MessageAttachment(
         canvas.toBuffer(),
         'image.png'
       );
       await msg.channel.send(
         new Discord.MessageEmbed()
           .setTitle(cmd.color)
-          .attachFiles(attachment)
+          .attachFiles([attachment])
           .setImage('attachment://image.png')
       );
       // Run for each discord background color
-      for (let color of ['#36393F', '#FFFFFF']) {
+      for (const color of ['#36393F', '#FFFFFF']) {
         canvas = Canvas.createCanvas(120, 40);
         ctx = canvas.getContext('2d');
         // Fill discord background color
@@ -308,7 +362,7 @@ let color = {
         );
         await msg.channel.send(
           new Discord.MessageEmbed()
-            .attachFiles(attachment)
+            .attachFiles([attachment])
             .setImage('attachment://image.png')
         );
       }
@@ -317,25 +371,25 @@ let color = {
     }
   },
 };
-let ping = {
+const ping = {
   name: 'ping',
   syntax: 'm: ping',
   explanation: 'Ping the bot',
   matcher: (cmd) => cmd.command == 'ping',
-  permissions: (msg) => true,
-  responder: async (msg, cmd) => {
+  permissions: () => true,
+  responder: async (msg) => {
     await msg.channel.send(
       `Pong! Took ${new Date().getTime() - msg.createdAt.getTime()}ms`
     );
   },
 };
-let about = {
+const about = {
   name: 'about',
   syntax: 'm: about',
   explanation: 'Get bot info',
   matcher: (cmd) => cmd.command == 'about',
-  permissions: (msg) => true,
-  responder: async (msg, cmd, client) => {
+  permissions: () => true,
+  responder: async (msg, _cmd, client) => {
     await msg.channel.send(
       util_functions.desc_embed(
         `ModBot v${require('../package.json').version} is in ${
@@ -352,8 +406,8 @@ let about = {
       )
     );
   },
-};
-let update_cmd = {
+}; /*
+const update_cmd = {
   name: 'update',
   syntax: 'm: update <ID>',
   explanation: 'Update bot',
@@ -384,14 +438,14 @@ let update_cmd = {
       );
     } catch (e) {}
   },
-};
-let cat = {
+};*/
+const cat = {
   name: 'cat',
   syntax: 'm: cat',
   explanation: 'By special request, a photo of a cat',
   matcher: (cmd) => cmd.command == 'cat',
-  permissions: (msg) => true,
-  responder: async (msg, cmd) => {
+  permissions: () => true,
+  responder: async (msg) => {
     const canvas = Canvas.createCanvas(600, 600);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://cataas.com/cat');
@@ -404,7 +458,7 @@ let cat = {
     // Actually fill the text with a solid color
     ctx.textAlign = 'center';
 
-    let message = (await (await fetch('https://catfact.ninja/fact')).json())
+    const message = (await (await fetch('https://catfact.ninja/fact')).json())
       .fact;
     ctx.font = '20pt Consolas';
 
@@ -430,20 +484,21 @@ exports.commandModule = {
     ping,
     cat,
     about,
-    update_cmd,
+    // update_cmd,
     autoping,
     poll,
+    suggestion,
     color,
   ],
 };
 function getLines(ctx, text, maxWidth) {
-  var words = text.split(' ');
-  var lines = [];
-  var currentLine = words[0];
+  const words = text.split(' ');
+  const lines: Array<string> = [];
+  let currentLine = words[0];
 
-  for (var i = 1; i < words.length; i++) {
-    var word = words[i];
-    var width = ctx.measureText(currentLine + ' ' + word).width;
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(currentLine + ' ' + word).width;
     if (width < maxWidth) {
       currentLine += ' ' + word;
     } else {

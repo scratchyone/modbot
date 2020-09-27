@@ -22,7 +22,7 @@ const nodefetch = require('node-fetch');
 const nearley = require('nearley');
 const commands = require('./commands.js');
 const mutes = require('./submodules/mutes.js');
-const utilities = require('./submodules/utilities.js');
+const utilities = require('./submodules/utilities.ts');
 const slowmode = require('./submodules/slowmode.js');
 const moderation = require('./submodules/moderation.ts');
 const starboard = require('./submodules/starboard.js');
@@ -2259,17 +2259,6 @@ client.on('message', async (msg: Discord.Message) => {
   }
 });*/
 client.login(process.env.DISCORD_TOKEN);
-Object.defineProperty(Array.prototype, 'chunk_inefficient', {
-  value: function (chunkSize) {
-    const array = this;
-    return [].concat.apply(
-      [],
-      array.map(function (elem, i) {
-        return i % chunkSize ? [] : [array.slice(i, i + chunkSize)];
-      })
-    );
-  },
-});
 /*
 var express = require('express');
 var cors = require('cors');
