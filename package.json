@@ -9,118 +9,6 @@
     {
       "version": "2.0.0",
       "changelog": "Rewrote 2.5 thousand lines of code into typescript. Vastly reduced the number of unexplained errors that will be displayed"
-    },
-    {
-      "version": "1.11.2",
-      "changelog": "Vastly improved ModBot deploy process, downtime should be even less frequent now"
-    },
-    {
-      "version": "1.11.1",
-      "changelog": "Disabling a slowmode will now fix permissions"
-    },
-    {
-      "version": "1.11.0",
-      "changelog": "Added new custom slowmode. Unlike the official slowmode, it can go >6hours and can also apply to users with manage message permissions"
-    },
-    {
-      "version": "1.10.2",
-      "changelog": "Added version to `m: about`"
-    },
-    {
-      "version": "1.10.1",
-      "changelog": "Fixed lockdown bug"
-    },
-    {
-      "version": "1.10.0",
-      "changelog": "Improved starboard functionality"
-    },
-    {
-      "version": "1.9.2",
-      "changelog": "AutoMod permissions now work correctly with anon channels"
-    },
-    {
-      "version": "1.9.1",
-      "changelog": "AutoMod is now significantly faster"
-    },
-    {
-      "version": "1.9.0",
-      "changelog": "ModBot will now map PluralKit webhook messages to the account that sent them for AutoMod. Also renamed `m: stats` to `m: about`"
-    },
-    {
-      "version": "1.8.2",
-      "changelog": "`m: lockdown` will no longer throw an error if the channel is already locked"
-    },
-    {
-      "version": "1.8.1",
-      "changelog": "Gave more time to name alertchannel when setting one up"
-    },
-    {
-      "version": "1.8.0",
-      "changelog": "Added even better error messages for when ModBot doesn't have administrator permissions"
-    },
-    {
-      "version": "1.7.0",
-      "changelog": "ModBot permissions errors are now way more helpful"
-    },
-    {
-      "version": "1.6.9",
-      "changelog": "`m: poll` now works with anon channels"
-    },
-    {
-      "version": "1.6.8",
-      "changelog": "AutoMod now works correctly with pluralkit"
-    },
-    {
-      "version": "1.6.7",
-      "changelog": "Log now includes tag of user who's message was removed"
-    },
-    {
-      "version": "1.6.6",
-      "changelog": "Fixed profile picture not appearing in AutoMod log"
-    },
-    {
-      "version": "1.6.5",
-      "changelog": "Raised time limit when setting up trigger"
-    },
-    {
-      "version": "1.6.4",
-      "changelog": "AutoMod now works even if ModBot doesn't have admin permissions"
-    },
-    {
-      "version": "1.6.3",
-      "changelog": "Fixed permissions on AutoMod log channel"
-    },
-    {
-      "version": "1.6.2",
-      "changelog": "Triggers can no longer be added with AutoMod disabled"
-    },
-    {
-      "version": "1.6.1",
-      "changelog": "Added ability to use flags in AutoMod regex triggers"
-    },
-    {
-      "version": "1.6.0",
-      "changelog": "Added brand new automod system! AutoMod includes punishment logging, powerful rule support with regex, and can automatically mute users and delete messages when they hit an automod trigger. It's highly customizable"
-    },
-    {
-      "version": "1.5.2",
-      "changelog": "Changed `m: color` font size to align with linux font differences"
-    },
-    {
-      "version": "1.5.1",
-      "changelog": "Fixed bug in purge command permission checking caused by previous update"
-    },
-    {
-      "version": "1.5.0",
-      "changelog": "`m: purge` now uses channel permissions instead of server-wide permissions"
-    },
-    {
-      "version": "1.4.0",
-      "changelog": "Added `m: color` command to get information about a color"
-    },
-    {
-      "version": "1.3.0",
-      "changelog": "Changelog will now show all new changes even if modbot isn't updated on every release"
     }
   ],
   "description": "",
@@ -129,13 +17,15 @@
     "test": "jest",
     "tsc": "tsc",
     "dev": "ts-node-dev --respawn ./main.ts",
-    "prod": "tsc && node ./main.js"
+    "prod": "tsc && node ./main.js",
+    "del_ps": "del main.js; del submodules/utilities.js; del submodules/moderation.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^5.23.0",
     "@sentry/types": "^5.24.2",
+    "@tsconfig/node12": "^1.0.7",
     "@types/node-fetch": "^2.5.7",
     "better-sqlite3": "^7.1.0",
     "canvas": "^2.6.1",
