@@ -1401,15 +1401,16 @@ const main_commands = {
         if (cmd.command !== 'usercard') return;
         const mentioned_member = msg.guild!.members.cache.get(cmd.user);
         if (!mentioned_member)
-          throw new util_functions.BotError(
-            'user',
-            'User not found! Have they left the server?'
+          msg.channel.send(
+            util_functions.desc_embed(
+              "Warning: User doesn't seem to be in this server, information display will be limited"
+            )
           );
-        const mm_nick = mentioned_member.displayName;
+        const mm_nick = mentioned_member?.displayName || cmd.user;
         const mute_role = mutes.getMuteRole.get(msg.guild!.id);
         const desc: Array<string> = [];
         let use_pronouns = false;
-        if (mute_role) {
+        if (mute_role && mentioned_member) {
           if (mentioned_member.roles.cache.get(mute_role.role)) {
             desc.push(`${mentioned_member} is muted.`);
             use_pronouns = true;
@@ -1418,23 +1419,27 @@ const main_commands = {
             use_pronouns = true;
           }
         }
-        const time_in_server = moment(mentioned_member.joinedAt).fromNow();
-        desc.push(
-          `${
-            use_pronouns ? 'They' : mentioned_member
-          } joined this server ${time_in_server}.`
-        );
+
+        const time_in_server = mentioned_member
+          ? moment(mentioned_member.joinedAt).fromNow()
+          : null;
+        if (time_in_server)
+          desc.push(
+            `${
+              use_pronouns ? 'They' : mentioned_member
+            } joined this server ${time_in_server}.`
+          );
         const usernotes = db
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
-          .all(mentioned_member.id, msg.guild!.id, 'note')
+          .all(mentioned_member?.id || cmd.user, msg.guild!.id, 'note')
           .map((n: { message: string }) => n.message);
         const userwarns = db
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
-          .all(mentioned_member.id, msg.guild!.id, 'warn')
+          .all(mentioned_member?.id || cmd.user, msg.guild!.id, 'warn')
           .map((n: { message: string }) => n.message);
         msg.channel.send(
           new Discord.MessageEmbed()
-            .setAuthor(mm_nick, mentioned_member.user.displayAvatarURL())
+            .setAuthor(mm_nick, mentioned_member?.user.displayAvatarURL())
             .setDescription(desc.join(' '))
             .addFields([
               {
