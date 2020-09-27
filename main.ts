@@ -3,6 +3,20 @@ import Discord from 'discord.js';
 const moment = require('moment');
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
+import { Model } from 'objection';
+import Knex from 'knex';
+
+// Initialize knex.
+const knex = Knex({
+  client: 'sqlite3',
+  useNullAsDefault: true,
+  connection: {
+    filename: 'perms.db3',
+  },
+});
+
+// Give the knex instance to objection.
+Model.knex(knex);
 require('dotenv').config();
 Sentry.init({
   dsn: process.env.SENTRY_TOKEN,
@@ -54,7 +68,7 @@ const { default: parse } = require('parse-duration');
 interface MatcherCommand {
   command: string;
 }
-import { Command, EMessage } from './types';
+import { Command, EMessage, Prefix } from './types';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
@@ -2092,7 +2106,12 @@ client.on('message', async (msg: Discord.Message) => {
             .setDescription(ar.embed_description)
         );
     }
-    if (!msg.content.startsWith('m: ') || msg.author.bot) return;
+    const prefixes = await Prefix.query().where('server', msg.guild.id);
+    const matchingPrefix =
+      prefixes.find((p: Prefix) => msg.content.startsWith(p.prefix))?.prefix ||
+      (msg.content.startsWith('m: ') ? 'm: ' : null);
+    console.log(matchingPrefix);
+    if (!matchingPrefix || msg.author.bot) return;
     if (
       msg.member &&
       msg.member.hasPermission('MANAGE_CHANNELS') &&
@@ -2105,7 +2124,7 @@ client.on('message', async (msg: Discord.Message) => {
         )
       );
     }
-    if (msg.content == 'm: help') {
+    if (msg.content == `${matchingPrefix}help`) {
       const chunks = all_command_modules.map((mod) => {
         const cmds = mod.commands
           .filter(
@@ -2130,11 +2149,11 @@ client.on('message', async (msg: Discord.Message) => {
           .addFields(chunks)
       );
       return;
-    } else if (msg.content.startsWith('m: help ')) {
+    } else if (msg.content.startsWith(`${matchingPrefix}help `)) {
       const chosen_module = all_command_modules.find(
         (mod) =>
           mod.title.toLowerCase() ==
-          msg.content.replace('m: help ', '').toLowerCase()
+          msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
       );
       if (!chosen_module) {
         await msg.channel.send('Module not found!');
@@ -2166,7 +2185,7 @@ client.on('message', async (msg: Discord.Message) => {
     }
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
     try {
-      parser.feed(msg.content.replace('m: ', ''));
+      parser.feed(msg.content.replace(matchingPrefix, ''));
       console.log(parser.results[0]);
     } catch (e) {
       console.log(e);

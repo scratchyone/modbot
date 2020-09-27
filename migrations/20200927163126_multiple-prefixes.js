@@ -5,7 +5,7 @@ exports.up = function (knex) {
 };
 
 exports.down = function (knex) {
-  return knex.schema.alterTable('prefixes', function (t) {
-    t.unique('server');
+  return knex.schema.alterTable('prefixes', function (table) {
+    table.unique('server');
   });
 };

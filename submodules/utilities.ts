@@ -3,9 +3,19 @@
 const db = require('better-sqlite3')('perms.db3', {});
 const util_functions = require('../util_functions.js');
 import Discord from 'discord.js';
-import { Command, EGuild } from '../types';
+import { Command, EGuild, Prefix } from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
+import Knex from 'knex';
+
+// Initialize knex.
+const knex = Knex({
+  client: 'sqlite3',
+  useNullAsDefault: true,
+  connection: {
+    filename: 'perms.db3',
+  },
+});
 const invite = {
   name: 'invite',
   syntax: 'm: invite',
@@ -234,6 +244,67 @@ const autoping = {
         );
       db.prepare('DELETE FROM autopings WHERE channel = ?').run(msg.channel.id);
       await msg.channel.send('Disabled');
+    }
+  },
+};
+const prefix = {
+  name: 'prefix',
+  syntax: 'm: prefix <add/remove/list>',
+  explanation: 'Change bot prefixes',
+  matcher: (cmd: Command) => cmd.command == 'prefix',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_MESSAGES'),
+  responder: async (msg: Discord.Message, cmd: Command) => {
+    if (cmd.command !== 'prefix' || !msg.guild) return;
+    if (cmd.action == 'list') {
+      msg.channel.send(
+        util_functions.desc_embed(
+          [
+            ...(await Prefix.query().where('server', msg.guild.id)),
+            { server: msg.guild.id, prefix: 'm: ' } as Prefix,
+          ]
+            .map((p: Prefix) => `\`${p.prefix}\``)
+            .join('\n')
+        )
+      );
+    }
+    if (cmd.action == 'add') {
+      const prefix = await util_functions.ask(
+        'What should the prefix be?',
+        20000,
+        msg
+      );
+      if (prefix === 'm: ')
+        throw new util_functions.BotError('user', 'Prefix already registered');
+      if (prefix.length > 5)
+        throw new util_functions.BotError('user', 'Prefix is too long');
+      try {
+        await Prefix.query().insert({ server: msg.guild.id, prefix });
+        await msg.channel.send('Added!');
+      } catch (e) {
+        await msg.channel.send('Failed to add prefix. Does it already exist?');
+      }
+    }
+    if (cmd.action == 'remove') {
+      const prefix = await util_functions.ask(
+        'What prefix do you want to remove?',
+        20000,
+        msg
+      );
+      if (prefix === 'm: ')
+        throw new util_functions.BotError(
+          'user',
+          "Default prefix can't be removed"
+        );
+      try {
+        await Prefix.query()
+          .delete()
+          .where('server', msg.guild.id)
+          .where('prefix', prefix);
+        await msg.channel.send('Removed!');
+      } catch (e) {
+        await msg.channel.send('Failed to remove prefix');
+      }
     }
   },
 };
@@ -504,6 +575,7 @@ exports.commandModule = {
     poll,
     suggestion,
     color,
+    prefix,
   ],
 };
 function getLines(

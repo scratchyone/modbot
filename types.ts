@@ -1,4 +1,5 @@
 import Discord from 'discord.js';
+import { Model } from 'objection';
 export type Command =
   | {
       command: 'pin';
@@ -189,10 +190,21 @@ export type Command =
     }
   | {
       command: 'suggestion';
+    }
+  | {
+      command: 'prefix';
+      action: 'add' | 'remove' | 'list';
     };
 export interface EMessage extends Discord.Message {
   isPoll: boolean;
 }
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
+}
+export class Prefix extends Model {
+  server!: string;
+  prefix!: string;
+  static get tableName(): string {
+    return 'prefixes';
+  }
 }
