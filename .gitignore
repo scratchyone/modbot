@@ -6,3 +6,4 @@ perms.db3
 .env
 main.js
 submodules/moderation.js
+submodules/utilities.js
