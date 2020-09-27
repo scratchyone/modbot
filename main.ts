@@ -2166,7 +2166,7 @@ client.on('message', async (msg: Discord.Message) => {
     }
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
     try {
-      parser.feed(msg.content);
+      parser.feed(msg.content.replace('m: ', ''));
       console.log(parser.results[0]);
     } catch (e) {
       console.log(e);

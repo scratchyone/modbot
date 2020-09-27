@@ -1,8 +1,8 @@
 @include "./discord_elements.ne"
-all_commands ->  prefix __ (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
-| purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | update | lockdown | 
+all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
+| purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
 unlockdown | autoping | poll | color | automod | slowmode | suggestion
-) {% n => n.slice(2)[0] %}
+) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
 setanonchannel -> "setanonchannel" __ ("enabled" | "disabled") (__ channel):? {% n => {return {command: "setanonchannel", enabled: n[2][0] == "enabled", channel: n[3] ? n[3][1] : null}} %}
