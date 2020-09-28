@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "changelogs": [
+    {
+      "version": "2.3.0",
+      "changelog": "Added ability to cancel reminders"
+    },
     {
       "version": "2.2.0",
       "changelog": "Added custom command prefixes! You can set them up with `m: prefix add`"
