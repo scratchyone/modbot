@@ -269,7 +269,7 @@ const main_commands = {
     {
       name: 'reminder',
       syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID>',
-      explanation: 'Set a reminder',
+      explanation: 'Set/cancel a reminder',
       matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
       permissions: (msg: Discord.Message) => true,
