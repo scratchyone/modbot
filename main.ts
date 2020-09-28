@@ -2196,7 +2196,10 @@ client.on('message', async (msg: Discord.Message) => {
             (command: { permissions: (arg0: Discord.Message) => boolean }) =>
               command.permissions(msg)
           )
-          .map((cmd: { syntax: string }) => `\`${cmd.syntax}\``)
+          .map(
+            (cmd: { syntax: string }) =>
+              `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
+          )
           .join('\n');
         return {
           name: mod.title,
@@ -2239,7 +2242,9 @@ client.on('message', async (msg: Discord.Message) => {
               (n: { name: string; syntax: string; explanation: string }) => {
                 return {
                   name: n.name,
-                  value: `\`${n.syntax}\`\n${n.explanation}`,
+                  value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
+                    n.explanation
+                  }`,
                   inline: false,
                 };
               }
@@ -2262,7 +2267,10 @@ client.on('message', async (msg: Discord.Message) => {
                 new Discord.MessageEmbed()
                   .setTitle('Syntax Error')
                   .setDescription(
-                    `**Help:**\n\`${registered_command.syntax}\`\n*${
+                    `**Help:**\n\`${registered_command.syntax.replace(
+                      'm: ',
+                      matchingPrefix
+                    )}\`\n*${
                       registered_command.long_explanation ||
                       registered_command.explanation
                     }*`
