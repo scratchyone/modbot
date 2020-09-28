@@ -136,6 +136,7 @@ function checkChannelsThingCanTalkInAlways(guild, thing) {
     return po ? po.allow.has('SEND_MESSAGES') : false;
   });
 }
+var parse_duration = require('parse-duration');
 let mute = {
   name: 'mute',
   syntax: 'm: mute <USER> [DURATION]',
@@ -162,7 +163,7 @@ let mute = {
         );
       } else {
         mutee.roles.add(mute_role);
-        if (cmd.duration) {
+        if (cmd.duration && parse_duration(cmd.duration, 's')) {
           util_functions.schedule_event(
             {
               type: 'unmute',
