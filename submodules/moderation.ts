@@ -8,6 +8,7 @@ const lockdown = {
   syntax: 'm: lockdown [TIME]',
   explanation: 'Prevent everyone for sending messages in this channel',
   matcher: (cmd: Command) => cmd.command == 'lockdown',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'lockdown',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
@@ -65,6 +66,7 @@ const unlockdown = {
   syntax: 'm: unlockdown <CHANNEL>',
   explanation: 'Unlockdown a channel',
   matcher: (cmd: Command) => cmd.command == 'unlockdown',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'unlockdown',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (

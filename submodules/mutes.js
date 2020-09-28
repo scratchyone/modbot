@@ -8,6 +8,7 @@ let setupmute = {
   long_explanation:
     'Create/Delete the mute role, and fix its channel permissions if they get changed',
   matcher: (cmd) => cmd.command == 'setupmute',
+  simplematcher: (cmd) => cmd[0] === 'setupmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
     if (
@@ -144,6 +145,7 @@ let mute = {
   long_explanation:
     'Mute a user. [DURATION] is an optional duration in the form `5m`',
   matcher: (cmd) => cmd.command == 'mute',
+  simplematcher: (cmd) => cmd[0] === 'mute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
@@ -251,6 +253,7 @@ let unmute = {
   explanation: 'Unmute a user',
   long_explanation: 'Unmute a user',
   matcher: (cmd) => cmd.command == 'unmute',
+  simplematcher: (cmd) => cmd[0] === 'unmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);

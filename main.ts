@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import Discord from 'discord.js';
 const moment = require('moment');
@@ -82,6 +83,7 @@ const main_commands = {
       permissions: (msg: Discord.Message) => {
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES');
       },
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'pin',
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'pin') return;
         msg.delete();
@@ -103,6 +105,7 @@ const main_commands = {
         msg.author.id === '234020040830091265' &&
         msg.member &&
         msg.member.hasPermission('MANAGE_MESSAGES'),
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (
         msg: Discord.Message,
         cmd: Command,
@@ -143,6 +146,7 @@ const main_commands = {
       syntax: 'm: say [CHANNEL] <keep/remove> <TEXT>',
       explanation: 'Make the bot say something in a channel',
       matcher: (cmd: MatcherCommand) => cmd.command == 'say',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'say',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -184,6 +188,7 @@ const main_commands = {
       explanation:
         'Add/Remove an anonymous channel. If no channel is provided it will use the current channel',
       matcher: (cmd: MatcherCommand) => cmd.command == 'setanonchannel',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'setanonchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -217,6 +222,7 @@ const main_commands = {
       syntax: 'm: listanonchannels',
       explanation: 'Lists all anonymous channels',
       matcher: (cmd: MatcherCommand) => cmd.command == 'listanonchannels',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'listanonchannels',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
@@ -242,6 +248,7 @@ const main_commands = {
       syntax: 'm: whosaid',
       explanation: 'See who sent an anon message',
       matcher: (cmd: MatcherCommand) => cmd.command == 'whosaid',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'whosaid',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -263,7 +270,8 @@ const main_commands = {
       name: 'reminder',
       syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID>',
       explanation: 'Set a reminder',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'reminder',
+      matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
       permissions: (msg: Discord.Message) => true,
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'reminder') return;
@@ -300,6 +308,7 @@ const main_commands = {
       syntax: 'm: clonepurge',
       explanation: 'Purge a channels entire history',
       matcher: (cmd: MatcherCommand) => cmd.command == 'clonepurge',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'clonepurge',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
@@ -402,6 +411,7 @@ const main_commands = {
       syntax: 'm: deletechannel',
       explanation: 'Delete channel',
       matcher: (cmd: MatcherCommand) => cmd.command == 'deletechannel',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'deletechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
@@ -421,6 +431,7 @@ const main_commands = {
       syntax: 'm: channeluser <add/remove> <USER> [CHANNEL]',
       explanation: 'Add/Remove a user from a channel',
       matcher: (cmd: MatcherCommand) => cmd.command == 'channeluser',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'channeluser',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -478,6 +489,7 @@ const main_commands = {
       explanation:
         'Archive a channel. Users with specified role will still be able to see it',
       matcher: (cmd: MatcherCommand) => cmd.command == 'archivechannel',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'archivechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -511,6 +523,7 @@ const main_commands = {
       syntax: 'm: anonban <USER> [TIME]',
       explanation: 'Ban a user from going anonymous',
       matcher: (cmd: MatcherCommand) => cmd.command == 'anonban',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'anonban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -545,6 +558,7 @@ const main_commands = {
       syntax: 'm: anonunban <USER>',
       explanation: 'Unban a user from going anonymous',
       matcher: (cmd: MatcherCommand) => cmd.command == 'anonunban',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'anonunban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -563,6 +577,7 @@ const main_commands = {
       syntax: 'm: tmpchannel <NAME> <DURATION> <private/public>',
       explanation: 'Create a temporary channel',
       matcher: (cmd: MatcherCommand) => cmd.command == 'tmpchannel',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'tmpchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -639,6 +654,7 @@ const main_commands = {
       syntax: 'm: setpinperms <allowed/disallowed> <ROLE>',
       explanation: 'Choose if a role can pin messages with the :pushpin: react',
       matcher: (cmd: MatcherCommand) => cmd.command == 'setpinperms',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'setpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -672,6 +688,7 @@ const main_commands = {
       syntax: 'm: listpinperms',
       explanation: 'List all roles with :pushpin: permissions',
       matcher: (cmd: MatcherCommand) => cmd.command == 'listpinperms',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'listpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -693,6 +710,7 @@ const main_commands = {
       syntax: 'm: autoresponder <add/remove/list>',
       explanation: 'Configure the AutoResponder',
       matcher: (cmd: MatcherCommand) => cmd.command == 'autoresponder',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'autoresponder',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -837,6 +855,7 @@ const main_commands = {
       syntax: 'm: alpha <TEXT>',
       explanation: 'Query Wolfram Alpha',
       matcher: (cmd: MatcherCommand) => cmd.command == 'alpha',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'alpha',
       permissions: (msg: Discord.Message) => true,
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
@@ -865,6 +884,7 @@ const main_commands = {
       syntax: 'm: joinroles <enable/disable>',
       explanation: 'Configure roles given automatically to users who join',
       matcher: (cmd: MatcherCommand) => cmd.command == 'joinroles',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'joinroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -930,6 +950,7 @@ const main_commands = {
       syntax: 'm: reactionroles <add/edit>',
       explanation: 'Configure reaction roles',
       matcher: (cmd: MatcherCommand) => cmd.command == 'reactionroles',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'reactionroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1271,6 +1292,7 @@ const main_commands = {
       syntax: 'm: kick <USER>',
       explanation: 'Kick a user',
       matcher: (cmd: MatcherCommand) => cmd.command == 'kick',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'kick',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('KICK_MEMBERS'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1304,6 +1326,7 @@ const main_commands = {
       syntax: 'm: tmprole <add/remove> <USER> <ROLE> <DURATION>',
       explanation: "Temporarily change a user's role",
       matcher: (cmd: MatcherCommand) => cmd.command == 'tmprole',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'tmprole',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1390,6 +1413,7 @@ const main_commands = {
       syntax: 'm: purge <COUNT>',
       explanation: 'Purge messages',
       matcher: (cmd: MatcherCommand) => cmd.command == 'purge',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'purge',
       permissions: (msg: Discord.Message) =>
         msg.member &&
         msg.channel.type == 'text' &&
@@ -1426,6 +1450,7 @@ const main_commands = {
       syntax: 'm: usercard <USER>',
       explanation: "Get a user's information card",
       matcher: (cmd: MatcherCommand) => cmd.command == 'usercard',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'usercard',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1496,6 +1521,7 @@ const main_commands = {
       syntax: 'm: note <USER>',
       explanation: 'Add a note to a user',
       matcher: (cmd: MatcherCommand) => cmd.command == 'note',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'note',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1520,6 +1546,7 @@ const main_commands = {
       syntax: 'm: warn <USER>',
       explanation: 'Add a warn to a user',
       matcher: (cmd: MatcherCommand) => cmd.command == 'warn',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'warn',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -1562,6 +1589,7 @@ const main_commands = {
       syntax: 'm: forgive <ID>',
       explanation: 'Remove a warn/note',
       matcher: (cmd: MatcherCommand) => cmd.command == 'forgive',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'forgive',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
@@ -2221,16 +2249,44 @@ client.on('message', async (msg: Discord.Message) => {
       return;
     }
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
+    const showSyntaxError = async (input: string): Promise<boolean> => {
+      for (const module of all_command_modules) {
+        for (const registered_command of module.commands)
+          try {
+            if (
+              registered_command.simplematcher(
+                input.replace(matchingPrefix, '').split(' ')
+              )
+            ) {
+              await msg.channel.send(
+                new Discord.MessageEmbed()
+                  .setTitle('Syntax Error')
+                  .setDescription(
+                    `**Help:**\n\`${registered_command.syntax}\`\n*${
+                      registered_command.long_explanation ||
+                      registered_command.explanation
+                    }*`
+                  )
+              );
+              return true;
+            }
+          } catch (e) {}
+      }
+      return false;
+    };
     try {
       parser.feed(msg.content.replace(matchingPrefix, ''));
       console.log(parser.results[0]);
     } catch (e) {
-      console.log(e);
-      msg.channel.send(
-        util_functions.desc_embed(
-          '```\n' + e.toString().substring(0, 1000) + '```'
-        )
-      );
+      const foundSyntax = await showSyntaxError(msg.content);
+      if (!foundSyntax) {
+        console.log(e);
+        msg.channel.send(
+          util_functions.desc_embed(
+            '```\n' + e.toString().substring(0, 1000) + '```'
+          )
+        );
+      }
     }
     const results = parser.results;
     /*await msg.channel.send(util_functions.desc_embed(
@@ -2239,7 +2295,11 @@ client.on('message', async (msg: Discord.Message) => {
     for (const module of all_command_modules) {
       for (const registered_command of module.commands)
         try {
-          if (registered_command.matcher(results[0][0])) {
+          if (
+            results.length &&
+            results[0].length &&
+            registered_command.matcher(results[0][0])
+          ) {
             try {
               if (registered_command.permissions(msg))
                 await registered_command.responder(
@@ -2318,6 +2378,12 @@ client.on('message', async (msg: Discord.Message) => {
                 }
               }
             }
+          } else if (
+            registered_command.simplematcher(
+              msg.content.replace(matchingPrefix, '').split(' ')
+            )
+          ) {
+            await showSyntaxError(msg.content);
           }
         } catch (e) {
           //

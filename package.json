@@ -1,7 +1,11 @@
 {
   "name": "js_version",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "changelogs": [
+    {
+      "version": "2.4.0",
+      "changelog": "Fixed confusing and super long ModBot syntax errors! When you make an error, ModBot will now show you exactly how to correct it"
+    },
     {
       "version": "2.3.0",
       "changelog": "Added ability to cancel reminders"

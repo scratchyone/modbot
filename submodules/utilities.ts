@@ -110,6 +110,7 @@ const poll = {
   syntax: 'm: poll <TEXT>',
   explanation: 'Run a yes/no poll',
   matcher: (cmd: Command) => cmd.command == 'poll',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
   permissions: () => true,
   responder: async (
     msg: Discord.Message,
@@ -146,6 +147,7 @@ const suggestion = {
   syntax: 'm: suggestion',
   explanation: 'Submit a suggestion to ModBot',
   matcher: (cmd: Command) => cmd.command == 'suggestion',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'suggestion',
   permissions: () =>
     process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
   responder: async (msg: Discord.Message) => {
@@ -201,6 +203,7 @@ const autoping = {
     'Make __botName__ ping a user/role on every new message in a channel'
   ),
   matcher: (cmd: Command) => cmd.command == 'autoping',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'autoping',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg: Discord.Message, cmd: Command) => {
@@ -252,6 +255,7 @@ const prefix = {
   syntax: 'm: prefix <add/remove/list>',
   explanation: 'Change bot prefixes',
   matcher: (cmd: Command) => cmd.command == 'prefix',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'prefix',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg: Discord.Message, cmd: Command) => {
@@ -351,6 +355,7 @@ const userpic = {
   syntax: 'm: userpic',
   explanation: 'Get a nice message',
   matcher: (cmd: Command) => cmd.command == 'userpic',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'userpic',
   permissions: () => true,
   responder: async (msg: Discord.Message) => {
     const canvas = Canvas.createCanvas(700, 250);
@@ -404,6 +409,7 @@ const color = {
   syntax: 'm: color <COLOR>',
   explanation: 'Get info about a color',
   matcher: (cmd: Command) => cmd.command == 'color',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'color',
   permissions: () => true,
   responder: async (msg: Discord.Message, cmd: Command) => {
     if (cmd.command !== 'color') return;
@@ -458,6 +464,7 @@ const ping = {
   syntax: 'm: ping',
   explanation: 'Ping the bot',
   matcher: (cmd: Command) => cmd.command == 'ping',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'ping',
   permissions: () => true,
   responder: async (msg: Discord.Message) => {
     await msg.channel.send(
@@ -470,6 +477,7 @@ const about = {
   syntax: 'm: about',
   explanation: 'Get bot info',
   matcher: (cmd: Command) => cmd.command == 'about',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'about',
   permissions: () => true,
   responder: async (
     msg: Discord.Message,
@@ -530,6 +538,7 @@ const cat = {
   syntax: 'm: cat',
   explanation: 'By special request, a photo of a cat',
   matcher: (cmd: Command) => cmd.command == 'cat',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'cat',
   permissions: () => true,
   responder: async (msg: Discord.Message) => {
     const canvas = Canvas.createCanvas(600, 600);

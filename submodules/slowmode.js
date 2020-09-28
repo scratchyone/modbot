@@ -6,6 +6,7 @@ let slowmodeCommand = {
   syntax: 'm: slowmode <enable/disable> <CHANNEL>',
   explanation: 'Configure slowmode',
   matcher: (cmd) => cmd.command == 'slowmode',
+  simplematcher: (cmd) => cmd[0] === 'slowmode',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd) => {
     let channel = msg.guild.channels.cache.get(cmd.channel);

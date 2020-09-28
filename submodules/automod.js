@@ -9,6 +9,7 @@ let automod = {
   explanation:
     'Enable/Disable the automod, Add/Remove automod triggers, and list all configured triggers. You can use m: inspect to view more info about a specific trigger',
   matcher: (cmd) => cmd.command == 'automod',
+  simplematcher: (cmd) => cmd[0] === 'automod',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, [
