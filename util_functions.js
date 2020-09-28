@@ -62,7 +62,7 @@ async function confirm(message) {
     return false;
   }
 }
-async function embed_options(title, options, set, message) {
+async function embed_options(title, options, set, message, time) {
   let n_options = [];
   for (let i = 0; i < options.length; i++) {
     if (isNaN(set[i])) n_options.push(set[i] + ' ' + options[i]);
@@ -79,7 +79,7 @@ async function embed_options(title, options, set, message) {
     (reaction, user) =>
       set.indexOf(reaction.emoji.name) != -1 && user.id == message.author.id,
     {
-      time: 15000,
+      time: time || 15000,
       max: 1,
     }
   );

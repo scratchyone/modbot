@@ -500,7 +500,139 @@ const about = {
       )
     );
   },
-}; /*
+};
+async function designEmbed(
+  msg: Discord.Message,
+  embed?: Discord.MessageEmbed
+): Promise<Discord.MessageEmbed> {
+  let currEmbed = embed || new Discord.MessageEmbed();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      await msg.channel.send('Current Embed:', currEmbed);
+    } catch (e) {
+      msg.channel.send('Invalid data provided, embed reset');
+      currEmbed = embed || new Discord.MessageEmbed();
+      await msg.channel.send('Current Embed:', currEmbed);
+    }
+    await msg.channel.send('Options:');
+    let change = await util_functions.embed_options(
+      'What do you want to change?',
+      [
+        'Finish and Save',
+        'Title',
+        'Description',
+        'Color',
+        'Footer',
+        'Image',
+        'Link',
+        'Clear All Fields',
+        'Author',
+      ],
+      ['💾', '🎟️', '📝', '🟩', '🦶', '🖼️', '🔗', '🆑', '😀'],
+      msg,
+      80000
+    );
+    if (change === 0) return currEmbed;
+    if (change === null)
+      throw new util_functions.BotError('user', 'Timed out, embed not saved');
+    if (change === 1)
+      currEmbed.setTitle(
+        await util_functions.ask('What should the title be?', 30000, msg)
+      );
+    if (change === 2)
+      currEmbed.setDescription(
+        await util_functions.ask('What should the description be?', 80000, msg)
+      );
+    if (change === 3)
+      currEmbed.setColor(
+        await util_functions.ask('What should the color be?', 30000, msg)
+      );
+    if (change === 4)
+      currEmbed.setFooter(
+        await util_functions.ask('What should the footer be?', 30000, msg)
+      );
+    if (change === 5)
+      currEmbed.setImage(
+        await util_functions.ask(
+          'What should the URL of the image be?',
+          60000,
+          msg
+        )
+      );
+    if (change === 6)
+      currEmbed.setURL(
+        await util_functions.ask(
+          'What URL should the embed link to?',
+          60000,
+          msg
+        )
+      );
+
+    if (change === 7) currEmbed = new Discord.MessageEmbed();
+    if (change === 8)
+      currEmbed.setAuthor(
+        await util_functions.ask(
+          'What should the name of the author be?',
+          60000,
+          msg
+        )
+      );
+  }
+}
+const embed = {
+  name: 'embed',
+  syntax: 'm: embed <create/edit>',
+  explanation: 'Create/Edit a custom embed',
+  matcher: (cmd: Command) => cmd.command == 'embed',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'embed',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_MESSAGES'),
+  responder: async (
+    msg: Discord.Message,
+    cmd: Command,
+    client: Discord.Client
+  ) => {
+    if (cmd.command !== 'embed' || !msg.guild) return;
+    if (cmd.action == 'create') {
+      const channel = await util_functions.ask('What channel?', 20000, msg);
+      const dChannel = msg.guild.channels.cache.get(
+        channel.replace('<#', '').replace('>', '')
+      );
+      if (!dChannel || dChannel.type !== 'text')
+        throw new util_functions.BotError('user', 'Failed to get channel');
+      if (!dChannel.permissionsFor(msg.author)?.has('MANAGE_MESSAGES'))
+        throw new util_functions.BotError(
+          'user',
+          "You don't have permission to talk in that channel"
+        );
+      await (dChannel as Discord.TextChannel).send(await designEmbed(msg));
+      await msg.channel.send('Sent!');
+    }
+    if (cmd.action == 'edit') {
+      const channel = await util_functions.ask('What channel?', 20000, msg);
+      const dChannel = msg.guild.channels.cache.get(
+        channel.replace('<#', '').replace('>', '')
+      );
+      if (!dChannel || dChannel.type !== 'text')
+        throw new util_functions.BotError('user', 'Failed to get channel');
+      if (!dChannel.permissionsFor(msg.author)?.has('MANAGE_MESSAGES'))
+        throw new util_functions.BotError(
+          'user',
+          "You don't have permission to talk in that channel"
+        );
+      const m = await util_functions.ask('What messsage ID?', 20000, msg);
+      const dMessage = await (dChannel as Discord.TextChannel).messages.fetch(
+        m
+      );
+      if (!dMessage)
+        throw new util_functions.BotError('user', 'Failed to get channel');
+      await dMessage.edit(await designEmbed(msg, dMessage.embeds[0]));
+      await msg.channel.send('Edited!');
+    }
+  },
+};
+/*
 const update_cmd = {
   name: 'update',
   syntax: 'm: update <ID>',
@@ -585,6 +717,7 @@ exports.commandModule = {
     suggestion,
     color,
     prefix,
+    embed,
   ],
 };
 function getLines(

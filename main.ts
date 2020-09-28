@@ -298,10 +298,9 @@ const main_commands = {
           const orig = await Types.Reminder.query().where('id', cmd.id);
           if (!orig.length)
             throw new util_functions.BotError('user', 'Reminder not found');
-          const id = nanoid.nanoid(5);
           await Types.ReminderSubscriber.query().insert({
             user: msg.author.id,
-            id,
+            id: cmd.id,
           });
           await msg.channel.send(
             `You will be notifed when the reminder is ready!`
@@ -1683,6 +1682,7 @@ client.on('ready', async () => {
             'id',
             event.id
           );
+          console.log(subs);
           if (res.length) {
             await (client.channels.cache.get(
               event.channel

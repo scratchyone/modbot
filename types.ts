@@ -200,6 +200,10 @@ export type Command =
   | {
       command: 'prefix';
       action: 'add' | 'remove' | 'list';
+    }
+  | {
+      command: 'embed';
+      action: 'create' | 'edit';
     };
 export interface EMessage extends Discord.Message {
   isPoll: boolean;
