@@ -529,8 +529,9 @@ async function designEmbed(
         'Clear All',
         'Author',
         'Add Field',
+        'Edit Field',
       ],
-      ['💾', '🎟️', '📝', '🟩', '🦶', '🖼️', '🔗', '🆑', '😀', '➕'],
+      ['💾', '🎟️', '📝', '🟩', '🦶', '🖼️', '🔗', '🆑', '😀', '➕', '✏️'],
       msg,
       80000
     );
@@ -592,6 +593,41 @@ async function designEmbed(
           msg
         )
       );
+    if (change === 10)
+      if (
+        await util_functions.embed_options(
+          'What do you want to change?',
+          ['Delete', 'Edit'],
+          ['🗑️', '✏️'],
+          msg,
+          20000
+        )
+      )
+        currEmbed.spliceFields(
+          parseInt(
+            await util_functions.ask('Which embed (by number)?', 60000, msg)
+          ) - 1,
+          1,
+          {
+            name: await util_functions.ask(
+              'What should the name of the field be?',
+              60000,
+              msg
+            ),
+            value: await util_functions.ask(
+              'What should the content of the field be?',
+              60000,
+              msg
+            ),
+          }
+        );
+      else
+        currEmbed.spliceFields(
+          parseInt(
+            await util_functions.ask('Which embed (by number)?', 60000, msg)
+          ) - 1,
+          1
+        );
   }
 }
 const embed = {
