@@ -25,8 +25,14 @@ export type Command =
     }
   | {
       command: 'reminder';
+      action: 'add';
       time: string;
       text: string;
+    }
+  | {
+      command: 'reminder';
+      action: 'cancel';
+      id: string;
     }
   | {
       command: 'clonepurge';
@@ -206,5 +212,12 @@ export class Prefix extends Model {
   prefix!: string;
   static get tableName(): string {
     return 'prefixes';
+  }
+}
+export class Reminder extends Model {
+  author!: string;
+  id!: string;
+  static get tableName(): string {
+    return 'reminders';
   }
 }

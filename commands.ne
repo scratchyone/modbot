@@ -8,7 +8,7 @@ say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return 
 setanonchannel -> "setanonchannel" __ ("enabled" | "disabled") (__ channel):? {% n => {return {command: "setanonchannel", enabled: n[2][0] == "enabled", channel: n[3] ? n[3][1] : null}} %}
 listanonchannels -> "listanonchannels" {% ()=>{return {command: "listanonchannels"}}%}
 whosaid -> "whosaid" __ anything {% (n)=>{return {command: "whosaid", id: n[2]}}%}
-reminder -> "reminder" __ word __ anything {% (n)=>{return {command: "reminder", time: n[2], text: n[4]}}%}
+reminder -> "reminder" __ (("add" __ word __ anything) | ("cancel" __ word)) {% (n)=>{return {command: "reminder", time: n[2][0][0] == "add" ? n[2][0][2] : undefined, text: n[2][0][0] == "add" ? n[2][0][4] : undefined, action: n[2][0][0], id: n[2][0][0] == "cancel" ? n[2][0][2] : undefined}}%}
 clonepurge -> "clonepurge" {% ()=>{return {command: "clonepurge"}}%}
 deletechannel -> "deletechannel" {% ()=>{return {command: "deletechannel"}}%}
 channeluser -> "channeluser" __ ("add" | "remove") __ user (__ channel):? {% (n)=>{return {command: "channeluser", allowed: n[2][0]=="add", user: n[4], channel:n[5] ? n[5][1] : null}}%}

@@ -69,6 +69,7 @@ interface MatcherCommand {
   command: string;
 }
 import { Command, EMessage, Prefix } from './types';
+import * as Types from './types';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
@@ -260,22 +261,38 @@ const main_commands = {
     },
     {
       name: 'reminder',
-      syntax: 'm: reminder <DURATION> <TEXT>',
+      syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID>',
       explanation: 'Set a reminder',
       matcher: (cmd: MatcherCommand) => cmd.command == 'reminder',
       permissions: (msg: Discord.Message) => true,
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'reminder') return;
-        util_functions.schedule_event(
-          {
-            type: 'reminder',
-            text: await util_functions.cleanPings(cmd.text, msg.guild),
-            channel: msg.channel.id,
-            user: msg.author.id,
-          },
-          cmd.time
-        );
-        await msg.channel.send('Set reminder!');
+        if (cmd.action === 'add') {
+          const id = nanoid.nanoid(5);
+          await Types.Reminder.query().insert({
+            author: msg.author.id,
+            id,
+          });
+          util_functions.schedule_event(
+            {
+              type: 'reminder',
+              text: await util_functions.cleanPings(cmd.text, msg.guild),
+              channel: msg.channel.id,
+              user: msg.author.id,
+              id,
+            },
+            cmd.time
+          );
+          await msg.channel.send(
+            `Set reminder, you can cancel it with \`m: reminder cancel ${id}\``
+          );
+        } else if (cmd.action === 'cancel') {
+          await Types.Reminder.query()
+            .delete()
+            .where('author', msg.author.id)
+            .where('id', cmd.id);
+          await msg.channel.send(`Cleared!`);
+        }
       },
     },
     {
@@ -1619,11 +1636,15 @@ client.on('ready', async () => {
       const event = JSON.parse(event_item.event);
       if (event.type == 'reminder') {
         try {
-          await (client.channels.cache.get(
-            event.channel
-          )! as Discord.TextChannel).send(
-            `<@${event.user}>, you have a reminder: ${event.text}`
-          );
+          let res = await Types.Reminder.query()
+            .where('author', event.user)
+            .where('id', event.id);
+          if (res.length)
+            await (client.channels.cache.get(
+              event.channel
+            )! as Discord.TextChannel).send(
+              `<@${event.user}>, you have a reminder: ${event.text}`
+            );
         } catch (e) {
           //
         }
