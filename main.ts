@@ -245,7 +245,7 @@ const main_commands = {
     },
     {
       name: 'whosaid',
-      syntax: 'm: whosaid',
+      syntax: 'm: whosaid <ID>',
       explanation: 'See who sent an anon message',
       matcher: (cmd: MatcherCommand) => cmd.command == 'whosaid',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'whosaid',
