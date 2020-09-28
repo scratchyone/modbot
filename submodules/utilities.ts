@@ -526,10 +526,11 @@ async function designEmbed(
         'Footer',
         'Image',
         'Link',
-        'Clear All Fields',
+        'Clear All',
         'Author',
+        'Add Field',
       ],
-      ['💾', '🎟️', '📝', '🟩', '🦶', '🖼️', '🔗', '🆑', '😀'],
+      ['💾', '🎟️', '📝', '🟩', '🦶', '🖼️', '🔗', '🆑', '😀', '➕'],
       msg,
       80000
     );
@@ -578,6 +579,19 @@ async function designEmbed(
           msg
         )
       );
+    if (change === 9)
+      currEmbed.addField(
+        await util_functions.ask(
+          'What should the name of the field be?',
+          60000,
+          msg
+        ),
+        await util_functions.ask(
+          'What should the content of the field be?',
+          60000,
+          msg
+        )
+      );
   }
 }
 const embed = {
@@ -611,11 +625,6 @@ const embed = {
       );
       if (!dChannel || dChannel.type !== 'text')
         throw new util_functions.BotError('user', 'Failed to get channel');
-      if (!dChannel.permissionsFor(msg.author)?.has('MANAGE_MESSAGES'))
-        throw new util_functions.BotError(
-          'user',
-          "You don't have permission to talk in that channel"
-        );
       const m = await util_functions.ask('What messsage ID?', 20000, msg);
       const dMessage = await (dChannel as Discord.TextChannel).messages.fetch(
         m
