@@ -2212,7 +2212,9 @@ client.on('message', async (msg: Discord.Message) => {
         new Discord.MessageEmbed()
           .setTitle(util_functions.fillStringVars('Help for __botName__'))
           .setDescription(
-            '<> means required, [] means optional. Type `m: help <NAME>` to get help for a specific command module'
+            '<> means required, [] means optional. Type `' +
+              matchingPrefix +
+              'help <NAME>` to get help for a specific command module'
           )
           .addFields(chunks)
       );
@@ -2290,9 +2292,11 @@ client.on('message', async (msg: Discord.Message) => {
       if (!foundSyntax) {
         console.log(e);
         msg.channel.send(
-          util_functions.desc_embed(
-            '```\n' + e.toString().substring(0, 1000) + '```'
-          )
+          new Discord.MessageEmbed()
+            .setTitle('Command not found')
+            .setDescription(
+              `Use \`${matchingPrefix}help\` to view all commands`
+            )
         );
       }
     }
