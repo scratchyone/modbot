@@ -542,10 +542,7 @@ const addemoji = {
         `Added ${addedEmoji} with name ${addedEmoji.name}`
       );
     } catch (e) {
-      await msg.channel.send(
-        'Failed, is the image too large? Does an emoji with that name already exist?\n' +
-          e
-      );
+      await msg.channel.send('Failed\n' + e);
     }
   },
 };
