@@ -5,6 +5,7 @@
 anything -> [\S\s]:+ {% n=> n[0].join('') %}
 word -> [\S]:+ {% n=> n[0].join('') %}
 channel -> "<#":? number ">":? {% (x)=>x[1] %}
+emote -> "<:" word ":" number ">":? {% (x)=>x[3] %}
 role -> "<@&":? number ">":? {% (x)=>x[1] %}
 user -> "<@":? "<@!":? number ">":? {% (x)=>x[2] %}
 number -> [0-9]:+ {% n=> n[0].join('') %}

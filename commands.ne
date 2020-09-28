@@ -1,7 +1,7 @@
 @include "./discord_elements.ne"
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
-unlockdown | autoping | poll | color | automod | slowmode | suggestion | prefix | embed
+unlockdown | autoping | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji
 ) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -50,3 +50,4 @@ slowmode -> "slowmode" __ ("enable" | "disable") __ channel {% (n)=>{return {com
 suggestion -> "suggestion" {% (n)=>{return {command: "suggestion"}}%}
 prefix -> "prefix" __ ("list" | "add" | "remove") {% (n)=>{return {command: "prefix", action: n[2][0]}}%}
 embed -> "embed" __ ("create" | "edit") {% (n)=>{return {command: "embed", action: n[2][0]}}%}
+addemoji -> "addemoji" __  word (__ word):? {% (n)=>{return {command: "addemoji", name: n[2], emojiData: n[3] ? n[3][1]: undefined}}%}

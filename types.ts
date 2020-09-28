@@ -204,6 +204,11 @@ export type Command =
   | {
       command: 'embed';
       action: 'create' | 'edit';
+    }
+  | {
+      command: 'addemoji';
+      name: string;
+      emojiData?: string;
     };
 export interface EMessage extends Discord.Message {
   isPoll: boolean;

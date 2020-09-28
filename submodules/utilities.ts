@@ -501,6 +501,53 @@ const about = {
     );
   },
 };
+const addemoji = {
+  name: 'addemoji',
+  syntax: 'm: addemoji <NAME> <EMOJI/URL/ATTACH A FILE>',
+  explanation:
+    'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
+  matcher: (cmd: Command) => cmd.command === 'addemoji',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'addemoji',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_EMOJIS'),
+  responder: async (
+    msg: Discord.Message,
+    cmd: Command,
+    client: Discord.Client
+  ) => {
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
+    if (cmd.command !== 'addemoji' || !msg.guild) return;
+    let emojiUrl = undefined;
+    if (/<:.*:(\d+)>/.test(cmd.emojiData || '')) {
+      emojiUrl =
+        'https://cdn.discordapp.com/emojis/' +
+        (cmd.emojiData || '').match(/<:.*:(\d+)>/)?.[1] +
+        '.png';
+    } else if (/<a:.*:(\d+)>/.test(cmd.emojiData || '')) {
+      emojiUrl =
+        'https://cdn.discordapp.com/emojis/' +
+        (cmd.emojiData || '').match(/<a:.*:(\d+)>/)?.[1] +
+        '.gif';
+    } else if (msg.attachments.array().length)
+      emojiUrl = msg.attachments.array()[0].url;
+    else if (cmd.emojiData) emojiUrl = cmd.emojiData;
+    if (!emojiUrl)
+      throw new util_functions.BotError(
+        'user',
+        "You don't seem to have supplied me an image"
+      );
+    try {
+      const addedEmoji = await msg.guild.emojis.create(emojiUrl, cmd.name, {});
+      await msg.channel.send(
+        `Added ${addedEmoji} with name ${addedEmoji.name}`
+      );
+    } catch (e) {
+      await msg.channel.send(
+        'Failed, is the image too large? Does an emoji with that name already exist?'
+      );
+    }
+  },
+};
 async function designEmbed(
   msg: Discord.Message,
   embed?: Discord.MessageEmbed
@@ -758,6 +805,7 @@ exports.commandModule = {
     color,
     prefix,
     embed,
+    addemoji,
   ],
 };
 function getLines(
