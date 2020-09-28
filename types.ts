@@ -31,7 +31,7 @@ export type Command =
     }
   | {
       command: 'reminder';
-      action: 'cancel';
+      action: 'cancel' | 'copy';
       id: string;
     }
   | {
@@ -219,5 +219,12 @@ export class Reminder extends Model {
   id!: string;
   static get tableName(): string {
     return 'reminders';
+  }
+}
+export class ReminderSubscriber extends Model {
+  user!: string;
+  id!: string;
+  static get tableName(): string {
+    return 'reminderSubscribers';
   }
 }

@@ -268,8 +268,8 @@ const main_commands = {
     },
     {
       name: 'reminder',
-      syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID>',
-      explanation: 'Set/cancel a reminder',
+      syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID> / copy <ID>',
+      explanation: 'Set/cancel/copy a reminder',
       matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
       permissions: (msg: Discord.Message) => true,
@@ -292,7 +292,19 @@ const main_commands = {
             cmd.time
           );
           await msg.channel.send(
-            `Set reminder, you can cancel it with \`m: reminder cancel ${id}\``
+            `Set reminder, you can cancel it with \`m: reminder cancel ${id}\`, or somebody else can run \`m: reminder copy ${id}\` to also get reminded`
+          );
+        } else if (cmd.action === 'copy') {
+          const orig = await Types.Reminder.query().where('id', cmd.id);
+          if (!orig.length)
+            throw new util_functions.BotError('user', 'Reminder not found');
+          const id = nanoid.nanoid(5);
+          await Types.ReminderSubscriber.query().insert({
+            user: msg.author.id,
+            id,
+          });
+          await msg.channel.send(
+            `You will be notifed when the reminder is ready!`
           );
         } else if (cmd.action === 'cancel') {
           await Types.Reminder.query()
@@ -1667,12 +1679,29 @@ client.on('ready', async () => {
           let res = await Types.Reminder.query()
             .where('author', event.user)
             .where('id', event.id);
-          if (res.length)
+          let subs = await Types.ReminderSubscriber.query().where(
+            'id',
+            event.id
+          );
+          if (res.length) {
             await (client.channels.cache.get(
               event.channel
             )! as Discord.TextChannel).send(
               `<@${event.user}>, you have a reminder: ${event.text}`
             );
+            if (subs.length) {
+              await (client.channels.cache.get(
+                event.channel
+              )! as Discord.TextChannel).send(
+                subs.map((sub) => `<@${sub.user}> `).join('')
+              );
+            }
+          }
+          Types.Reminder.query()
+            .where('author', event.user)
+            .where('id', event.id)
+            .delete();
+          await Types.ReminderSubscriber.query().where('id', event.id).delete();
         } catch (e) {
           //
         }
