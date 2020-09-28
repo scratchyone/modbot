@@ -2033,12 +2033,29 @@ client.on(
     }
   }
 );
+function getArrayRandomElement<T>(arr: Array<T>): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 client.on('message', async (msg: Discord.Message) => {
   try {
     if (!msg.guild) return;
     if (!client.user) return;
     if (msg.mentions.has(client.user, { ignoreEveryone: true }))
-      msg.react('759186176094765057');
+      msg.react(
+        getArrayRandomElement([
+          '759186176094765057',
+          '759943179175854100',
+          '759943973338087425',
+          '736452416282689617',
+          '736440605311369237',
+          '736440605311369237',
+          '755599209952182364',
+          '759943973375836190',
+          '759943973107924995',
+          '759943973157470208',
+          '759943973514248242',
+        ])
+      );
     if (msg.author.id === client.user.id) return;
     await automod.checkForTriggers(msg);
     if (msg.author.bot) return;
@@ -2110,7 +2127,6 @@ client.on('message', async (msg: Discord.Message) => {
     const matchingPrefix =
       prefixes.find((p: Prefix) => msg.content.startsWith(p.prefix))?.prefix ||
       (msg.content.startsWith('m: ') ? 'm: ' : null);
-    console.log(matchingPrefix);
     if (!matchingPrefix || msg.author.bot) return;
     if (
       msg.member &&
