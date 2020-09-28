@@ -46,9 +46,7 @@ exports.onStarReactRemove = async (reaction, client) => {
       .get(reaction.message.id);
     let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
     let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
-    await
-      sb_disc_msg.edit(await genSBMessage(reaction.message));
-    
+    await sb_disc_msg.edit(await genSBMessage(reaction.message));
   }
 };
 async function genSBMessage(message) {
@@ -68,20 +66,40 @@ async function genSBMessage(message) {
     desc += message.embeds[0].description || '';
   }
   let image;
+  let spoiler = false;
   if (message.attachments.array().length) {
     image = message.attachments.array().map((n) => n.url)[0];
+    if (message.attachments.array()[0].name.startsWith('SPOILER_'))
+      spoiler = true;
   } else if (message.embeds.length > 0 && message.embeds[0].type === 'image') {
     image = message.embeds[0].url;
+    if (message.content.includes('||')) spoiler = true;
   }
-  return {
-    content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
-      message.channel.name
-    } `,
-    embed: new Discord.MessageEmbed()
-      .setAuthor(msg_username, await message.author.displayAvatarURL())
-      .setDescription(desc + '\n\n**[Source](' + message.url + ')**')
-      .setImage(image),
-  };
+  if (spoiler)
+    return {
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
+        message.channel.name
+      } `,
+      files: [
+        new Discord.MessageAttachment(
+          image,
+          'SPOILER_image.' + image.split('.')[image.split('.').length - 1]
+        ),
+      ],
+      embed: new Discord.MessageEmbed()
+        .setAuthor(msg_username, await message.author.displayAvatarURL())
+        .setDescription(desc + '\n\n**[Source](' + message.url + ')**'),
+    };
+  else
+    return {
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
+        message.channel.name
+      } `,
+      embed: new Discord.MessageEmbed()
+        .setAuthor(msg_username, await message.author.displayAvatarURL())
+        .setDescription(desc + '\n\n**[Source](' + message.url + ')**')
+        .setImage(image),
+    };
 }
 exports.onStarReactAdd = async (reaction, client) => {
   if (
