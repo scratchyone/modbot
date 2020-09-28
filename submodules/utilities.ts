@@ -543,7 +543,8 @@ const addemoji = {
       );
     } catch (e) {
       await msg.channel.send(
-        'Failed, is the image too large? Does an emoji with that name already exist?'
+        'Failed, is the image too large? Does an emoji with that name already exist?\n' +
+          e
       );
     }
   },
