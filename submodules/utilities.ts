@@ -601,11 +601,6 @@ const embed = {
       );
       if (!dChannel || dChannel.type !== 'text')
         throw new util_functions.BotError('user', 'Failed to get channel');
-      if (!dChannel.permissionsFor(msg.member!)?.has('MANAGE_MESSAGES'))
-        throw new util_functions.BotError(
-          'user',
-          "You don't have permission to talk in that channel"
-        );
       await (dChannel as Discord.TextChannel).send(await designEmbed(msg));
       await msg.channel.send('Sent!');
     }
