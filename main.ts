@@ -291,7 +291,7 @@ const main_commands = {
             .delete()
             .where('author', msg.author.id)
             .where('id', cmd.id);
-          await msg.channel.send(`Cleared!`);
+          await msg.channel.send(`Cancelled!`);
         }
       },
     },
