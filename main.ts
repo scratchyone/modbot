@@ -891,6 +891,20 @@ const main_commands = {
       },
     },
     {
+      name: 'support',
+      syntax: 'm: support',
+      explanation: 'Get an invite to the support server',
+      matcher: (cmd: MatcherCommand) => cmd.command == 'support',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'support',
+      permissions: (msg: Discord.Message) => true,
+      responder: async (msg: Discord.Message, cmd: Command) => {
+        if (cmd.command !== 'support') return;
+        msg.channel.send(
+          util_functions.desc_embed('https://discord.gg/wJ2TCpx')
+        );
+      },
+    },
+    {
       name: 'joinroles',
       syntax: 'm: joinroles <enable/disable>',
       explanation: 'Configure roles given automatically to users who join',
@@ -2350,9 +2364,12 @@ client.on('message', async (msg: Discord.Message) => {
                   db
                 );
             } catch (e) {
-              if (e.type == 'user')
+              if (e.type == 'user') {
                 await msg.channel.send(util_functions.desc_embed(e.message));
-              else if (e.type == 'bot') {
+                await msg.channel.send(
+                  'Use `m: support` to get an invite to the support server'
+                );
+              } else if (e.type == 'bot') {
                 await msg.channel.send(
                   'An error has occurred. Would you please explain what you were trying to do?'
                 );
@@ -2379,6 +2396,9 @@ client.on('message', async (msg: Discord.Message) => {
                     "There's been an error! Luckily, it's not your fault. Please give the bot owner this ID: " +
                       Sentry.captureException(e)
                   )
+                );
+                await msg.channel.send(
+                  'Use `m: support` to get an invite to the support server'
                 );
               } else {
                 console.log(e);
@@ -2415,6 +2435,9 @@ client.on('message', async (msg: Discord.Message) => {
                       'This error is likely not your fault. Please give the bot owner this ID: ' +
                         Sentry.captureException(e)
                     )
+                  );
+                  await msg.channel.send(
+                    'Use `m: support` to get an invite to the support server'
                   );
                 }
               }
