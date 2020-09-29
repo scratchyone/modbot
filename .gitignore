@@ -7,4 +7,5 @@ perms.db3
 main.js
 submodules/moderation.js
 submodules/utilities.js
+submodules/tickets.js
 types.js
