@@ -85,6 +85,16 @@ export type Command =
       action: 'enable' | 'disable' | 'configure' | 'fixperms';
     }
   | {
+      command: 'ticket';
+      action: 'delete';
+    }
+  | {
+      command: 'ticket';
+      action: 'create';
+      user: string;
+      role: string;
+    }
+  | {
       command: 'star';
       action: 'random';
     }

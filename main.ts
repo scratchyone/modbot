@@ -39,6 +39,7 @@ const mutes = require('./submodules/mutes.js');
 const utilities = require('./submodules/utilities');
 const slowmode = require('./submodules/slowmode.js');
 const moderation = require('./submodules/moderation');
+const tickets = require('./submodules/tickets');
 const starboard = require('./submodules/starboard.js');
 const alertchannels = require('./submodules/alertchannels.js');
 const automod = require('./submodules/automod.js');
@@ -2059,6 +2060,7 @@ const all_command_modules = [
   moderation.commandModule,
   automod.commandModule,
   slowmode.commandModule,
+  tickets.commandModule,
 ];
 for (const module of all_command_modules) {
   if (module.cog) module.cog(client);
