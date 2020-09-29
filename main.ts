@@ -2060,6 +2060,9 @@ const all_command_modules = [
   automod.commandModule,
   slowmode.commandModule,
 ];
+for (const module of all_command_modules) {
+  if (module.cog) module.cog(client);
+}
 client.on('guildMemberAdd', async (member) => {
   if (
     db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
@@ -2153,7 +2156,6 @@ client.on('message', async (msg: Discord.Message) => {
     if (msg.author.bot) return;
     const ap = check_autopings.get(msg.channel.id);
     if (ap) await (await msg.channel.send(ap.message)).delete();
-    await slowmode.onMessage(msg);
     /*if (msg.author.id == '671486892457590846') {
       const Canvas = require('canvas');
       const canvas = Canvas.createCanvas(502, 453);

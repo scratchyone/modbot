@@ -70,38 +70,41 @@ let slowmodeCommand = {
   },
 };
 let getChannelSlowmode = db.prepare('SELECT * FROM slowmodes WHERE channel=?');
-exports.onMessage = async (msg) => {
-  let slowmodeRes = getChannelSlowmode.get(msg.channel.id);
-  if (slowmodeRes)
-    if (
-      (msg.member.hasPermission('MANAGE_MESSAGES') && !slowmodeRes.delete_mm) ||
-      !msg.member.hasPermission('MANAGE_MESSAGES')
-    ) {
-      if (msg.channel.permissionsFor(msg.member).has('SEND_MESSAGES')) {
-        msg.channel.updateOverwrite(msg.member, {
-          SEND_MESSAGES: false,
-        });
-        try {
-          db.prepare('INSERT INTO slowmoded_users VALUES (?, ?)').run(
-            msg.channel.id,
-            msg.author.id
-          );
-        } catch (e) {
-          console.log(e);
-        }
-        util_functions.schedule_event(
-          {
-            type: 'removeSlowmodePerm',
-            channel: msg.channel.id,
-            user: msg.author.id,
-          },
-          slowmodeRes.time + 's'
-        );
-      }
-    }
-};
 exports.commandModule = {
   title: 'Slowmode',
   description: "Commands for managing ModBot's slowmode system",
   commands: [slowmodeCommand],
+  cog: async (client) => {
+    client.on('message', async (msg) => {
+      let slowmodeRes = getChannelSlowmode.get(msg.channel.id);
+      if (slowmodeRes)
+        if (
+          (msg.member.hasPermission('MANAGE_MESSAGES') &&
+            !slowmodeRes.delete_mm) ||
+          !msg.member.hasPermission('MANAGE_MESSAGES')
+        ) {
+          if (msg.channel.permissionsFor(msg.member).has('SEND_MESSAGES')) {
+            msg.channel.updateOverwrite(msg.member, {
+              SEND_MESSAGES: false,
+            });
+            try {
+              db.prepare('INSERT INTO slowmoded_users VALUES (?, ?)').run(
+                msg.channel.id,
+                msg.author.id
+              );
+            } catch (e) {
+              console.log(e);
+            }
+            util_functions.schedule_event(
+              {
+                type: 'removeSlowmodePerm',
+                channel: msg.channel.id,
+                user: msg.author.id,
+              },
+              slowmodeRes.time + 's'
+            );
+          }
+        }
+    });
+  },
 };
