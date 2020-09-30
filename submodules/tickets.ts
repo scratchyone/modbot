@@ -26,7 +26,7 @@ const ticket = {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     if (cmd.action === 'create') {
       if (!msg.member.roles.cache.get(cmd.role))
-        throw new util_functions.BotError('user', `You don't have that role!`);
+        throw new util_functions.BotError('user', "You don't have that role!");
       try {
         const channel = await msg.guild.channels.create(
           'ticket-' + nanoid(15),

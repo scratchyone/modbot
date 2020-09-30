@@ -6,16 +6,6 @@ import Discord from 'discord.js';
 import { Command, EGuild, Prefix } from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
-import Knex from 'knex';
-
-// Initialize knex.
-const knex = Knex({
-  client: 'sqlite3',
-  useNullAsDefault: true,
-  connection: {
-    filename: 'perms.db3',
-  },
-});
 const invite = {
   name: 'invite',
   syntax: 'm: invite',
@@ -494,7 +484,7 @@ const about = {
             .filter((channel) => channel.type === 'text').length
         } channels, and ${client.users.cache.array().length} users.${
           (msg.guild as EGuild).hasPluralKit
-            ? ` ModBot is designed to work well with PluralKit.`
+            ? ' ModBot is designed to work well with PluralKit.'
             : ''
         }`
       )
@@ -561,7 +551,7 @@ async function designEmbed(
       await msg.channel.send('Current Embed:', currEmbed);
     }
     await msg.channel.send('Options:');
-    let change = await util_functions.embed_options(
+    const change = await util_functions.embed_options(
       'What do you want to change?',
       [
         'Finish and Save',
