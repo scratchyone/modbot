@@ -1467,13 +1467,20 @@ const main_commands = {
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'usercard' || !msg.guild) return;
         const mentioned_member = msg.guild.members.cache.get(cmd.user);
+        let mentioned_user;
+        try {
+          mentioned_user = await client.users.fetch(cmd.user);
+        } catch (e) {
+          throw new util_functions.BotError('user', 'Failed to get user');
+        }
         if (!mentioned_member)
           msg.channel.send(
             util_functions.desc_embed(
               "Warning: User doesn't seem to be in this server, information display will be limited"
             )
           );
-        const mm_nick = mentioned_member?.displayName || cmd.user;
+        const mm_nick =
+          mentioned_member?.displayName || mentioned_user.username;
         const mute_role = mutes.getMuteRole.get(msg.guild.id);
         const desc: Array<string> = [];
         let use_pronouns = false;
@@ -1490,12 +1497,23 @@ const main_commands = {
         const time_in_server = mentioned_member
           ? moment(mentioned_member.joinedAt).fromNow()
           : null;
-        if (time_in_server)
+        if (time_in_server) {
           desc.push(
             `${
               use_pronouns ? 'They' : mentioned_member
             } joined this server ${time_in_server}.`
           );
+          use_pronouns = true;
+        }
+        desc.push(
+          `${
+            use_pronouns
+              ? 'They'
+              : mentioned_member
+              ? mentioned_member
+              : mentioned_user.username
+          } joined discord ${moment(mentioned_user.createdAt).fromNow()}.`
+        );
         const usernotes = db
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
           .all(mentioned_member?.id || cmd.user, msg.guild.id, 'note')
@@ -1506,7 +1524,7 @@ const main_commands = {
           .map((n: { message: string }) => n.message);
         msg.channel.send(
           new Discord.MessageEmbed()
-            .setAuthor(mm_nick, mentioned_member?.user.displayAvatarURL())
+            .setAuthor(mm_nick, mentioned_user.displayAvatarURL())
             .setDescription(desc.join(' '))
             .addFields([
               {
