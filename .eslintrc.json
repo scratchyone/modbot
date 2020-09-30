@@ -17,6 +17,8 @@
   "rules": {
     "quotes": ["error", "single", "avoid-escape"],
     "semi": ["error", "always"],
+    "linebreak-style": ["error", "windows"],
+    "prettier/prettier": "error",
     "no-unused-vars": ["warn"],
     "@typescript-eslint/no-var-requires": "off",
     "no-empty": "off"
