@@ -1,7 +1,7 @@
 @include "./discord_elements.ne"
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
-unlockdown | autoping | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket
+unlockdown | autoping | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce
 ) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -53,3 +53,4 @@ embed -> "embed" __ ("create" | "edit") {% (n)=>{return {command: "embed", actio
 addemoji -> "addemoji" __  word (__ word):? {% (n)=>{return {command: "addemoji", name: n[2], emojiData: n[3] ? n[3][1]: undefined}}%}
 support -> "support" {% (n)=>{return {command: "support"}}%}
 ticket -> "ticket" __ (("create" __ role __ user) | ("delete")) {% (n)=>{return {command: "ticket", user: n[2][0][0] == "create" ? n[2][0][4] : undefined, role: n[2][0][0] == "create" ? n[2][0][2] : undefined, action: n[2][0][0]}} %}
+announce -> "announce" {% (n)=>{return {command: "announce"}}%}

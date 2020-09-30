@@ -36,7 +36,7 @@
     "eslint": "npx eslint . --ext .js,.ts",
     "dev": "nearleyc ./commands.ne -o ./commands.js && ts-node-dev --respawn ./main.ts",
     "prod": "tsc && node ./main.js",
-    "clear": "npx del-cli main.js submodules/utilities.js submodules/tickets.js submodules/moderation.js types.js commands.js discord_elements.js"
+    "clear": "npx del-cli main.js submodules/utilities.js submodules/tickets.js submodules/moderation.js submodules/admin.js types.js commands.js discord_elements.js"
   },
   "author": "",
   "license": "ISC",

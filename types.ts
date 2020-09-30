@@ -27,6 +27,9 @@ export type Command =
       command: 'support';
     }
   | {
+      command: 'announce';
+    }
+  | {
       command: 'reminder';
       action: 'add';
       time: string;

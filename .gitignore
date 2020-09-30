@@ -8,5 +8,6 @@ main.js
 submodules/moderation.js
 submodules/utilities.js
 submodules/tickets.js
+submodules/admin.js
 types.js
 report.*.json
