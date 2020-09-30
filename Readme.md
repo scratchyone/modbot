@@ -16,8 +16,8 @@ Then start the bot with:
 
 ```powershell
 npm install
-npm run tsc
+npm run nearley # Compile parsing grammar
+npm run tsc # Compile typescript
 npx knex migrate:latest # Runs all DB migrations
-nearleyc .\commands.ne -o .\commands.js # Compile parsing grammar
 node main.js # This will also start a web server if PORT is set
 ```
