@@ -9,3 +9,4 @@ submodules/moderation.js
 submodules/utilities.js
 submodules/tickets.js
 types.js
+report.*.json

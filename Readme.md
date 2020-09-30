@@ -15,8 +15,6 @@ SUGGESTIONMANAGER_TOKEN # Token from url for submit suggestion page on suggestio
 Then start the bot with:
 
 ```powershell
-npm install -g nearley
-npm install -g db-migrate
 npm install
 npm run tsc
 npx knex migrate:latest # Runs all DB migrations

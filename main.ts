@@ -2232,23 +2232,26 @@ client.on('message', async (msg: Discord.Message) => {
       );
     }
     if (msg.content == `${matchingPrefix}help`) {
-      const chunks = all_command_modules.map((mod) => {
-        const cmds = mod.commands
-          .filter(
-            (command: { permissions: (arg0: Discord.Message) => boolean }) =>
-              command.permissions(msg)
-          )
-          .map(
-            (cmd: { syntax: string }) =>
-              `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
-          )
-          .join('\n');
-        return {
-          name: mod.title,
-          value: '*' + mod.description + '*\n' + cmds,
-          inline: false,
-        };
-      });
+      const chunks = all_command_modules
+        .map((mod) => {
+          const cmds = mod.commands
+            .filter(
+              (command: { permissions: (arg0: Discord.Message) => boolean }) =>
+                command.permissions(msg)
+            )
+            .map(
+              (cmd: { syntax: string }) =>
+                `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
+            )
+            .join('\n');
+          return {
+            name: mod.title,
+            value: '*' + mod.description + '*\n' + cmds,
+            inline: false,
+            cmds: cmds,
+          };
+        })
+        .filter((n) => n.cmds.length);
       //.chunk_inefficient(25);
       msg.channel.send(
         new Discord.MessageEmbed()
