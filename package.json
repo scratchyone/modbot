@@ -32,6 +32,7 @@
   "scripts": {
     "test": "jest",
     "tsc": "tsc",
+    "nearley": "nearleyc ./commands.ne -o ./commands.js",
     "dev": "nearleyc ./commands.ne -o ./commands.js && ts-node-dev --respawn ./main.ts",
     "prod": "tsc && node ./main.js"
   },
