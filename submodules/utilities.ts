@@ -500,11 +500,7 @@ const addemoji = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'addemoji',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_EMOJIS'),
-  responder: async (
-    msg: Discord.Message,
-    cmd: Command,
-    client: Discord.Client
-  ) => {
+  responder: async (msg: Discord.Message, cmd: Command) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
     if (cmd.command !== 'addemoji' || !msg.guild) return;
     let emojiUrl = undefined;
@@ -673,11 +669,7 @@ const embed = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'embed',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (
-    msg: Discord.Message,
-    cmd: Command,
-    client: Discord.Client
-  ) => {
+  responder: async (msg: Discord.Message, cmd: Command) => {
     if (cmd.command !== 'embed' || !msg.guild) return;
     if (cmd.action == 'create') {
       const channel = await util_functions.ask('What channel?', 20000, msg);

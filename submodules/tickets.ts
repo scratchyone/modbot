@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const util_functions = require('../util_functions.js');
-const db = require('better-sqlite3')('perms.db3', {});
-import Discord, { Channel } from 'discord.js';
+import Discord from 'discord.js';
 import { nanoid } from 'nanoid';
-import { util } from 'prettier';
 import { Command } from '../types';
 const ticket = {
   name: 'ticket',
