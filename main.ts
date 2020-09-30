@@ -2607,7 +2607,7 @@ if (process.env.PORT) {
   });
 }
 */
-if (process.env.STATUSTRACKER_URL) {
+if (process.env.STATUSTRACKER_URL && process.env.STATUSTRACKER_TIME_MS) {
   const reportStatus = async () => {
     try {
       const res = await (
@@ -2632,5 +2632,5 @@ if (process.env.STATUSTRACKER_URL) {
   reportStatus();
   setInterval(async () => {
     await reportStatus();
-  }, parseInt(process.env.STATUSTRACKER_TIME_MS!));
+  }, parseInt(process.env.STATUSTRACKER_TIME_MS));
 }
