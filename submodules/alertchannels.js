@@ -1,6 +1,5 @@
 const db = require('better-sqlite3')('perms.db3', {});
 let util_functions = require('../util_functions.js');
-const Discord = require('discord.js');
 exports.check_for_alert_channel = db.prepare(
   'SELECT * FROM alert_channels WHERE server=?'
 );
@@ -20,16 +19,16 @@ let alertchannel = {
         msg.guild.id
       );
       msg.channel.send(
-        `Disabled alert channel warning message. I strongly encourage you to setup an alert channel, it is very important`
+        'Disabled alert channel warning message. I strongly encourage you to setup an alert channel, it is very important'
       );
     } else if (cmd.action === 'enable') {
       util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
       if (exports.check_for_alert_channel.get(msg.guild.id)) {
         msg.channel.send(
-          `An alert channel already exists! You can remove it with \`m: alertchannel disable\``
+          'An alert channel already exists! You can remove it with `m: alertchannel disable`'
         );
       } else {
-        msg.channel.send(`What should the channel be named?`);
+        msg.channel.send('What should the channel be named?');
         let channel_name = await msg.channel.awaitMessages(
           (m) => m.author.id == msg.author.id,
           {
@@ -42,7 +41,7 @@ let alertchannel = {
           return;
         }
         msg.channel.send(
-          `What role should be allowed to view it? (Probably your moderator role)`
+          'What role should be allowed to view it? (Probably your moderator role)'
         );
         let role = await msg.channel.awaitMessages(
           (m) => m.author.id == msg.author.id,
@@ -97,7 +96,7 @@ let alertchannel = {
       }
     } else if (cmd.action === 'disable') {
       if (!exports.check_for_alert_channel.get(msg.guild.id)) {
-        msg.channel.send(`An alert channel doesn't exist in this server!`);
+        msg.channel.send("An alert channel doesn't exist in this server!");
       } else {
         try {
           await client.channels.cache
@@ -108,7 +107,7 @@ let alertchannel = {
           msg.guild.id
         );
 
-        await msg.channel.send(util_functions.desc_embed(`Disabled!`));
+        await msg.channel.send(util_functions.desc_embed('Disabled!'));
       }
     }
   },

@@ -249,9 +249,9 @@ let starboardCommand = {
             allow: ['SEND_MESSAGES'],
           },
         ]);
-        await msg.channel.send(util_functions.desc_embed(`Fixed permissions`));
+        await msg.channel.send(util_functions.desc_embed('Fixed permissions'));
       } else {
-        await msg.channel.send(util_functions.desc_embed(`No starboard found`));
+        await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
     } else if (cmd.action === 'disable') {
       let sb = db
@@ -281,12 +281,12 @@ let starboardCommand = {
               msg.guild.id
             );
             await msg.channel.send(
-              util_functions.desc_embed(`Deleted starboard`)
+              util_functions.desc_embed('Deleted starboard')
             );
           }
         }
       } else {
-        await msg.channel.send(util_functions.desc_embed(`No starboard found`));
+        await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
     } else if (cmd.action === 'configure') {
       let sb = db
@@ -326,7 +326,7 @@ let starboardCommand = {
           }
         }
       } else {
-        await msg.channel.send(util_functions.desc_embed(`No starboard found`));
+        await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
     }
   },
@@ -338,7 +338,7 @@ let starGetCommand = {
   long_explanation: 'Get a message from the starboard',
   matcher: (cmd) => cmd.command == 'star',
   simplematcher: (cmd) => cmd[0] === 'star',
-  permissions: (msg) => true,
+  permissions: () => true,
   responder: async (msg, cmd, client) => {
     let sb = db
       .prepare('SELECT * FROM starboards WHERE server=?')

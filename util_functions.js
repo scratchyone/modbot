@@ -110,12 +110,13 @@ async function embed_options(title, options, set, message, time) {
 async function cleanPings(text, guild) {
   let cleaned = text.split('@everyone').join('@​​everyone');
   let role_pings = [...cleaned.matchAll(/<@&[0-9]+>/g)];
-  for (ping of role_pings) {
+  for (const ping of role_pings) {
     let pinged_role = guild.roles.cache.get(
       ping.toString().replace('<@&', '').replace('>', '')
     );
     if (pinged_role.name != 'here')
       cleaned = cleaned.replace(ping, `@${pinged_role.name}`);
+    // eslint-disable-next-line no-irregular-whitespace
     else cleaned = cleaned.replace(ping, `@​${pinged_role.name}`);
   }
 
@@ -201,7 +202,6 @@ exports.fillStringVars = (text) => {
   return text;
 };
 const { Structures } = require('discord.js');
-const { check } = require('prettier');
 Structures.extend('Guild', (Guild) => {
   return class EGuild extends Guild {
     constructor(client, guild) {
@@ -269,7 +269,7 @@ exports.EMessage = class EMessage extends Discord.Message {
     }
   }
 };
-Structures.extend('Message', (Message) => {
+Structures.extend('Message', () => {
   return exports.EMessage;
 });
 function sleep(ms) {

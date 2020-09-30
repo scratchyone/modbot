@@ -10,7 +10,7 @@ let setupmute = {
   matcher: (cmd) => cmd.command == 'setupmute',
   simplematcher: (cmd) => cmd[0] === 'setupmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
-  responder: async (msg, cmd) => {
+  responder: async (msg) => {
     if (
       !db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
     ) {

@@ -83,7 +83,7 @@ let automod = {
         msg.guild.id
       );
       await msg.channel.send(
-        util_functions.desc_embed(`Disabled AutoMod and deleted all triggers!`)
+        util_functions.desc_embed('Disabled AutoMod and deleted all triggers!')
       );
     } else if (cmd.action === 'add') {
       if (
@@ -232,7 +232,7 @@ exports.checkForTriggers = async (msg) => {
           realMember ? realMember.roles.highest.position < role.position : true
         ) {
           let punishments_sorted = JSON.parse(trigger.punishments);
-          punishments_sorted.sort((x, y) => (x.action === 'delete' ? -1 : 0));
+          punishments_sorted.sort((x) => (x.action === 'delete' ? -1 : 0));
           for (let punishment of JSON.parse(trigger.punishments)) {
             if (punishment.action === 'delete') {
               try {
@@ -290,7 +290,7 @@ exports.checkForTriggers = async (msg) => {
           let channel = msg.guild.channels.cache.get(am.channel);
           if (!channel) {
             msg.channel.send(
-              util_functions.desc_embed(`Error: Log channel doesn't exist`)
+              util_functions.desc_embed("Error: Log channel doesn't exist")
             );
             return;
           }
