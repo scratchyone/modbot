@@ -304,14 +304,14 @@ const main_commands = {
             id: cmd.id,
           });
           await msg.channel.send(
-            `You will be notifed when the reminder is ready!`
+            'You will be notifed when the reminder is ready!'
           );
         } else if (cmd.action === 'cancel') {
           await Types.Reminder.query()
             .delete()
             .where('author', msg.author.id)
             .where('id', cmd.id);
-          await msg.channel.send(`Cancelled!`);
+          await msg.channel.send('Cancelled!');
         }
       },
     },
@@ -1690,10 +1690,10 @@ client.on('ready', async () => {
       const event = JSON.parse(event_item.event);
       if (event.type == 'reminder') {
         try {
-          let res = await Types.Reminder.query()
+          const res = await Types.Reminder.query()
             .where('author', event.user)
             .where('id', event.id);
-          let subs = await Types.ReminderSubscriber.query().where(
+          const subs = await Types.ReminderSubscriber.query().where(
             'id',
             event.id
           );
