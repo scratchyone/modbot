@@ -55,7 +55,7 @@ let setupmute = {
           util_functions.desc_embed('Setting channel overrides')
         );
         let guild_channels = msg.guild.channels.cache.array();
-        for (channel of guild_channels) {
+        for (const channel of guild_channels) {
           try {
             await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
           } catch (e) {
@@ -104,7 +104,7 @@ let setupmute = {
           .get(msg.guild.id);
         let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
         let guild_channels = msg.guild.channels.cache.array();
-        for (channel of guild_channels) {
+        for (const channel of guild_channels) {
           try {
             await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
           } catch (e) {

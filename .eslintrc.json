@@ -19,6 +19,7 @@
     "quotes": ["error", "single", "avoid-escape"],
     "semi": ["error", "always"],
     "no-unused-vars": ["warn"],
-    "@typescript-eslint/no-var-requires": "off"
+    "@typescript-eslint/no-var-requires": "off",
+    "no-empty": "off"
   }
 }
