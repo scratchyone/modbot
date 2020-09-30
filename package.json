@@ -35,7 +35,8 @@
     "nearley": "nearleyc ./commands.ne -o ./commands.js",
     "eslint": "npx eslint . --ext .js,.ts",
     "dev": "nearleyc ./commands.ne -o ./commands.js && ts-node-dev --respawn ./main.ts",
-    "prod": "tsc && node ./main.js"
+    "prod": "tsc && node ./main.js",
+    "clear": "del-cli main.js submodules/utilities.js submodules/tickets.js submodules/moderation.js types.js commands.js discord_elements.js"
   },
   "author": "",
   "license": "ISC",
@@ -68,6 +69,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.2.0",
     "@typescript-eslint/parser": "^4.2.0",
+    "del-cli": "^3.0.1",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^26.4.2",
