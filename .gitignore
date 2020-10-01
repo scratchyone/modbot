@@ -1,13 +1,7 @@
 node_modules
 bot.zip
 commands.js
-discord_elements.js
 perms.db3
 .env
-main.js
-submodules/moderation.js
-submodules/utilities.js
-submodules/tickets.js
-submodules/admin.js
-types.js
+build
 report.*.json
