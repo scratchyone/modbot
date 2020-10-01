@@ -19,7 +19,7 @@ npm install
 npm run nearley # Compile parsing grammar
 npm run tsc # Compile typescript
 npx knex migrate:latest # Runs all DB migrations
-node main.js
+node build/main.js # Make sure to start the bot from the root directory and not the build directory or the DB won't work
 ```
 
 # Contributing

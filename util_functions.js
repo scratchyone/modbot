@@ -108,16 +108,18 @@ async function embed_options(title, options, set, message, time) {
   }
 }
 async function cleanPings(text, guild) {
-  let cleaned = text.split('@everyone').join('@​​everyone');
+  let cleaned = text
+    .split('@everyone')
+    .join('@​​everyone')
+    .split('@here')
+    .join('@​​here');
   let role_pings = [...cleaned.matchAll(/<@&[0-9]+>/g)];
   for (const ping of role_pings) {
     let pinged_role = guild.roles.cache.get(
       ping.toString().replace('<@&', '').replace('>', '')
     );
-    if (pinged_role.name != 'here')
-      cleaned = cleaned.replace(ping, `@${pinged_role.name}`);
     // eslint-disable-next-line no-irregular-whitespace
-    else cleaned = cleaned.replace(ping, `@​${pinged_role.name}`);
+    cleaned = cleaned.replace(ping, `@​${pinged_role.name}`);
   }
 
   return cleaned;
