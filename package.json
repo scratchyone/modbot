@@ -30,13 +30,13 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "npm run clear && npm run eslint && npm run tsc && npm run nearley && npm run clear",
-    "tsc": "tsc",
+    "test": "npm run clear && npm run eslint && npm run nearley && npm run tsc && npm run clear",
+    "tsc": "copyfiles package.json build && tsc",
     "nearley": "nearleyc ./commands.ne -o ./commands.js",
     "eslint": "npx eslint . --ext .js,.ts",
-    "dev": "nearleyc ./commands.ne -o ./commands.js && ts-node-dev --respawn ./main.ts",
-    "prod": "tsc && node ./main.js",
-    "clear": "npx del-cli main.js submodules/utilities.js submodules/tickets.js submodules/moderation.js submodules/admin.js types.js commands.js discord_elements.js"
+    "build": "npm run clear && npm run nearley && npm run tsc",
+    "dev": "npm run nearley && ts-node-dev --respawn ./main.ts",
+    "clear": "npx del-cli build/ commands.js"
   },
   "author": "",
   "license": "ISC",
@@ -66,6 +66,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.3.0",
     "@typescript-eslint/parser": "^4.3.0",
+    "copyfiles": "^2.3.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^26.4.2"
   }
