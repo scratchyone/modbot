@@ -18,78 +18,21 @@ const invite = {
     );
   },
 };
-function createPollAttachment(votes: { up: number; down: number }) {
-  const canvas = Canvas.createCanvas(320, 194);
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'white';
-  ctx.rect(0, 0, 320, 194);
-  ctx.fill();
-  if (votes.up == 0 && votes.down == 0) {
-    ctx.fillStyle = '#4397C7';
-    roundRect(ctx, 40, 74, 240, 46, 5, true, false);
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '500 27px Roboto';
-    ctx.fillText('No Votes', 320 / 2, 107);
-  } else {
-    ctx.fillStyle = '#45CE39';
-    roundRect(ctx, 40, 74, 240, 46, 5, true, false);
-    if (votes.down) {
-      ctx.fillStyle = '#CE3939';
-      roundRect(
-        ctx,
-        40,
-        74,
-        240 * (votes.down / (votes.down + votes.up)),
-        46,
-        5,
-        true,
-        false
-      );
-    }
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#535353';
-    ctx.font = '600 20px Roboto';
-    if (votes.up >= votes.down)
-      ctx.fillText(
-        Math.round((votes.up / (votes.down + votes.up)) * 100) + '% In Favor',
-        320 / 2,
-        60
-      );
-    else
-      ctx.fillText(
-        Math.round((votes.down / (votes.down + votes.up)) * 100) + '% Against',
-        320 / 2,
-        60
-      );
-    ctx.textAlign = 'left';
-    ctx.fillText(votes.down + ' Against', 40, 145);
-    ctx.textAlign = 'right';
-    ctx.fillText(votes.up + ' In Favor', 278, 145);
-  }
-  const attachment = new Discord.MessageAttachment(
-    canvas.toBuffer(),
-    'image.png'
-  );
-  return attachment;
-}
-exports.createPollAttachment = createPollAttachment;
-exports.reRenderPoll = async (
-  message: Discord.Message,
-  client: Discord.Client
-) => {
+exports.reRenderPoll = async (message: Discord.Message) => {
   try {
-    const attachment = createPollAttachment({
-      up:
-        (message.reactions.cache.array().filter((r) => r.emoji.name == '👍')[0]
-          .count || 1) - 1,
-      down:
-        (message.reactions.cache.array().filter((r) => r.emoji.name == '👎')[0]
-          .count || 1) - 1,
-    });
-    const [iurl] = await util_functions.attachmentToUrl(attachment, client);
     await message.edit({
-      embed: message.embeds[0].setImage(iurl),
+      embed: message.embeds[0].setImage(
+        'http://34.121.173.137/?up=' +
+          ((message.reactions.cache
+            .array()
+            .filter((r) => r.emoji.name == '👍')[0].count || 1) -
+            1) +
+          '&down=' +
+          ((message.reactions.cache
+            .array()
+            .filter((r) => r.emoji.name == '👎')[0].count || 1) -
+            1)
+      ),
     });
   } catch (e) {
     console.log(e);
@@ -102,11 +45,7 @@ const poll = {
   matcher: (cmd: Command) => cmd.command == 'poll',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
   permissions: () => true,
-  responder: async (
-    msg: Discord.Message,
-    cmd: Command,
-    client: Discord.Client
-  ) => {
+  responder: async (msg: Discord.Message, cmd: Command) => {
     if (cmd.command !== 'poll') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     try {
@@ -116,16 +55,14 @@ const poll = {
       'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
     );
     setTimeout(() => warning.delete(), 8000);
-    const attachment = createPollAttachment({ up: 0, down: 0 });
-    const [iurl] = await util_functions.attachmentToUrl(attachment, client);
     const pollMsg = await msg.channel.send(
       new Discord.MessageEmbed()
         .setAuthor(
           msg.member?.displayName || msg.author.username,
-          await msg.author.displayAvatarURL()
+          msg.author.displayAvatarURL()
         )
         .setTitle(cmd.text)
-        .setImage(iurl)
+        .setImage('http://34.121.173.137/?up=' + 0 + '&down=' + 0)
     );
     await pollMsg.react('👍');
     await pollMsg.react('👎');
@@ -305,41 +242,6 @@ const prefix = {
 function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
-function roundRect(
-  ctx: Canvas.CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  rradius: number,
-  fill: boolean,
-  stroke: boolean
-) {
-  const radius = { tl: rradius, tr: rradius, br: rradius, bl: rradius };
-  ctx.beginPath();
-  ctx.moveTo(x + radius.tl, y);
-  ctx.lineTo(x + width - radius.tr, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
-  ctx.lineTo(x + width, y + height - radius.br);
-  ctx.quadraticCurveTo(
-    x + width,
-    y + height,
-    x + width - radius.br,
-    y + height
-  );
-  ctx.lineTo(x + radius.bl, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
-  ctx.lineTo(x, y + radius.tl);
-  ctx.quadraticCurveTo(x, y, x + radius.tl, y);
-  ctx.closePath();
-  if (fill) {
-    ctx.fill();
-  }
-  if (stroke) {
-    ctx.stroke();
-  }
-}
-
 const userpic = {
   name: 'userpic',
   syntax: 'm: userpic',

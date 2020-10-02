@@ -7,7 +7,6 @@ Create .env and fill in the tokens and port:
 ```powershell
 DISCORD_TOKEN # Required
 SENTRY_TOKEN # Optional
-UPLOAD_CHANNEL # ID of channel used to upload images to discord cdn, optional but required for poll command to work
 SUGGESTIONMANAGER_URL # Base URL of suggestionmanager backend, optional but required for suggestion command to work
 SUGGESTIONMANAGER_TOKEN # Token from url for submit suggestion page on suggestionmanager, optional but required for suggestion command to work
 ```
