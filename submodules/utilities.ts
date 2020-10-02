@@ -64,6 +64,9 @@ const poll = {
         .setTitle(cmd.text)
         .setImage('http://34.121.173.137/?up=' + 0 + '&down=' + 0)
     );
+    await msg.channel.send(
+      'Sorry, polls are currently under maintenance. You can still accept votes but the picture might not be displayed'
+    );
     await pollMsg.react('👍');
     await pollMsg.react('👎');
     db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);

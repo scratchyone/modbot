@@ -77,7 +77,7 @@ exports.commandModule = {
   cog: async (client) => {
     client.on('message', async (msg) => {
       let slowmodeRes = getChannelSlowmode.get(msg.channel.id);
-      if (slowmodeRes)
+      if (slowmodeRes && msg.member)
         if (
           (msg.member.hasPermission('MANAGE_MESSAGES') &&
             !slowmodeRes.delete_mm) ||
