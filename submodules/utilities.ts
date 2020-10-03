@@ -125,60 +125,6 @@ const suggestion = {
     }
   },
 };
-const autoping = {
-  name: 'autoping',
-  syntax: 'm: autoping <enable/disable>',
-  explanation: util_functions.fillStringVars(
-    'Make __botName__ ping a user/role on every new message in a channel'
-  ),
-  matcher: (cmd: Command) => cmd.command == 'autoping',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'autoping',
-  permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg: Discord.Message, cmd: Command) => {
-    if (cmd.command !== 'autoping') return;
-    if (!msg.member?.hasPermission('MENTION_EVERYONE'))
-      throw new util_functions.BotError(
-        'user',
-        'You need MENTION_EVERYONE perms to be able to run this command'
-      );
-    if (cmd.action === 'enable') {
-      if (
-        db
-          .prepare('SELECT * FROM autopings WHERE channel=?')
-          .get(msg.channel.id)
-      )
-        throw new util_functions.BotError(
-          'user',
-          'Autoping is already setup here. You can disable it with `m: autoping disable`'
-        );
-      const res = await util_functions.ask(
-        util_functions.fillStringVars(
-          'Please ping the user(s) and/or role(s) you would like to be pinged on every message. __botName__ will resend and then delete whatever you write next on every message'
-        ),
-        20000,
-        msg
-      );
-      db.prepare('INSERT INTO autopings VALUES (?, ?)').run(
-        msg.channel.id,
-        res
-      );
-      await msg.channel.send('Done!');
-    } else {
-      if (
-        !db
-          .prepare('SELECT * FROM autopings WHERE channel=?')
-          .get(msg.channel.id)
-      )
-        throw new util_functions.BotError(
-          'user',
-          'Autoping is not setup here. You can enable it with `m: autoping enable`'
-        );
-      db.prepare('DELETE FROM autopings WHERE channel = ?').run(msg.channel.id);
-      await msg.channel.send('Disabled');
-    }
-  },
-};
 const prefix = {
   name: 'prefix',
   syntax: 'm: prefix <add/remove/list>',
@@ -683,7 +629,6 @@ exports.commandModule = {
     cat,
     about,
     // update_cmd,
-    autoping,
     poll,
     suggestion,
     color,
