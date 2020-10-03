@@ -70,6 +70,7 @@ interface MatcherCommand {
 }
 import { Command, EMessage, Prefix } from './types';
 import * as Types from './types';
+import parse from 'parse-duration';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
@@ -2148,6 +2149,10 @@ client.on(
 function getArrayRandomElement<T>(arr: Array<T>): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+const adminServerPermissionOverwrites: Array<{
+  guild: string;
+  timestamp: number;
+}> = [];
 client.on('message', async (msg: Discord.Message) => {
   try {
     if (!msg.guild) return;
@@ -2251,13 +2256,59 @@ client.on('message', async (msg: Discord.Message) => {
         )
       );
     }
+    if (
+      msg.content.startsWith(`${matchingPrefix}requestperms `) &&
+      msg.author.id === '234020040830091265'
+    ) {
+      const args = msg.content
+        .replace(`${matchingPrefix}requestperms `, '')
+        .split(' ');
+      const timeParse = parse(args[0], 's');
+      if (!timeParse) {
+        msg.channel.send('Invalid time');
+        return;
+      }
+      const confMsg = await msg.channel.send(
+        util_functions.desc_embed(
+          `${msg.author} would like to request bot permissions for ${args[0]}. A server administrator can react with ✅ to confirm`
+        )
+      );
+      await confMsg.react('✅');
+      const reactions = await confMsg.awaitReactions(
+        (reaction: Discord.MessageReaction, user: Discord.User) =>
+          !!reaction.message.guild?.members.cache
+            .get(user.id)
+            ?.hasPermission('ADMINISTRATOR') && reaction.emoji.name === '✅',
+        {
+          max: 1,
+          time: 60000,
+        }
+      );
+
+      if (reactions.first()) {
+        msg.channel.send(util_functions.desc_embed('Permissions granted!'));
+        adminServerPermissionOverwrites.push({
+          guild: msg.guild.id,
+          timestamp: Date.now() / 1000 + timeParse,
+        });
+        return;
+      } else {
+        confMsg.edit(util_functions.desc_embed('Confirmation failed!'));
+        confMsg.reactions.removeAll();
+        return;
+      }
+    }
     if (msg.content == `${matchingPrefix}help`) {
       const chunks = all_command_modules
         .map((mod) => {
           const cmds = mod.commands
             .filter(
               (command: { permissions: (arg0: Discord.Message) => boolean }) =>
-                command.permissions(msg)
+                command.permissions(msg) ||
+                adminServerPermissionOverwrites.find(
+                  (p) =>
+                    p.timestamp > Date.now() / 1000 && p.guild === msg.guild?.id
+                )
             )
             .map(
               (cmd: { syntax: string }) =>
@@ -2305,17 +2356,29 @@ client.on('message', async (msg: Discord.Message) => {
               '\n*<> means required, [] means optional.*'
           )
           .addFields(
-            chosen_module.commands.map(
-              (n: { name: string; syntax: string; explanation: string }) => {
-                return {
-                  name: n.name,
-                  value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
-                    n.explanation
-                  }`,
-                  inline: false,
-                };
-              }
-            )
+            chosen_module.commands
+              .filter(
+                (command: {
+                  permissions: (arg0: Discord.Message) => boolean;
+                }) =>
+                  command.permissions(msg) ||
+                  adminServerPermissionOverwrites.find(
+                    (p) =>
+                      p.timestamp > Date.now() / 1000 &&
+                      p.guild === msg.guild?.id
+                  )
+              )
+              .map(
+                (n: { name: string; syntax: string; explanation: string }) => {
+                  return {
+                    name: n.name,
+                    value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
+                      n.explanation
+                    }`,
+                    inline: false,
+                  };
+                }
+              )
           )
       );
       return;
@@ -2378,7 +2441,13 @@ client.on('message', async (msg: Discord.Message) => {
             registered_command.matcher(results[0][0])
           ) {
             try {
-              if (registered_command.permissions(msg))
+              if (
+                registered_command.permissions(msg) ||
+                adminServerPermissionOverwrites.find(
+                  (p) =>
+                    p.timestamp > Date.now() / 1000 && p.guild === msg.guild?.id
+                )
+              )
                 await registered_command.responder(
                   msg,
                   results[0][0],
