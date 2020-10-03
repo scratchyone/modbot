@@ -95,7 +95,7 @@ async function genSBMessage(message) {
         .setAuthor(msg_username, await message.author.displayAvatarURL())
         .setDescription(desc + '\n\n**[Source](' + message.url + ')**'),
     };
-  else if (!isImage)
+  else if (!isImage && image)
     return {
       content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
         message.channel.name
