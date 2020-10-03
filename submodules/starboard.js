@@ -75,6 +75,11 @@ async function genSBMessage(message) {
     image = message.embeds[0].url;
     if (message.content.includes('||')) spoiler = true;
   }
+  let isImage =
+    image &&
+    ['png', 'jpeg', 'gif', 'jpg', 'tiff'].includes(
+      image.split('.')[image.split('.').length - 1]
+    );
   if (spoiler)
     return {
       content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
@@ -84,6 +89,21 @@ async function genSBMessage(message) {
         new Discord.MessageAttachment(
           image,
           'SPOILER_image.' + image.split('.')[image.split('.').length - 1]
+        ),
+      ],
+      embed: new Discord.MessageEmbed()
+        .setAuthor(msg_username, await message.author.displayAvatarURL())
+        .setDescription(desc + '\n\n**[Source](' + message.url + ')**'),
+    };
+  else if (!isImage)
+    return {
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
+        message.channel.name
+      } `,
+      files: [
+        new Discord.MessageAttachment(
+          image,
+          'vid.' + image.split('.')[image.split('.').length - 1]
         ),
       ],
       embed: new Discord.MessageEmbed()
