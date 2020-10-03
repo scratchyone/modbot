@@ -62,10 +62,9 @@ const poll = {
           msg.author.displayAvatarURL()
         )
         .setTitle(cmd.text)
-        .setImage('http://34.121.173.137/?up=' + 0 + '&down=' + 0)
-    );
-    await msg.channel.send(
-      'Sorry, polls are currently under maintenance. You can still accept votes but the picture might not be displayed'
+        .setImage(
+          'https://modbot.scratchyone.com/pollgen/?up=' + 0 + '&down=' + 0
+        )
     );
     await pollMsg.react('👍');
     await pollMsg.react('👎');
