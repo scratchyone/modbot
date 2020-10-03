@@ -267,47 +267,48 @@ const main_commands = {
       name: 'reminder',
       syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID> / copy <ID>',
       explanation: 'Set/cancel/copy a reminder',
+      version: 2,
       matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
       permissions: () => true,
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'reminder') return;
         if (cmd.action === 'add') {
           const id = nanoid.nanoid(5);
           await Types.Reminder.query().insert({
-            author: msg.author.id,
+            author: ctx.msg.author.id,
             id,
           });
           util_functions.schedule_event(
             {
               type: 'reminder',
-              text: await util_functions.cleanPings(cmd.text, msg.guild),
-              channel: msg.channel.id,
-              user: msg.author.id,
+              text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
+              channel: ctx.msg.channel.id,
+              user: ctx.msg.author.id,
               id,
             },
             cmd.time
           );
-          await msg.channel.send(
-            `Set reminder, you can cancel it with \`m: reminder cancel ${id}\`, or somebody else can run \`m: reminder copy ${id}\` to also get reminded`
+          await ctx.msg.channel.send(
+            `Set reminder, you can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`
           );
         } else if (cmd.action === 'copy') {
           const orig = await Types.Reminder.query().where('id', cmd.id);
           if (!orig.length)
             throw new util_functions.BotError('user', 'Reminder not found');
           await Types.ReminderSubscriber.query().insert({
-            user: msg.author.id,
+            user: ctx.msg.author.id,
             id: cmd.id,
           });
-          await msg.channel.send(
+          await ctx.msg.channel.send(
             'You will be notifed when the reminder is ready!'
           );
         } else if (cmd.action === 'cancel') {
           await Types.Reminder.query()
             .delete()
-            .where('author', msg.author.id)
+            .where('author', ctx.msg.author.id)
             .where('id', cmd.id);
-          await msg.channel.send('Cancelled!');
+          await ctx.msg.channel.send('Cancelled!');
         }
       },
     },
@@ -2448,17 +2449,29 @@ client.on('message', async (msg: Discord.Message) => {
                     p.timestamp > Date.now() / 1000 && p.guild === msg.guild?.id
                 )
               )
-                await registered_command.responder(
-                  msg,
-                  results[0][0],
-                  client,
-                  db
-                );
+                if (registered_command.version === 2)
+                  await registered_command.responder(
+                    new Types.Context(
+                      msg,
+                      await util_functions.cleanPings(matchingPrefix),
+                      client
+                    ),
+                    results[0][0],
+                    client,
+                    db
+                  );
+                else
+                  await registered_command.responder(
+                    msg,
+                    results[0][0],
+                    client,
+                    db
+                  );
             } catch (e) {
               if (e.type == 'user') {
                 await msg.channel.send(util_functions.desc_embed(e.message));
                 await msg.channel.send(
-                  'Use `m: support` to get an invite to the support server'
+                  `Use \`${matchingPrefix}support\` to get an invite to the support server`
                 );
               } else if (e.type == 'bot') {
                 await msg.channel.send(
@@ -2489,7 +2502,7 @@ client.on('message', async (msg: Discord.Message) => {
                   )
                 );
                 await msg.channel.send(
-                  'Use `m: support` to get an invite to the support server'
+                  `Use \`${matchingPrefix}support\` to get an invite to the support server`
                 );
               } else {
                 console.log(e);
@@ -2528,7 +2541,7 @@ client.on('message', async (msg: Discord.Message) => {
                     )
                   );
                   await msg.channel.send(
-                    'Use `m: support` to get an invite to the support server'
+                    `Use \`${matchingPrefix}support\` to get an invite to the support server`
                   );
                 }
               }

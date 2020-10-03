@@ -1,5 +1,6 @@
 import Discord from 'discord.js';
 import { Model } from 'objection';
+const util_functions = require('./util_functions');
 export type Command =
   | {
       command: 'pin';
@@ -228,6 +229,7 @@ export type Command =
     };
 export interface EMessage extends Discord.Message {
   isPoll: boolean;
+  guild: EGuild;
 }
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
@@ -251,5 +253,15 @@ export class ReminderSubscriber extends Model {
   id!: string;
   static get tableName(): string {
     return 'reminderSubscribers';
+  }
+}
+export class Context {
+  msg: EMessage;
+  prefix: string;
+  client: Discord.Client;
+  constructor(msg: Discord.Message, prefix: string, client: Discord.Client) {
+    this.msg = msg as EMessage;
+    this.prefix = prefix;
+    this.client = client;
   }
 }
