@@ -1,7 +1,7 @@
 @include "./discord_elements.ne"
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
-unlockdown | autoping | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce
+unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce
 ) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -42,7 +42,6 @@ cat -> "cat" {% (n)=>{return {command: "cat"}}%}
 about -> "about" {% (n)=>{return {command: "about"}}%}
 lockdown -> "lockdown" (__ word):? {% (n)=>{return {command: "lockdown", time: n[1] ? n[1][1] : null}}%}
 unlockdown -> "unlockdown" __ channel {% (n)=>{return {command: "unlockdown", channel: n[2]}}%}
-autoping -> "autoping" __ ("enable" | "disable") {% (n)=>{return {command: "autoping", action: n[2][0]}}%}
 poll -> "poll" __ anything {% n => {return {command: "poll", text: n[2]}} %}
 color -> "color" __ anything {% n => {return {command: "color", color: n[2]}} %}
 automod -> "automod" __ ("enable" | "disable" | "list" | "add" | "remove" | "inspect") {% (n)=>{return {command: "automod", action: n[2][0]}}%}

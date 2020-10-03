@@ -191,10 +191,6 @@ export type Command =
       channel: string;
     }
   | {
-      command: 'autoping';
-      action: 'enable' | 'disable';
-    }
-  | {
       command: 'poll';
       text: string;
     }
