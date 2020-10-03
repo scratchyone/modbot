@@ -22,7 +22,7 @@ exports.reRenderPoll = async (message: Discord.Message) => {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
-        'https://modbot.scratchyone.com/pollgen/?up=' +
+        'https://modbot.scratchyone.com/mediagen/poll?up=' +
           ((message.reactions.cache
             .array()
             .filter((r) => r.emoji.name == '👍')[0].count || 1) -
@@ -63,7 +63,7 @@ const poll = {
         )
         .setTitle(cmd.text)
         .setImage(
-          'https://modbot.scratchyone.com/pollgen/?up=' + 0 + '&down=' + 0
+          'https://modbot.scratchyone.com/mediagen/poll?up=' + 0 + '&down=' + 0
         )
     );
     await pollMsg.react('👍');
