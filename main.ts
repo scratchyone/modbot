@@ -2091,7 +2091,6 @@ client.on('guildMemberAdd', async (member) => {
         .role
     );
 });
-const check_autopings = db.prepare('SELECT * FROM autopings WHERE channel=?');
 client.on('messageUpdate', async (omsg, nmsg) => {
   if (nmsg.partial) {
     // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
@@ -2177,8 +2176,6 @@ client.on('message', async (msg: Discord.Message) => {
     if (msg.author.id === client.user.id) return;
     await automod.checkForTriggers(msg);
     if (msg.author.bot) return;
-    const ap = check_autopings.get(msg.channel.id);
-    if (ap) await (await msg.channel.send(ap.message)).delete();
     /*if (msg.author.id == '671486892457590846') {
       const Canvas = require('canvas');
       const canvas = Canvas.createCanvas(502, 453);
