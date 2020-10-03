@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const db = require('better-sqlite3')('perms.db3', {});
 const util_functions = require('../util_functions.js');
+import moment from 'moment';
 import Discord from 'discord.js';
 import { Command, EGuild, Prefix } from '../types';
 import Canvas from 'canvas';
@@ -336,7 +337,9 @@ const about = {
           (msg.guild as EGuild).hasPluralKit
             ? ' ModBot is designed to work well with PluralKit.'
             : ''
-        }`
+        } ModBot was last restarted ${moment
+          .duration(process.uptime() * -1)
+          .humanize(true)}`
       )
     );
   },
