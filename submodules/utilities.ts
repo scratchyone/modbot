@@ -22,7 +22,7 @@ exports.reRenderPoll = async (message: Discord.Message) => {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
-        'http://34.121.173.137/?up=' +
+        'https://modbot.scratchyone.com/pollgen/?up=' +
           ((message.reactions.cache
             .array()
             .filter((r) => r.emoji.name == '👍')[0].count || 1) -
