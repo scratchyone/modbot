@@ -21,7 +21,7 @@ const invite = {
           'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
         )
         .setTitle('Click here to invite ModBot to your server')
-        .setDescription('Thank you for using ModBot!')
+        .setDescription('Thank you for using ModBot! <:pOg:759186176094765057>')
         .setColor('#9168a6')
         .setFooter(
           process.env.AUTHOR_NAME
