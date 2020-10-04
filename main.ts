@@ -1867,6 +1867,7 @@ client.on('ready', async () => {
 
 client.on('messageReactionAdd', async (reaction, user) => {
   const message = reaction.message as util_functions.EMessage;
+  if (user.id === client.user?.id) return;
   try {
     // When we receive a reaction we check if the reaction is partial or not
     if (reaction.partial) {
