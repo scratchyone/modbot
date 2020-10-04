@@ -379,21 +379,28 @@ const about = {
     client: Discord.Client
   ) => {
     await msg.channel.send(
-      util_functions.desc_embed(
-        `ModBot v${require('../package.json').version} is in ${
-          client.guilds.cache.array().length
-        } servers, with ${
-          client.channels.cache
-            .array()
-            .filter((channel) => channel.type === 'text').length
-        } channels, and ${client.users.cache.array().length} users.${
-          (msg.guild as EGuild).hasPluralKit
-            ? ' ModBot is designed to work well with PluralKit.'
-            : ''
-        } ModBot was last restarted ${moment
-          .duration(process.uptime() * -1000)
-          .humanize(true)}`
-      )
+      new Discord.MessageEmbed()
+        .setTitle('About ModBot')
+        .setDescription(
+          `ModBot v${require('../package.json').version} is in ${
+            client.guilds.cache.array().length
+          } servers, with ${
+            client.channels.cache
+              .array()
+              .filter((channel) => channel.type === 'text').length
+          } channels, and ${client.users.cache.array().length} users.${
+            (msg.guild as EGuild).hasPluralKit
+              ? ' ModBot is designed to work well with PluralKit.'
+              : ''
+          } ModBot was last restarted ${moment
+            .duration(process.uptime() * -1000)
+            .humanize(true)}`
+        )
+        .setFooter(
+          process.env.AUTHOR_NAME
+            ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
+            : 'Made with ❤️'
+        )
     );
   },
 };
