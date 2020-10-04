@@ -1,5 +1,5 @@
 const db = require('better-sqlite3')('perms.db3', {});
-let util_functions = require('../util_functions.js');
+let util_functions = require('../util_functions');
 const Discord = require('discord.js');
 exports.onStarReactRemove = async (reaction, client) => {
   if (

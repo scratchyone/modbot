@@ -264,3 +264,9 @@ export class Context {
     this.client = client;
   }
 }
+export class Poll extends Model {
+  message!: string;
+  static get tableName(): string {
+    return 'polls';
+  }
+}

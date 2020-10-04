@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const util_functions = require('../util_functions.js');
+const util_functions = require('../util_functions');
 const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command } from '../types';

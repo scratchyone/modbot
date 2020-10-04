@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const util_functions = require('../util_functions.js');
+const util_functions = require('../util_functions');
 import Discord from 'discord.js';
 import { nanoid } from 'nanoid';
 import { Command } from '../types';

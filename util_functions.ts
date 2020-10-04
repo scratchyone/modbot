@@ -1,8 +1,9 @@
-const Discord = require('discord.js');
-var parse_duration = require('parse-duration');
+import Discord from 'discord.js';
+const parse_duration = require('parse-duration');
 const db = require('better-sqlite3')('perms.db3', {});
-const fetch = require('node-fetch');
-let captcha_emojis = [
+const node_fetch = require('node-fetch');
+import * as Types from './types';
+const captcha_emojis = [
   '⏺️',
   '🟠',
   '🟣',
@@ -15,33 +16,33 @@ let captcha_emojis = [
   '📅',
   '💯',
 ];
-function randomIntFromInterval(min, max) {
+function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
-function desc_embed(text) {
+function desc_embed(text: string) {
   return new Discord.MessageEmbed().setDescription(text);
 }
-function schedule_event(event, time) {
+function schedule_event(event: unknown, time: string) {
   db.prepare('INSERT INTO timerevents VALUES (@timestamp, @event)').run({
     timestamp: Math.round(Date.now() / 1000) + parse_duration(time, 's'),
     event: JSON.stringify(event),
   });
 }
-function shuffle(a) {
+function shuffle<T>(a: Array<T>) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
-async function confirm(message) {
-  let c_emojis = shuffle(captcha_emojis).slice(0, 6);
-  let item = randomIntFromInterval(0, 5);
-  let msg = await message.channel.send(
+async function confirm(message: Discord.Message) {
+  const c_emojis = shuffle(captcha_emojis).slice(0, 6);
+  const item = randomIntFromInterval(0, 5);
+  const msg = await message.channel.send(
     new Discord.MessageEmbed().setTitle(`Click ${c_emojis[item]} to confirm`)
   );
   for (let i = 0; i < c_emojis.length; i++) msg.react(c_emojis[i]);
-  let reactions = await msg.awaitReactions(
+  const reactions = await msg.awaitReactions(
     (reaction, user) =>
       c_emojis.indexOf(reaction.emoji.name) != -1 &&
       user.id == message.author.id,
@@ -62,20 +63,26 @@ async function confirm(message) {
     return false;
   }
 }
-async function embed_options(title, options, set, message, time) {
-  let n_options = [];
+async function embed_options(
+  title: string,
+  options: string[],
+  set: string[],
+  message: Discord.Message,
+  time: number
+) {
+  const n_options = [];
   for (let i = 0; i < options.length; i++) {
-    if (isNaN(set[i])) n_options.push(set[i] + ' ' + options[i]);
+    if (isNaN(parseInt(set[i]))) n_options.push(set[i] + ' ' + options[i]);
     else n_options.push('<:emoji:' + set[i] + '>' + ' ' + options[i]);
   }
 
-  let msg = await message.channel.send(
+  const msg = await message.channel.send(
     new Discord.MessageEmbed()
       .setTitle(title)
       .setDescription(n_options.join('\n'))
   );
   for (let i = 0; i < options.length; i++) msg.react(set[i]);
-  let reactions = await msg.awaitReactions(
+  const reactions = await msg.awaitReactions(
     (reaction, user) =>
       set.indexOf(reaction.emoji.name) != -1 && user.id == message.author.id,
     {
@@ -107,38 +114,44 @@ async function embed_options(title, options, set, message, time) {
     return null;
   }
 }
-async function cleanPings(text, guild) {
+async function cleanPings(text: string, guild: Discord.Guild) {
   let cleaned = text
     .split('@everyone')
     .join('@​​everyone')
     .split('@here')
     .join('@​​here');
-  let role_pings = [...cleaned.matchAll(/<@&[0-9]+>/g)];
+  const role_pings = [...cleaned.matchAll(/<@&[0-9]+>/g)];
   for (const ping of role_pings) {
-    let pinged_role = guild.roles.cache.get(
+    const pinged_role = guild.roles.cache.get(
       ping.toString().replace('<@&', '').replace('>', '')
     );
-    // eslint-disable-next-line no-irregular-whitespace
-    cleaned = cleaned.replace(ping, `@​${pinged_role.name}`);
+    cleaned = cleaned.replace(
+      ping.toString(),
+      // eslint-disable-next-line no-irregular-whitespace
+      `@​${pinged_role ? pinged_role.name : 'deleted-role'}`
+    );
   }
 
   return cleaned;
 }
-async function checkSelfPermissions(client, guild) {
-  return guild.members.cache.get(client.user.id).hasPermission('ADMINISTRATOR');
-}
-function assertHasPerms(guild, perms) {
-  for (let perm of perms) {
-    if (!guild.me.hasPermission(perm))
+function assertHasPerms(
+  guild: Discord.Guild,
+  perms: Array<Discord.PermissionResolvable>
+) {
+  for (const perm of perms) {
+    if (!guild.me?.hasPermission(perm))
       throw new BotError(
         'user',
         `ModBot needs the ${perm} permission to do this`
       );
   }
 }
-function warnIfNoPerms(msg, perms) {
-  for (let perm of perms) {
-    if (!msg.guild.me.hasPermission(perm))
+function warnIfNoPerms(
+  msg: Discord.Message,
+  perms: Array<Discord.PermissionResolvable>
+) {
+  for (const perm of perms) {
+    if (!msg.guild?.me?.hasPermission(perm))
       msg.channel.send(
         desc_embed(
           `ModBot should have the ${perm} permission for best results, continuing anyways`
@@ -149,9 +162,12 @@ function warnIfNoPerms(msg, perms) {
 exports.warnIfNoPerms = warnIfNoPerms;
 exports.assertHasPerms = assertHasPerms;
 class BotError extends Error {
-  constructor(type, message, ...params) {
+  type: string;
+  message: string;
+  name: string;
+  constructor(type: 'user' | 'bot', message: string) {
     // Pass remaining arguments (including vendor specific ones) to parent constructor
-    super(...params);
+    super();
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
     if (Error.captureStackTrace) {
@@ -164,22 +180,16 @@ class BotError extends Error {
     this.message = message;
   }
 }
-exports.attachmentToUrl = async (attachment, client) => {
-  let uploadChannel = client.channels.cache.get(process.env.UPLOAD_CHANNEL);
-  let imageMessage = await uploadChannel.send(attachment);
-  return [imageMessage.attachments.array()[0].url, imageMessage];
-};
 exports.desc_embed = desc_embed;
 exports.shuffle = shuffle;
 exports.schedule_event = schedule_event;
 exports.embed_options = embed_options;
 exports.confirm = confirm;
 exports.cleanPings = cleanPings;
-exports.checkSelfPermissions = checkSelfPermissions;
 exports.BotError = BotError;
-exports.ask = async (question, time, msg) => {
+exports.ask = async (question: string, time: number, msg: Discord.Message) => {
   await msg.channel.send(question);
-  let sb_name = await msg.channel.awaitMessages(
+  const sb_name = await msg.channel.awaitMessages(
     (m) => m.author.id == msg.author.id,
     {
       max: 1,
@@ -189,37 +199,44 @@ exports.ask = async (question, time, msg) => {
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
   return sb_name.array()[0].content;
 };
-let stringVars = {
+const stringVars = {
   botName: 'ModBot',
 };
-exports.fillStringVars = (text) => {
+exports.fillStringVars = (text: string) => {
   const regex = /__.*__/g;
   const found = text.match(regex);
-  for (let item of found) {
-    text = text.replace(
-      item,
-      stringVars[item.replace('__', '').replace('__', '')]
-    );
-  }
+  if (found)
+    for (const item of found) {
+      if (found.toString() === '__botName__')
+        text = text.replace(
+          item,
+          stringVars[item.replace('__', '').replace('__', '') as 'botName']
+        );
+    }
   return text;
 };
 const { Structures } = require('discord.js');
-Structures.extend('Guild', (Guild) => {
-  return class EGuild extends Guild {
-    constructor(client, guild) {
-      super(client, guild);
-    }
-    get starboard() {
-      return db.prepare('SELECT * FROM starboards WHERE server=?').get(this.id);
-    }
-    get hasPluralKit() {
-      return !!this.members.cache.get('466378653216014359');
-    }
-  };
+class EGuild extends Discord.Guild {
+  constructor(client: Discord.Client, guild: Discord.Guild) {
+    super(client, guild);
+  }
+  get starboard() {
+    return db.prepare('SELECT * FROM starboards WHERE server=?').get(this.id);
+  }
+  get hasPluralKit() {
+    return !!this.members.cache.get('466378653216014359');
+  }
+}
+Structures.extend('Guild', () => {
+  return EGuild;
 });
-let check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
+const check_poll = db.prepare('SELECT * FROM polls WHERE message=?');
 exports.EMessage = class EMessage extends Discord.Message {
-  constructor(client, message, channel) {
+  constructor(
+    client: Discord.Client,
+    message: Discord.Message,
+    channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel
+  ) {
     super(client, message, channel);
   }
   get isPoll() {
@@ -227,10 +244,11 @@ exports.EMessage = class EMessage extends Discord.Message {
   }
   async getPluralKitSender() {
     try {
+      if (!this.guild) return null;
       return this.guild.members.cache.get(
         (
           await (
-            await fetch('https://api.pluralkit.me/v1/msg/' + this.id)
+            await node_fetch('https://api.pluralkit.me/v1/msg/' + this.id)
           ).json()
         ).sender
       );
@@ -240,11 +258,13 @@ exports.EMessage = class EMessage extends Discord.Message {
   }
   async getAnonSender() {
     await sleep(200);
-    let tmp = db.prepare('SELECT * FROM anonmessages WHERE id=?').get(this.id);
-    return tmp ? this.guild.members.cache.get(tmp.user) : null;
+    const tmp = db
+      .prepare('SELECT * FROM anonmessages WHERE id=?')
+      .get(this.id);
+    return tmp ? this.guild?.members.cache.get(tmp.user) : null;
   }
   async isPluralKitMessage() {
-    if (this.webhookID && this.guild.hasPluralKit) {
+    if (this.webhookID && (this.guild as EGuild | undefined)?.hasPluralKit) {
       return !!(await this.getPluralKitSender());
     } else {
       return false;
@@ -259,12 +279,12 @@ exports.EMessage = class EMessage extends Discord.Message {
   }
   async getRealMember() {
     if (this.webhookID) {
-      let anonsender = await this.getAnonSender();
+      const anonsender = await this.getAnonSender();
       if (anonsender) {
         return anonsender;
       }
     }
-    if (this.webhookID && this.guild.hasPluralKit) {
+    if (this.webhookID && (this.guild as EGuild | undefined)?.hasPluralKit) {
       return await this.getPluralKitSender();
     } else {
       return this.member;
@@ -274,6 +294,6 @@ exports.EMessage = class EMessage extends Discord.Message {
 Structures.extend('Message', () => {
   return exports.EMessage;
 });
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const db = require('better-sqlite3')('perms.db3', {});
 const Discord = require('discord.js');
-let util_functions = require('../util_functions.js');
+let util_functions = require('../util_functions');
 let automod = {
   name: 'automod',
   syntax: 'm: automod <enable/disable/add/remove/list>',

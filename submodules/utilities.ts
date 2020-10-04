@@ -1,10 +1,11 @@
 /* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const db = require('better-sqlite3')('perms.db3', {});
-const util_functions = require('../util_functions.js');
+const util_functions = require('../util_functions');
 import moment from 'moment';
 import Discord from 'discord.js';
 import { Command, EGuild, Prefix, Context } from '../types';
+import * as Types from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
 const invite = {
@@ -81,7 +82,7 @@ const poll = {
     );
     await pollMsg.react('👍');
     await pollMsg.react('👎');
-    db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);
+    await Types.Poll.query().insert({ message: pollMsg.id });
   },
 };
 const spoil = {

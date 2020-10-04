@@ -1,5 +1,5 @@
 const db = require('better-sqlite3')('perms.db3', {});
-let util_functions = require('./util_functions.js');
+let util_functions = require('./util_functions');
 let check_anon_channel = db.prepare(
   'SELECT * FROM anonchannels WHERE id=? AND server=?'
 );

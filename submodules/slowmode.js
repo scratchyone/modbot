@@ -1,4 +1,4 @@
-let util_functions = require('../util_functions.js');
+let util_functions = require('../util_functions');
 const db = require('better-sqlite3')('perms.db3', {});
 var parse_duration = require('parse-duration');
 let slowmodeCommand = {
