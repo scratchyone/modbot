@@ -1292,11 +1292,14 @@ const main_commands = {
                 );
                 return;
               }
-              db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
+              db.prepare(
+                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
+              ).run(
                 rr_mes.id,
                 msg.guild.id,
                 em.id,
-                react.role
+                react.role,
+                removable !== 1 ? 1 : 0
               );
               await rr_mes.react(em.id);
             }
