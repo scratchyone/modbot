@@ -19,7 +19,7 @@ const captcha_emojis = [
 export function randomIntFromInterval(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
-export async function desc_embed(text: string): Promise<Discord.MessageEmbed> {
+export function desc_embed(text: string): Discord.MessageEmbed {
   return new Discord.MessageEmbed().setDescription(text);
 }
 export function schedule_event(event: unknown, time: string): void {
