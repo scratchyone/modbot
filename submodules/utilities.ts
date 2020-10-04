@@ -103,9 +103,11 @@ const suggestion = {
               body: JSON.stringify({
                 operationName: 'addSuggestion',
                 variables: {
-                  displayName: msg.member
-                    ? msg.member.displayName
-                    : msg.author.username,
+                  displayName: await util_functions.ask(
+                    'What is your name?',
+                    120000,
+                    msg
+                  ),
                   suggestionText: await util_functions.ask(
                     'What is your suggestion?',
                     120000,
