@@ -1,6 +1,4 @@
 /* eslint-disable no-empty */
-/* eslint-disable @typescript-eslint/no-var-requires */
-const db = require('better-sqlite3')('perms.db3', {});
 const util_functions = require('../util_functions');
 import moment from 'moment';
 import Discord from 'discord.js';
