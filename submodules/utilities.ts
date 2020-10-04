@@ -369,7 +369,7 @@ const about = {
   ) => {
     await msg.channel.send(
       util_functions.desc_embed(
-        `ModBot v${require('./package.json').version} is in ${
+        `ModBot v${require('../package.json').version} is in ${
           client.guilds.cache.array().length
         } servers, with ${
           client.channels.cache
