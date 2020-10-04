@@ -1,6 +1,5 @@
 import Discord from 'discord.js';
 import { Model } from 'objection';
-const util_functions = require('./util_functions');
 export type Command =
   | {
       command: 'pin';

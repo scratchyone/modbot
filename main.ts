@@ -71,7 +71,6 @@ interface MatcherCommand {
 import { Command, EMessage, Prefix } from './types';
 import * as Types from './types';
 import parse from 'parse-duration';
-import { util } from 'prettier';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
