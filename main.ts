@@ -48,7 +48,7 @@ const nanoid = require('nanoid');
 const db = require('better-sqlite3')('perms.db3', {});
 const check_if_can_pin = db.prepare('SELECT * FROM pinners');
 const check_for_ar = db.prepare(
-  'SELECT * FROM autoresponders WHERE prompt=? AND server=?'
+  'SELECT * FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
 );
 const check_for_reactionrole = db.prepare(
   'SELECT * FROM reactionroles WHERE emoji=? AND message=? AND server=?'
@@ -835,7 +835,9 @@ const main_commands = {
             return;
           }
           const rc = db
-            .prepare('DELETE FROM autoresponders WHERE prompt=? AND server=?')
+            .prepare(
+              'DELETE FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
+            )
             .run(prompt.array()[0].content, msg.guild.id);
           if (rc.changes)
             await msg.channel.send(
