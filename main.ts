@@ -71,6 +71,7 @@ interface MatcherCommand {
 import { Command, EMessage, Prefix } from './types';
 import * as Types from './types';
 import parse from 'parse-duration';
+import { util } from 'prettier';
 const main_commands = {
   title: 'Main Commands',
   description: 'All main bot commands',
@@ -1003,6 +1004,13 @@ const main_commands = {
             .array()[0]
             .content.replace('<#', '')
             .replace('>', '');
+          const removable = await util_functions.embed_options(
+            'Should the role be removable by un-reacting?',
+            ['Yes', 'No'],
+            ['✅', '❌'],
+            msg,
+            20000
+          );
           await msg.channel.send('What should the embed title be?');
           const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
@@ -1096,11 +1104,14 @@ const main_commands = {
           for (const react of reacts_formatted) {
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
-              db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
+              db.prepare(
+                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
+              ).run(
                 rr_mes.id,
                 msg.guild.id,
                 react.emoji,
-                react.role
+                react.role,
+                removable !== 1 ? 1 : 0
               );
             } else {
               const em = msg.guild.emojis.cache.find(
@@ -1115,11 +1126,14 @@ const main_commands = {
                 await rr_mes.delete();
                 return;
               }
-              db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
+              db.prepare(
+                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
+              ).run(
                 rr_mes.id,
                 msg.guild.id,
                 em.id,
-                react.role
+                react.role,
+                removable !== 1 ? 1 : 0
               );
               await rr_mes.react(em.id);
             }
@@ -1170,6 +1184,13 @@ const main_commands = {
             );
             return;
           }
+          const removable = await util_functions.embed_options(
+            'Should the role be removable by un-reacting?',
+            ['Yes', 'No'],
+            ['✅', '❌'],
+            msg,
+            20000
+          );
           await msg.channel.send('What should the embed title be?');
           const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
@@ -1251,11 +1272,14 @@ const main_commands = {
           for (const react of reacts_formatted) {
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
-              db.prepare('INSERT INTO reactionroles VALUES (?, ?, ?, ?)').run(
+              db.prepare(
+                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
+              ).run(
                 rr_mes.id,
                 msg.guild.id,
                 react.emoji,
-                react.role
+                react.role,
+                removable !== 1 ? 1 : 0
               );
             } else {
               const em = msg.guild.emojis.cache.find(
@@ -2038,7 +2062,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
         reaction.message.id,
         reaction.message.guild.id
       );
-    if (!user.bot && rr) {
+    if (!user.bot && rr && rr.removable) {
       const member = reaction.message.guild.member(user as Discord.User);
       try {
         if (member) await member.roles.remove(rr.role);
