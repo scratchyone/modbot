@@ -15,7 +15,7 @@ const invite = {
   permissions: () => true,
   responder: async (msg: Discord.Message) => {
     await msg.channel.send(
-      'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
+      '<https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot>'
     );
   },
 };
