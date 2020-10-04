@@ -61,7 +61,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 const anonchannels = require('./anonchannels.js');
-const util_functions = require('./util_functions');
+import * as util_functions from './util_functions';
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
 });
@@ -321,6 +321,7 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
+        if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, [
           'MANAGE_MESSAGES',
           'MANAGE_CHANNELS',
@@ -411,7 +412,7 @@ const main_commands = {
             await clone(type);
           }
         } else if (type !== null) {
-          await clone(type);
+          await clone(type as 0 | 1 | 2 | null);
         }
       },
     },
@@ -424,6 +425,7 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: Discord.Message) => {
+        if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         if (msg.channel.id == '707361413894504489') return;
         if (await util_functions.confirm(msg)) {
@@ -1461,7 +1463,7 @@ const main_commands = {
         msg.channel.type == 'text' &&
         msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: Command) => {
-        if (cmd.command !== 'purge') return;
+        if (cmd.command !== 'purge' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
         if (count > 50) {
@@ -1864,7 +1866,7 @@ client.on('ready', async () => {
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
-  const message = reaction.message as EMessage;
+  const message = reaction.message as util_functions.EMessage;
   try {
     // When we receive a reaction we check if the reaction is partial or not
     if (reaction.partial) {
@@ -1880,7 +1882,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     if (!reaction.message.guild) return;
     if (
       (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
-      message.isPoll
+      (await message.isPoll())
     ) {
       const t = reaction.message.reactions.cache
         .array()
@@ -2478,7 +2480,10 @@ client.on('message', async (msg: Discord.Message) => {
                   await registered_command.responder(
                     new Types.Context(
                       msg,
-                      await util_functions.cleanPings(matchingPrefix),
+                      await util_functions.cleanPings(
+                        matchingPrefix,
+                        msg.guild
+                      ),
                       client
                     ),
                     results[0][0],
