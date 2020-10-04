@@ -72,6 +72,39 @@ const poll = {
     db.prepare('INSERT INTO polls VALUES (?)').run(pollMsg.id);
   },
 };
+const spoil = {
+  name: 'spoil',
+  syntax: 'm: spoil <TEXT>',
+  explanation: 'Repost message with all attachments spoilered',
+  matcher: (cmd: Command) => cmd.command == 'spoil',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'spoil',
+  permissions: () => true,
+  responder: async (msg: Discord.Message, cmd: Command) => {
+    if (cmd.command !== 'spoil') return;
+    util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
+
+    if (msg.guild !== null && msg.channel.type == 'text') {
+      const uuser = msg.member;
+      if (!uuser) throw new Error('User not found');
+      const loghook = await msg.channel.createWebhook(uuser.displayName, {
+        avatar: uuser.user.displayAvatarURL(),
+      });
+      const files = msg.attachments.array().map((attachment) => {
+        return { ...attachment, name: 'SPOILER_' + attachment.name };
+      });
+      console.log(files);
+      await loghook.send({
+        content: cmd.text,
+        files: files,
+      });
+      await loghook.delete();
+    }
+
+    try {
+      await msg.delete();
+    } catch (e) {}
+  },
+};
 const suggestion = {
   name: 'suggestion',
   syntax: 'm: suggestion',
@@ -647,6 +680,7 @@ exports.commandModule = {
     prefix,
     embed,
     addemoji,
+    spoil,
   ],
 };
 function getLines(

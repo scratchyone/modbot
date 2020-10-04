@@ -191,6 +191,10 @@ export type Command =
       channel: string;
     }
   | {
+      command: 'spoil';
+      text: string;
+    }
+  | {
       command: 'poll';
       text: string;
     }
