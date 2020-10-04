@@ -338,7 +338,7 @@ const about = {
             ? ' ModBot is designed to work well with PluralKit.'
             : ''
         } ModBot was last restarted ${moment
-          .duration(process.uptime() * -1)
+          .duration(process.uptime() * -1000)
           .humanize(true)}`
       )
     );
