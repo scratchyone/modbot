@@ -85,6 +85,21 @@ const suggestion = {
       process.env.SUGGESTIONMANAGER_URL &&
       process.env.SUGGESTIONMANAGER_TOKEN
     ) {
+      const st = await util_functions.ask(
+        'What is your suggestion?',
+        120000,
+        msg
+      );
+      let sn;
+      try {
+        sn = await util_functions.ask(
+          "What is your name? If you don't answer your nickname will be used!",
+          13000,
+          msg
+        );
+      } catch (e) {
+        sn = msg.member ? msg.member.displayName : msg.author.username;
+      }
       console.log(
         await (
           await fetch(
@@ -103,16 +118,8 @@ const suggestion = {
               body: JSON.stringify({
                 operationName: 'addSuggestion',
                 variables: {
-                  displayName: await util_functions.ask(
-                    'What is your name?',
-                    120000,
-                    msg
-                  ),
-                  suggestionText: await util_functions.ask(
-                    'What is your suggestion?',
-                    120000,
-                    msg
-                  ),
+                  displayName: sn,
+                  suggestionText: st,
                   key: process.env.SUGGESTIONMANAGER_TOKEN,
                 },
                 query:
