@@ -4,7 +4,7 @@ const db = require('better-sqlite3')('perms.db3', {});
 const util_functions = require('../util_functions.js');
 import moment from 'moment';
 import Discord from 'discord.js';
-import { Command, EGuild, Prefix } from '../types';
+import { Command, EGuild, Prefix, Context } from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
 const invite = {
@@ -13,9 +13,21 @@ const invite = {
   explanation: util_functions.fillStringVars('Get a __botName__ server invite'),
   matcher: (cmd: Command) => cmd.command == 'invite',
   permissions: () => true,
-  responder: async (msg: Discord.Message) => {
-    await msg.channel.send(
-      '<https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot>'
+  version: 2,
+  responder: async (ctx: Context) => {
+    await ctx.msg.channel.send(
+      new Discord.MessageEmbed()
+        .setURL(
+          'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
+        )
+        .setTitle('Click here to invite ModBot to your server')
+        .setDescription('Thank you for using ModBot!')
+        .setColor('#9168a6')
+        .setFooter(
+          process.env.AUTHOR_NAME
+            ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
+            : 'Made with ❤️'
+        )
     );
   },
 };
