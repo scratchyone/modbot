@@ -57,7 +57,10 @@ let setupmute = {
         let guild_channels = msg.guild.channels.cache.array();
         for (const channel of guild_channels) {
           try {
-            await channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+            await channel.updateOverwrite(mute_role, {
+              SEND_MESSAGES: false,
+              ADD_REACTIONS: false,
+            });
           } catch (e) {
             await msg.channel.send(
               util_functions.desc_embed(
@@ -289,7 +292,10 @@ exports.onChannelCreate = async (channel) => {
   let mr = exports.getMuteRole.get(channel.guild.id);
   if (mr) {
     let mute_role = channel.guild.roles.cache.get(mr.role);
-    channel.updateOverwrite(mute_role, { SEND_MESSAGES: false });
+    channel.updateOverwrite(mute_role, {
+      SEND_MESSAGES: false,
+      ADD_REACTIONS: false,
+    });
   }
 };
 exports.commandModule = {
