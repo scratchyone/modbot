@@ -62,7 +62,7 @@ const lockdown = {
   },
 };
 const unlockdown = {
-  name: 'lockdown',
+  name: 'unlockdown',
   syntax: 'm: unlockdown <CHANNEL>',
   explanation: 'Unlockdown a channel',
   matcher: (cmd: Command) => cmd.command == 'unlockdown',
