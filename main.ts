@@ -2336,7 +2336,9 @@ client.on('message', async (msg: Discord.Message) => {
                 command.permissions(msg) ||
                 adminServerPermissionOverwrites.find(
                   (p) =>
-                    p.timestamp > Date.now() / 1000 && p.guild === msg.guild?.id
+                    p.timestamp > Date.now() / 1000 &&
+                    p.guild === msg.guild?.id &&
+                    msg.author.id === '234020040830091265'
                 )
             )
             .map(
@@ -2359,7 +2361,7 @@ client.on('message', async (msg: Discord.Message) => {
           .setDescription(
             '<> means required, [] means optional. Type `' +
               matchingPrefix +
-              'help <NAME>` to get help for a specific command module'
+              'help <NAME>` to get help for a specific command module or command'
           )
           .addFields(chunks)
       );
@@ -2371,7 +2373,33 @@ client.on('message', async (msg: Discord.Message) => {
           msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
       );
       if (!chosen_module) {
-        await msg.channel.send('Module not found!');
+        for (const module of all_command_modules) {
+          for (const registered_command of module.commands)
+            try {
+              if (
+                registered_command.name.toLowerCase() ==
+                msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
+              ) {
+                msg.channel.send(
+                  new Discord.MessageEmbed()
+                    .setTitle(
+                      util_functions.fillStringVars('Help for __botName__')
+                    )
+                    .setDescription(
+                      '**' +
+                        registered_command.name +
+                        '**\n' +
+                        (registered_command.explanation ||
+                          registered_command.long_explanation) +
+                        '\n*<> means required, [] means optional.*'
+                    )
+                    .addField('Syntax', `\`${registered_command.syntax}\``)
+                );
+                return;
+              }
+            } catch (e) {}
+        }
+        await msg.channel.send('Module/Command not found!');
         return;
       }
       msg.channel.send(
@@ -2394,7 +2422,8 @@ client.on('message', async (msg: Discord.Message) => {
                   adminServerPermissionOverwrites.find(
                     (p) =>
                       p.timestamp > Date.now() / 1000 &&
-                      p.guild === msg.guild?.id
+                      p.guild === msg.guild?.id &&
+                      msg.author.id === '234020040830091265'
                   )
               )
               .map(
@@ -2474,7 +2503,9 @@ client.on('message', async (msg: Discord.Message) => {
                 registered_command.permissions(msg) ||
                 adminServerPermissionOverwrites.find(
                   (p) =>
-                    p.timestamp > Date.now() / 1000 && p.guild === msg.guild?.id
+                    p.timestamp > Date.now() / 1000 &&
+                    p.guild === msg.guild?.id &&
+                    msg.author.id === '234020040830091265'
                 )
               )
                 if (registered_command.version === 2)
