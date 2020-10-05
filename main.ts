@@ -2411,7 +2411,9 @@ client.on('message', async (msg: Discord.Message) => {
               chosen_module.title +
               '**\n' +
               chosen_module.description +
-              '\n*<> means required, [] means optional.*'
+              '\n*<> means required, [] means optional.*\nType ' +
+              matchingPrefix +
+              'help <NAME> to get help for a specific command'
           )
           .addFields(
             chosen_module.commands
