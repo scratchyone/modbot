@@ -2184,6 +2184,7 @@ const adminServerPermissionOverwrites: Array<{
   guild: string;
   timestamp: number;
 }> = [];
+import Humanize from 'humanize-plus';
 client.on('message', async (msg: Discord.Message) => {
   try {
     if (!msg.guild) return;
@@ -2387,7 +2388,7 @@ client.on('message', async (msg: Discord.Message) => {
                     )
                     .setDescription(
                       '**' +
-                        registered_command.name +
+                        Humanize.capitalize(registered_command.name) +
                         '**\n' +
                         (registered_command.explanation ||
                           registered_command.long_explanation) +
@@ -2429,7 +2430,7 @@ client.on('message', async (msg: Discord.Message) => {
               .map(
                 (n: { name: string; syntax: string; explanation: string }) => {
                   return {
-                    name: n.name,
+                    name: Humanize.capitalize(n.name),
                     value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
                       n.explanation
                     }`,
