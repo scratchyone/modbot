@@ -55,6 +55,14 @@ export default class KeyValueStore {
       modificationMetadata: gotKey.modificationMetadata,
     });
   }
+  /**
+   * @param {number?}  timeout The time before the key is deleted in MS, if a new key is created
+   */
+  public addOrCreate(key: string, amount: number, timeout?: number): void {
+    const gotKey = this.data.get(key);
+    if (!gotKey) this.set(key, amount, timeout);
+    else this.add(key, amount);
+  }
   public get(key: string): ValueType | null {
     return this.data.get(key)?.value || null;
   }

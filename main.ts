@@ -869,27 +869,44 @@ const main_commands = {
       syntax: 'm: alpha <TEXT>',
       explanation: 'Query Wolfram Alpha',
       matcher: (cmd: MatcherCommand) => cmd.command == 'alpha',
+      version: 2,
       simplematcher: (cmd: Array<string>) => cmd[0] === 'alpha',
-      permissions: () => true,
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      permissions: () => process.env.WOLFRAMALPHA_KEY,
+      responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
+        const rateLimit = ctx.store.get(
+          `rateLimits.alpha.${ctx.msg.author.id}`
+        );
+        if (rateLimit && rateLimit > 3)
+          throw new util_functions.BotError(
+            'user',
+            `Sorry, please wait **${+toFixed(
+              (ctx.store.timeLeft(`rateLimits.alpha.${ctx.msg.author.id}`) ||
+                0) / 1000
+            )}s** before trying again`
+          );
+        ctx.store.addOrCreate(
+          `rateLimits.alpha.${ctx.msg.author.id}`,
+          1,
+          30000
+        );
         try {
           const res = await (
             await nodefetch(
-              'http://api.wolframalpha.com/v2/query?appid=KGQK9K-5TT39X9VQ8&input=' +
+              'http://api.wolframalpha.com/v2/query?appid=' +
+                process.env.WOLFRAMALPHA_KEY +
+                '&input=' +
                 encodeURIComponent(cmd.text) +
                 '&format=plaintext&output=json'
             )
           ).json();
-          console.log(res.queryresult.pods);
-          console.log(res.queryresult.pods[1].subpods[0].plaintext);
-          msg.channel.send(
+          ctx.msg.channel.send(
             util_functions.desc_embed(
               res.queryresult.pods[1].subpods[0].plaintext
             )
           );
         } catch (e) {
-          msg.channel.send(util_functions.desc_embed('Failed'));
+          ctx.msg.channel.send(util_functions.desc_embed('Failed:'));
         }
       },
     },
@@ -2185,7 +2202,7 @@ const adminServerPermissionOverwrites: Array<{
   guild: string;
   timestamp: number;
 }> = [];
-import Humanize from 'humanize-plus';
+import Humanize, { toFixed } from 'humanize-plus';
 client.on('message', async (msg: Discord.Message) => {
   try {
     if (!msg.guild) return;
