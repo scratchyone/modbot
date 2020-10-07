@@ -1,5 +1,6 @@
 import Discord from 'discord.js';
 import { Model } from 'objection';
+import KeyValueStore from './kvs';
 export type Command =
   | {
       command: 'pin';
@@ -258,10 +259,17 @@ export class Context {
   msg: EMessage;
   prefix: string;
   client: Discord.Client;
-  constructor(msg: Discord.Message, prefix: string, client: Discord.Client) {
+  store: KeyValueStore;
+  constructor(
+    msg: Discord.Message,
+    prefix: string,
+    client: Discord.Client,
+    store: KeyValueStore
+  ) {
     this.msg = msg as EMessage;
     this.prefix = prefix;
     this.client = client;
+    this.store = store;
   }
 }
 export class Poll extends Model {

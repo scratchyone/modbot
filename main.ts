@@ -6,7 +6,8 @@ const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
 import { Model } from 'objection';
 import Knex from 'knex';
-
+import KeyValueStore from './kvs';
+const store = new KeyValueStore();
 // Initialize knex.
 const knex = Knex({
   client: 'sqlite3',
@@ -2519,7 +2520,8 @@ client.on('message', async (msg: Discord.Message) => {
                         matchingPrefix,
                         msg.guild
                       ),
-                      client
+                      client,
+                      store
                     ),
                     results[0][0],
                     client,
