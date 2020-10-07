@@ -874,10 +874,14 @@ const main_commands = {
       permissions: () => process.env.WOLFRAMALPHA_KEY,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
-        const rateLimit = ctx.store.get(
-          `rateLimits.alpha.${ctx.msg.author.id}`
+        ctx.store.addOrCreate(
+          `rateLimits.alpha.${ctx.msg.author.id}`,
+          1,
+          30000
         );
-        if (rateLimit && rateLimit > 3)
+        if (
+          (ctx.store.get(`rateLimits.alpha.${ctx.msg.author.id}`) as number) > 3
+        )
           throw new util_functions.BotError(
             'user',
             `Sorry, please wait **${+toFixed(
@@ -885,11 +889,6 @@ const main_commands = {
                 0) / 1000
             )}s** before trying again`
           );
-        ctx.store.addOrCreate(
-          `rateLimits.alpha.${ctx.msg.author.id}`,
-          1,
-          30000
-        );
         try {
           const res = await (
             await nodefetch(
