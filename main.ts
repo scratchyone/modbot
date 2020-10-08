@@ -1649,7 +1649,7 @@ const main_commands = {
           await (await mentioned_member.createDM()).send(
             new Discord.MessageEmbed()
               .setTitle(`You have been warned in ${msg.guild.name}`)
-              .setDescription(`**Warn Message:**\n\`${cmd.text}\``)
+              .setDescription(`**Warn Message:**\n> ${cmd.text}`)
               .setFooter(`Warning ID: ${id}`)
           );
         } catch (e) {
