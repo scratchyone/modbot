@@ -122,6 +122,7 @@ const main_commands = {
               );
               await loghook.send(text);
               await loghook.delete();
+              await msg.delete();
             }
           };
           if (!cloneUser) return;
