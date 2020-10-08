@@ -2152,7 +2152,7 @@ client.on(
       } catch (error) {
         console.log('Something went wrong when fetching the message: ', error);
         // Return as `reaction.message.author` may be undefined/null
-        return;
+        // return;
       }
     }
     const message = msg as util_functions.EMessage;
