@@ -1,6 +1,7 @@
 import Discord from 'discord.js';
 import { Model } from 'objection';
 import KeyValueStore from './kvs';
+import * as Types from './util_functions';
 export type Command =
   | {
       command: 'pin';
@@ -227,10 +228,6 @@ export type Command =
       name: string;
       emojiData?: string;
     };
-export interface EMessage extends Discord.Message {
-  isPoll: boolean;
-  guild: EGuild;
-}
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
 }
@@ -256,7 +253,7 @@ export class ReminderSubscriber extends Model {
   }
 }
 export class Context {
-  msg: EMessage;
+  msg: Types.EMessage;
   prefix: string;
   client: Discord.Client;
   store: KeyValueStore;
@@ -266,7 +263,7 @@ export class Context {
     client: Discord.Client,
     store: KeyValueStore
   ) {
-    this.msg = msg as EMessage;
+    this.msg = msg as Types.EMessage;
     this.prefix = prefix;
     this.client = client;
     this.store = store;
@@ -276,5 +273,14 @@ export class Poll extends Model {
   message!: string;
   static get tableName(): string {
     return 'polls';
+  }
+}
+export class BotMessage extends Model {
+  guild!: string;
+  channel!: string;
+  message!: string;
+  botMessage!: string;
+  static get tableName(): string {
+    return 'botMessages';
   }
 }

@@ -69,7 +69,7 @@ const client = new Discord.Client({
 interface MatcherCommand {
   command: string;
 }
-import { Command, EMessage, Prefix } from './types';
+import { Command, Prefix } from './types';
 import * as Types from './types';
 import parse from 'parse-duration';
 const main_commands = {
@@ -190,7 +190,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'setanonchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'setanonchannel') return;
         if (!msg.guild || !msg.guild.id) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
@@ -209,7 +209,7 @@ const main_commands = {
               (msg.guild as Discord.Guild).id
             );
           }
-        msg.channel.send(
+        msg.dbReply(
           util_functions.desc_embed(
             `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>`
           )
@@ -224,15 +224,15 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'listanonchannels',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message) => {
+      responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild || !msg.guild.id) return;
         const channels = db
           .prepare('SELECT * FROM anonchannels WHERE server=?')
           .all(msg.guild.id);
         if (channels.length == 0) {
-          await msg.channel.send('No anon channels');
+          await msg.dbReply('No anon channels');
         } else {
-          await msg.channel.send(
+          await msg.dbReply(
             channels
               .map(
                 (channel: { id: string }) => `${channel.id} -> <#${channel.id}>`
@@ -250,18 +250,16 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'whosaid',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'whosaid') return;
         if (!msg.guild || !msg.guild.id) return;
         const author = db
           .prepare('SELECT * FROM anonmessages WHERE id=? AND server=?')
           .get(cmd.id, msg.guild.id);
         if (author) {
-          await msg.channel.send(
-            util_functions.desc_embed(`<@${author.user}>`)
-          );
+          await msg.dbReply(util_functions.desc_embed(`<@${author.user}>`));
         } else {
-          await msg.channel.send('No message found');
+          await msg.dbReply('No message found');
         }
       },
     },
@@ -274,7 +272,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
       permissions: () => true,
       responder: async (ctx: Types.Context, cmd: Command) => {
-        if (cmd.command !== 'reminder') return;
+        if (cmd.command !== 'reminder' || !ctx.msg.guild) return;
         if (cmd.action === 'add') {
           const id = nanoid.nanoid(5);
           await Types.Reminder.query().insert({
@@ -291,7 +289,7 @@ const main_commands = {
             },
             cmd.time
           );
-          await ctx.msg.channel.send(
+          await ctx.msg.dbReply(
             `Set reminder, you can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`
           );
         } else if (cmd.action === 'copy') {
@@ -302,7 +300,7 @@ const main_commands = {
             user: ctx.msg.author.id,
             id: cmd.id,
           });
-          await ctx.msg.channel.send(
+          await ctx.msg.dbReply(
             'You will be notifed when the reminder is ready!'
           );
         } else if (cmd.action === 'cancel') {
@@ -310,7 +308,7 @@ const main_commands = {
             .delete()
             .where('author', ctx.msg.author.id)
             .where('id', cmd.id);
-          await ctx.msg.channel.send('Cancelled!');
+          await ctx.msg.dbReply('Cancelled!');
         }
       },
     },
@@ -322,7 +320,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'clonepurge',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message) => {
+      responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, [
           'MANAGE_MESSAGES',
@@ -338,9 +336,7 @@ const main_commands = {
           if (!msg.guild || !msg.guild.id) return;
           if (msg.channel.type !== 'text')
             throw new util_functions.BotError('user', 'Not a text channel!');
-          await msg.channel.send(
-            util_functions.desc_embed('Running clonepurge')
-          );
+          await msg.dbReply(util_functions.desc_embed('Running clonepurge'));
           const new_channel = await msg.channel.clone();
           await new_channel.setPosition(msg.channel.position);
           await new_channel.setTopic(msg.channel.topic || '');
@@ -365,9 +361,9 @@ const main_commands = {
             }
             await anonhook.delete();
             if (type === 2) {
-              await msg.channel.send(util_functions.desc_embed('Finished.'));
+              await msg.dbReply(util_functions.desc_embed('Finished.'));
             } else if (type === 1) {
-              await msg.channel.send(util_functions.desc_embed('Archiving'));
+              await msg.dbReply(util_functions.desc_embed('Archiving'));
               let deleted_catergory = msg.guild.channels.cache.find(
                 (n) => n.type == 'category' && n.name == 'archived'
               );
@@ -392,9 +388,9 @@ const main_commands = {
                   allow: ['VIEW_CHANNEL'],
                 },
               ]);
-              await msg.channel.send(util_functions.desc_embed('Finished.'));
+              await msg.dbReply(util_functions.desc_embed('Finished.'));
             } else {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(
                   'Finished. Deleting channel in 10 seconds'
                 )
@@ -403,7 +399,7 @@ const main_commands = {
               await msg.channel.delete();
             }
           } catch (e) {
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed(`Clonepurge failed: ${e}`)
             );
             await new_channel.delete();
@@ -426,12 +422,12 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'deletechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message) => {
+      responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         if (msg.channel.id == '707361413894504489') return;
         if (await util_functions.confirm(msg)) {
-          msg.channel.send(
+          msg.dbReply(
             util_functions.desc_embed('Deleting channel in 5 seconds')
           );
           await sleep(5000);
@@ -447,7 +443,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'channeluser',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'channeluser') return;
         if (!client.user || !msg.member || !msg.guild)
           throw new util_functions.BotError(
@@ -464,7 +460,7 @@ const main_commands = {
           throw new util_functions.BotError('user', 'Not a text channel');
         const realchannel: Discord.TextChannel = channel as Discord.TextChannel;
         if (cmd.user == client.user.id && !cmd.allowed) {
-          await msg.channel.send('Fuck you');
+          await msg.dbReply('Fuck you');
           return;
         }
         if (!realchannel.permissionsFor(msg.member))
@@ -477,7 +473,7 @@ const main_commands = {
             'VIEW_CHANNEL'
           )
         ) {
-          await msg.channel.send("Sorry, you can't access that channel");
+          await msg.dbReply("Sorry, you can't access that channel");
           return;
         }
         const user = msg.guild.member(cmd.user);
@@ -487,7 +483,7 @@ const main_commands = {
         } else {
           await realchannel.updateOverwrite(user, { VIEW_CHANNEL: true });
         }
-        await msg.channel.send(
+        await msg.dbReply(
           util_functions.desc_embed(
             `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
               cmd.allowed ? 'to' : 'from'
@@ -505,7 +501,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'archivechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'archivechannel' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         const deleted_category = (msg.guild.channels.cache.find(
@@ -528,7 +524,7 @@ const main_commands = {
             allow: ['VIEW_CHANNEL'],
           },
         ]);
-        await msg.channel.send(util_functions.desc_embed('Archived channel!'));
+        await msg.dbReply(util_functions.desc_embed('Archived channel!'));
       },
     },
     {
@@ -539,7 +535,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'anonban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'anonban' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         anonchannels.insert_anon_ban.run({
@@ -556,13 +552,11 @@ const main_commands = {
             },
             cmd.time
           );
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(`Banned <@${cmd.user}> for ${cmd.time}`)
           );
         } else {
-          await msg.channel.send(
-            util_functions.desc_embed(`Banned <@${cmd.user}>`)
-          );
+          await msg.dbReply(util_functions.desc_embed(`Banned <@${cmd.user}>`));
         }
       },
     },
@@ -574,15 +568,13 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'anonunban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'anonunban' || !msg.guild) return;
         anonchannels.remove_anon_ban.run({
           user: cmd.user,
           server: msg.guild.id,
         });
-        await msg.channel.send(
-          util_functions.desc_embed(`Unbanned <@${cmd.user}>`)
-        );
+        await msg.dbReply(util_functions.desc_embed(`Unbanned <@${cmd.user}>`));
       },
     },
     {
@@ -593,7 +585,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'tmpchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'tmpchannel' || !msg.guild) return;
         if (!client.user)
           throw new util_functions.BotError(
@@ -631,7 +623,7 @@ const main_commands = {
                 ],
           });
         } catch (e) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed('Failed to create channel: ' + e)
           );
           return;
@@ -657,7 +649,7 @@ const main_commands = {
             }
           }
         }, 5000);
-        await msg.channel.send(
+        await msg.dbReply(
           util_functions.desc_embed(`Creating ${channel} for ${cmd.duration}`)
         );
       },
@@ -670,7 +662,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'setpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'setpinperms' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (cmd.allowed) {
@@ -678,7 +670,7 @@ const main_commands = {
             cmd.role,
             msg.guild.id
           );
-          msg.channel.send(
+          msg.dbReply(
             util_functions.desc_embed(
               `<@&${cmd.role}> are now allowed to pin messages with :pushpin:`
             )
@@ -688,7 +680,7 @@ const main_commands = {
             cmd.role,
             msg.guild.id
           );
-          msg.channel.send(
+          msg.dbReply(
             util_functions.desc_embed(
               `<@&${cmd.role}> are no longer allowed to pin messages with :pushpin:`
             )
@@ -704,12 +696,12 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'listpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'listpinperms' || !msg.guild) return;
         const roles = db
           .prepare('SELECT * FROM pinners WHERE guild=?')
           .all(msg.guild.id);
-        msg.channel.send(
+        msg.dbReply(
           util_functions.desc_embed(
             roles
               .map((n: { roleid: string }) => `${n.roleid} (<@&${n.roleid}>)`)
@@ -726,11 +718,11 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'autoresponder',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'autoresponder' || !msg.guild) return;
         if (cmd.action === 'add') {
           try {
-            await msg.channel.send(
+            await msg.dbReply(
               'What message should this AutoResponder reply to?'
             );
             const prompt = await msg.channel.awaitMessages(
@@ -741,7 +733,7 @@ const main_commands = {
               }
             );
             if (!prompt.array().length) {
-              await msg.channel.send(util_functions.desc_embed('Timed out'));
+              await msg.dbReply(util_functions.desc_embed('Timed out'));
               return;
             }
             const message_type = await util_functions.embed_options(
@@ -751,7 +743,7 @@ const main_commands = {
               msg
             );
             if (message_type === 0) {
-              await msg.channel.send('What should I reply with?');
+              await msg.dbReply('What should I reply with?');
               const response = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
@@ -760,11 +752,11 @@ const main_commands = {
                 }
               );
               if (!response.array().length) {
-                await msg.channel.send(util_functions.desc_embed('Timed out'));
+                await msg.dbReply(util_functions.desc_embed('Timed out'));
                 return;
               }
               if (response.array()[0].attachments.array().length) {
-                await msg.channel.send(
+                await msg.dbReply(
                   util_functions.desc_embed('Attachments are not supported')
                 );
                 return;
@@ -778,7 +770,7 @@ const main_commands = {
                 msg.guild.id
               );
             } else if (message_type === 1) {
-              await msg.channel.send('What should the embed title be?');
+              await msg.dbReply('What should the embed title be?');
               const embed_title = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
@@ -787,10 +779,10 @@ const main_commands = {
                 }
               );
               if (!embed_title.array().length) {
-                await msg.channel.send(util_functions.desc_embed('Timed out'));
+                await msg.dbReply(util_functions.desc_embed('Timed out'));
                 return;
               }
-              await msg.channel.send('What should the embed description be?');
+              await msg.dbReply('What should the embed description be?');
               const embed_desc = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
@@ -799,7 +791,7 @@ const main_commands = {
                 }
               );
               if (!embed_desc.array().length) {
-                await msg.channel.send(util_functions.desc_embed('Timed out'));
+                await msg.dbReply(util_functions.desc_embed('Timed out'));
                 return;
               }
               db.prepare(
@@ -814,19 +806,15 @@ const main_commands = {
             } else {
               return;
             }
-            await msg.channel.send(
-              util_functions.desc_embed('Added AutoResponder')
-            );
+            await msg.dbReply(util_functions.desc_embed('Added AutoResponder'));
           } catch (e) {
             console.log(e);
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed('Failed to create AutoResponder')
             );
           }
         } else if (cmd.action === 'remove') {
-          await msg.channel.send(
-            'What AutoResponder would you like to remove?'
-          );
+          await msg.dbReply('What AutoResponder would you like to remove?');
           const prompt = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -835,7 +823,7 @@ const main_commands = {
             }
           );
           if (!prompt.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const rc = db
@@ -844,18 +832,18 @@ const main_commands = {
             )
             .run(prompt.array()[0].content, msg.guild.id);
           if (rc.changes)
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed('Removed AutoResponder')
             );
           else
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed("Couldn't find AutoResponder")
             );
         } else if (cmd.action === 'list') {
           const ars = db
             .prepare('SELECT * FROM autoresponders WHERE server=?')
             .all(msg.guild.id);
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               ars
                 ? ars.map((n: { prompt: string }) => `${n.prompt}`).join('\n')
@@ -900,13 +888,13 @@ const main_commands = {
                 '&format=plaintext&output=json'
             )
           ).json();
-          ctx.msg.channel.send(
+          ctx.msg.dbReply(
             util_functions.desc_embed(
               res.queryresult.pods[1].subpods[0].plaintext
             )
           );
         } catch (e) {
-          ctx.msg.channel.send(util_functions.desc_embed('Failed:'));
+          ctx.msg.dbReply(util_functions.desc_embed('Failed:'));
         }
       },
     },
@@ -917,11 +905,9 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'support',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'support',
       permissions: () => true,
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'support') return;
-        msg.channel.send(
-          util_functions.desc_embed('https://discord.gg/wJ2TCpx')
-        );
+        msg.dbReply(util_functions.desc_embed('https://discord.gg/wJ2TCpx'));
       },
     },
     {
@@ -932,7 +918,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'joinroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'joinroles' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
@@ -941,12 +927,12 @@ const main_commands = {
               .prepare('SELECT * FROM join_roles WHERE server=?')
               .get(msg.guild.id)
           ) {
-            await msg.channel.send(
+            await msg.dbReply(
               'This server already has a join role. You can disable it with `m: joinroles disable`'
             );
             return;
           }
-          await msg.channel.send(
+          await msg.dbReply(
             'What role would you like to set as the join role?'
           );
           const role = await msg.channel.awaitMessages(
@@ -957,7 +943,7 @@ const main_commands = {
             }
           );
           if (!role.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const rrole = role
@@ -966,25 +952,25 @@ const main_commands = {
             .replace('>', '');
           const disc_role = msg.guild.roles.cache.get(rrole);
           if (!disc_role) {
-            await msg.channel.send("Role doesn't exist!");
+            await msg.dbReply("Role doesn't exist!");
             return;
           }
           db.prepare('INSERT INTO join_roles VALUES (?, ?)').run(
             msg.guild.id,
             role
           );
-          await msg.channel.send(util_functions.desc_embed('Setup!'));
+          await msg.dbReply(util_functions.desc_embed('Setup!'));
         } else if (cmd.action === 'disable') {
           if (
             !db
               .prepare('SELECT * FROM join_roles WHERE server=?')
               .get(msg.guild.id)
           ) {
-            await msg.channel.send("This server doesn't have a join role.");
+            await msg.dbReply("This server doesn't have a join role.");
             return;
           }
           db.prepare('DELETE FROM join_roles WHERE server=?').run(msg.guild.id);
-          await msg.channel.send(util_functions.desc_embed('Disabled!'));
+          await msg.dbReply(util_functions.desc_embed('Disabled!'));
         }
       },
     },
@@ -996,7 +982,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reactionroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'reactionroles' || !msg.guild || !msg.member)
           return;
         util_functions.assertHasPerms(msg.guild, [
@@ -1004,7 +990,7 @@ const main_commands = {
           'MANAGE_MESSAGES',
         ]);
         if (cmd.action === 'add') {
-          await msg.channel.send(
+          await msg.dbReply(
             'What channel would you like the message to be in?'
           );
 
@@ -1016,7 +1002,7 @@ const main_commands = {
             }
           );
           if (!chan.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const cchan = chan
@@ -1030,7 +1016,7 @@ const main_commands = {
             msg,
             20000
           );
-          await msg.channel.send('What should the embed title be?');
+          await msg.dbReply('What should the embed title be?');
           const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1039,10 +1025,10 @@ const main_commands = {
             }
           );
           if (!embed_title.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          await msg.channel.send('What should the embed description be?');
+          await msg.dbReply('What should the embed description be?');
           const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1051,10 +1037,10 @@ const main_commands = {
             }
           );
           if (!embed_description.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          await msg.channel.send(
+          await msg.dbReply(
             'What should the reactions be?\nFormat:\n```:grinning: @happy\n:sad: @unhappy```'
           );
           const reacts = await msg.channel.awaitMessages(
@@ -1065,14 +1051,14 @@ const main_commands = {
             }
           );
           if (!reacts.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           let rr_mes;
           try {
             const tmp_chan = msg.guild.channels.cache.get(cchan);
             if (!tmp_chan || tmp_chan.type !== 'text') {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed("Channel doesn't exist!")
               );
               return;
@@ -1083,7 +1069,7 @@ const main_commands = {
                 .setDescription(embed_description.array()[0].content)
             );
           } catch (e) {
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed("Couldn't send message!")
             );
             return;
@@ -1112,7 +1098,7 @@ const main_commands = {
                 `${react.role} does not exist`
               );
             if (serv_role.position >= hp) {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(
                   'Your highest role position is below one of the roles you tried to add'
                 )
@@ -1137,7 +1123,7 @@ const main_commands = {
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               if (!em) {
-                await msg.channel.send(
+                await msg.dbReply(
                   util_functions.desc_embed(
                     'Emoji not found. You can only use emojis from this server'
                   )
@@ -1157,9 +1143,9 @@ const main_commands = {
               await rr_mes.react(em.id);
             }
           }
-          await msg.channel.send(util_functions.desc_embed('Added!'));
+          await msg.dbReply(util_functions.desc_embed('Added!'));
         } else if (cmd.action === 'edit') {
-          await msg.channel.send('What channel is the message in?');
+          await msg.dbReply('What channel is the message in?');
           const chan = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1168,7 +1154,7 @@ const main_commands = {
             }
           );
           if (!chan.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const cchan = chan
@@ -1180,7 +1166,7 @@ const main_commands = {
           const real_chan = msg.guild.channels.cache.get(cchan);
           if (!real_chan || real_chan.type !== 'text')
             throw new util_functions.BotError('user', 'No channel found');
-          await msg.channel.send('What is the message ID?');
+          await msg.dbReply('What is the message ID?');
           const mid = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1189,7 +1175,7 @@ const main_commands = {
             }
           );
           if (!mid.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           let rr_mes;
@@ -1198,7 +1184,7 @@ const main_commands = {
               mid.array()[0].content
             );
           } catch (e) {
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed("Couldn't find message")
             );
             return;
@@ -1210,7 +1196,7 @@ const main_commands = {
             msg,
             20000
           );
-          await msg.channel.send('What should the embed title be?');
+          await msg.dbReply('What should the embed title be?');
           const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1219,10 +1205,10 @@ const main_commands = {
             }
           );
           if (!embed_title.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          await msg.channel.send('What should the embed description be?');
+          await msg.dbReply('What should the embed description be?');
           const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
@@ -1231,7 +1217,7 @@ const main_commands = {
             }
           );
           if (!embed_description.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           await rr_mes.edit(
@@ -1239,7 +1225,7 @@ const main_commands = {
               .setTitle(embed_title.array()[0].content)
               .setDescription(embed_description.array()[0].content)
           );
-          await msg.channel.send(
+          await msg.dbReply(
             'What should the reactions be?\nFormat:\n```:grinning: @happy\n:sad: @unhappy```'
           );
           const reacts = await msg.channel.awaitMessages(
@@ -1250,7 +1236,7 @@ const main_commands = {
             }
           );
           if (!reacts.array().length) {
-            await msg.channel.send(util_functions.desc_embed('Timed out'));
+            await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const hp = msg.member.roles.highest.position;
@@ -1277,7 +1263,7 @@ const main_commands = {
                 `${react.role} does not exist`
               );
             if (serv_role.position >= hp) {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(
                   'Your highest role position is below one of the roles you tried to add'
                 )
@@ -1305,7 +1291,7 @@ const main_commands = {
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
               );
               if (!em) {
-                await msg.channel.send(
+                await msg.dbReply(
                   util_functions.desc_embed(
                     'Emoji not found. You can only use emojis from this server'
                   )
@@ -1345,7 +1331,7 @@ const main_commands = {
               reaction.remove();
             }
           }
-          await msg.channel.send(util_functions.desc_embed('Edited!'));
+          await msg.dbReply(util_functions.desc_embed('Edited!'));
         }
       },
     },
@@ -1357,7 +1343,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'kick',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('KICK_MEMBERS'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'kick' || !msg.member || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['KICK_MEMBERS']);
         const hp = msg.member.roles.highest.position;
@@ -1369,7 +1355,7 @@ const main_commands = {
           );
         const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               'Your highest role is below or equal to the user you are tying to kick'
             )
@@ -1378,7 +1364,7 @@ const main_commands = {
           const conf = await util_functions.confirm(msg);
           if (conf) {
             await kickee.kick();
-            await msg.channel.send(util_functions.desc_embed('Kicked'));
+            await msg.dbReply(util_functions.desc_embed('Kicked'));
           }
         }
       },
@@ -1391,7 +1377,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'tmprole',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'tmprole' || !msg.member || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         const hp = msg.member.roles.highest.position;
@@ -1403,7 +1389,7 @@ const main_commands = {
           );
         const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp && kickee.id != msg.author.id) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               'Your highest role is below or equal to the user you are trying to change roles on'
             )
@@ -1411,7 +1397,7 @@ const main_commands = {
         } else {
           if (cmd.action === 'remove') {
             if (!kickee.roles.cache.get(cmd.role)) {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(
                   `${kickee} doesn't have <@&${cmd.role}>`
                 )
@@ -1429,7 +1415,7 @@ const main_commands = {
               },
               cmd.duration
             );
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed(
                 `Removed <@&${cmd.role}> from ${kickee} for ${cmd.duration}`
               )
@@ -1437,13 +1423,13 @@ const main_commands = {
           } else if (cmd.action === 'add') {
             const role_to_be_added = msg.guild.roles.cache.get(cmd.role);
             if (!role_to_be_added) {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(`<@&${cmd.role}> doesn't exist`)
               );
               return;
             }
             if (hp <= role_to_be_added.position) {
-              await msg.channel.send(
+              await msg.dbReply(
                 util_functions.desc_embed(
                   `<@&${cmd.role}> is equal to or above you in the role list`
                 )
@@ -1461,7 +1447,7 @@ const main_commands = {
               },
               cmd.duration
             );
-            await msg.channel.send(
+            await msg.dbReply(
               util_functions.desc_embed(
                 `Added <@&${cmd.role}> to ${kickee} for ${cmd.duration}`
               )
@@ -1480,12 +1466,12 @@ const main_commands = {
         msg.member &&
         msg.channel.type == 'text' &&
         msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'purge' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
         if (count > 50) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               'Must be less than or equal to 50 messages'
             )
@@ -1503,7 +1489,7 @@ const main_commands = {
             purged_info_msg.delete();
           }, 2000);
         } catch (e) {
-          await msg.channel.send(util_functions.desc_embed(e));
+          await msg.dbReply(util_functions.desc_embed(e));
         }
       },
     },
@@ -1515,7 +1501,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'usercard',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'usercard' || !msg.guild) return;
         const mentioned_member = msg.guild.members.cache.get(cmd.user);
         let mentioned_user;
@@ -1525,7 +1511,7 @@ const main_commands = {
           throw new util_functions.BotError('user', 'Failed to get user');
         }
         if (!mentioned_member)
-          msg.channel.send(
+          msg.dbReply(
             util_functions.desc_embed(
               "Warning: User doesn't seem to be in this server, information display will be limited"
             )
@@ -1573,7 +1559,7 @@ const main_commands = {
           .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
           .all(mentioned_member?.id || cmd.user, msg.guild.id, 'warn')
           .map((n: { message: string }) => n.message);
-        msg.channel.send(
+        msg.dbReply(
           new Discord.MessageEmbed()
             .setAuthor(mm_nick, mentioned_user.displayAvatarURL())
             .setDescription(desc.join(' '))
@@ -1604,7 +1590,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'note',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'note' || !msg.guild) return;
         const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
@@ -1629,7 +1615,7 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'warn',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'warn' || !msg.guild) return;
         const id = nanoid.nanoid(5);
         db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
@@ -1653,13 +1639,13 @@ const main_commands = {
               .setFooter(`Warning ID: ${id}`)
           );
         } catch (e) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               'Alert: User will not receive a DM for this warn because they have them disabled'
             )
           );
         }
-        await msg.channel.send(
+        await msg.dbReply(
           util_functions.desc_embed(`Warned <@${cmd.user}>, warning ID ${id}`)
         );
       },
@@ -1672,19 +1658,19 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'forgive',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'forgive' || !msg.guild) return;
         const warn_item = db
           .prepare('SELECT * FROM notes WHERE server=? AND id=? ')
           .get(msg.guild.id, cmd.id);
         if (!warn_item) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(`Couldn't find ${cmd.id}`)
           );
           return;
         }
         if (warn_item.user == msg.author.id) {
-          await msg.channel.send(
+          await msg.dbReply(
             util_functions.desc_embed(
               `You can't forgive ${warn_item.type}s against yourself`
             )
@@ -1695,7 +1681,7 @@ const main_commands = {
           msg.guild.id,
           cmd.id
         );
-        await msg.channel.send(util_functions.desc_embed(`Removed ${cmd.id}`));
+        await msg.dbReply(util_functions.desc_embed(`Removed ${cmd.id}`));
       },
     },
   ],
@@ -2022,7 +2008,7 @@ client.on('channelCreate', async (channel) => {
   }
 });
 client.on('messageReactionRemove', async (reaction, user) => {
-  const message = reaction.message as EMessage;
+  const message = reaction.message as util_functions.EMessage;
   if (!reaction.message.guild) return;
   try {
     // When we receive a reaction we check if the reaction is partial or not
@@ -2166,7 +2152,20 @@ client.on(
         return;
       }
     }
+    const message = msg as util_functions.EMessage;
     await starboard.onMessageDelete(msg, client);
+    const bm = await Types.BotMessage.query().where('message', msg.id);
+    if (
+      bm.length &&
+      !(await message.getPluralKitSender()) &&
+      !(await message.isAnonMessage())
+    ) {
+      try {
+        (await msg.channel.messages.fetch(bm[0].botMessage)).delete();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 );
 client.on(
@@ -2204,6 +2203,7 @@ const adminServerPermissionOverwrites: Array<{
 }> = [];
 import Humanize, { toFixed } from 'humanize-plus';
 client.on('message', async (msg: Discord.Message) => {
+  const message = msg as util_functions.EMessage;
   try {
     if (!msg.guild) return;
     if (!client.user) return;
@@ -2279,9 +2279,9 @@ client.on('message', async (msg: Discord.Message) => {
     }
     const ar = check_for_ar.get(msg.content, msg.guild.id);
     if (ar) {
-      if (ar.type == 'text') msg.channel.send(ar.text_response);
+      if (ar.type == 'text') message.dbReply(ar.text_response);
       else if (ar.type == 'embed')
-        msg.channel.send(
+        message.dbReply(
           new Discord.MessageEmbed()
             .setTitle(ar.embed_title)
             .setDescription(ar.embed_description)
@@ -2298,7 +2298,7 @@ client.on('message', async (msg: Discord.Message) => {
       !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
       !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id)
     ) {
-      await msg.channel.send(
+      await message.dbReply(
         util_functions.desc_embed(
           "Warning: You don't have an alert channel setup. This is very important for the bot to be able to warn you if there is an issue. Please set one up with `m: alertchannel enable`, or type `m: alertchannel ignore` to stop getting this message"
         )
@@ -2313,10 +2313,10 @@ client.on('message', async (msg: Discord.Message) => {
         .split(' ');
       const timeParse = parse(args[0], 's');
       if (!timeParse) {
-        msg.channel.send('Invalid time');
+        message.dbReply('Invalid time');
         return;
       }
-      const confMsg = await msg.channel.send(
+      const confMsg = await message.dbReply(
         util_functions.desc_embed(
           `${msg.author} would like to request bot permissions for ${args[0]}. A server administrator can react with ✅ to confirm`
         )
@@ -2334,7 +2334,7 @@ client.on('message', async (msg: Discord.Message) => {
       );
 
       if (reactions.first()) {
-        msg.channel.send(util_functions.desc_embed('Permissions granted!'));
+        message.dbReply(util_functions.desc_embed('Permissions granted!'));
         adminServerPermissionOverwrites.push({
           guild: msg.guild.id,
           timestamp: Date.now() / 1000 + timeParse,
@@ -2374,7 +2374,7 @@ client.on('message', async (msg: Discord.Message) => {
         })
         .filter((n) => n.cmds.length);
       //.chunk_inefficient(25);
-      msg.channel.send(
+      message.dbReply(
         new Discord.MessageEmbed()
           .setTitle(util_functions.fillStringVars('Help for __botName__'))
           .setDescription(
@@ -2399,7 +2399,7 @@ client.on('message', async (msg: Discord.Message) => {
                 registered_command.name.toLowerCase() ==
                 msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
               ) {
-                msg.channel.send(
+                message.dbReply(
                   new Discord.MessageEmbed()
                     .setTitle(
                       util_functions.fillStringVars('Help for __botName__')
@@ -2418,10 +2418,10 @@ client.on('message', async (msg: Discord.Message) => {
               }
             } catch (e) {}
         }
-        await msg.channel.send('Module/Command not found!');
+        await message.dbReply('Module/Command not found!');
         return;
       }
-      msg.channel.send(
+      message.dbReply(
         new Discord.MessageEmbed()
           .setTitle(util_functions.fillStringVars('Help for __botName__'))
           .setDescription(
@@ -2472,7 +2472,7 @@ client.on('message', async (msg: Discord.Message) => {
                 input.replace(matchingPrefix, '').split(' ')
               )
             ) {
-              await msg.channel.send(
+              await message.dbReply(
                 new Discord.MessageEmbed()
                   .setTitle('Syntax Error')
                   .setDescription(
@@ -2498,7 +2498,7 @@ client.on('message', async (msg: Discord.Message) => {
       const foundSyntax = await showSyntaxError(msg.content);
       if (!foundSyntax) {
         console.log(e);
-        msg.channel.send(
+        message.dbReply(
           new Discord.MessageEmbed()
             .setTitle('Command not found')
             .setDescription(
@@ -2553,12 +2553,12 @@ client.on('message', async (msg: Discord.Message) => {
                   );
             } catch (e) {
               if (e.type == 'user') {
-                await msg.channel.send(util_functions.desc_embed(e.message));
-                await msg.channel.send(
+                await message.dbReply(util_functions.desc_embed(e.message));
+                await message.dbReply(
                   `Use \`${matchingPrefix}support\` to get an invite to the support server`
                 );
               } else if (e.type == 'bot') {
-                await msg.channel.send(
+                await message.dbReply(
                   'An error has occurred. Would you please explain what you were trying to do?'
                 );
                 const feedback = await msg.channel.awaitMessages(
@@ -2579,25 +2579,25 @@ client.on('message', async (msg: Discord.Message) => {
                       : null,
                   });
                 });
-                await msg.channel.send(
+                await message.dbReply(
                   util_functions.desc_embed(
                     "There's been an error! Luckily, it's not your fault. Please give the bot owner this ID: " +
                       Sentry.captureException(e)
                   )
                 );
-                await msg.channel.send(
+                await message.dbReply(
                   `Use \`${matchingPrefix}support\` to get an invite to the support server`
                 );
               } else {
                 console.log(e);
                 if (e.httpStatus === 403) {
-                  await msg.channel.send(
+                  await message.dbReply(
                     util_functions.desc_embed(
                       `**Sorry! ModBot doesn't have permission to do that! Maybe check on my permission settings? Currently ModBot works best with the Administrator permission and must be as close to the top of the role list as possible**\nError: ${e}`
                     )
                   );
                 } else {
-                  await msg.channel.send(
+                  await message.dbReply(
                     'An error has occurred. Would you please explain what you were trying to do?'
                   );
                   const feedback = await msg.channel.awaitMessages(
@@ -2618,13 +2618,13 @@ client.on('message', async (msg: Discord.Message) => {
                         : null,
                     });
                   });
-                  await msg.channel.send(
+                  await message.dbReply(
                     util_functions.desc_embed(
                       'This error is likely not your fault. Please give the bot owner this ID: ' +
                         Sentry.captureException(e)
                     )
                   );
-                  await msg.channel.send(
+                  await message.dbReply(
                     `Use \`${matchingPrefix}support\` to get an invite to the support server`
                   );
                 }

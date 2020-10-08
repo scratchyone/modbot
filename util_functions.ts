@@ -240,6 +240,21 @@ export class EMessage extends Discord.Message {
   async isPoll(): Promise<boolean> {
     return !!(await Types.Poll.query().where('message', this.id));
   }
+  async dbReply(
+    content: Discord.StringResolvable | Discord.APIMessage,
+    options?: Discord.MessageOptions | Discord.MessageAdditions
+  ): Promise<Discord.Message> {
+    if (!this.guild)
+      throw new BotError('bot', 'dbReply was called outside of a guild');
+    const bmsg = await this.channel.send(content, options);
+    await Types.BotMessage.query().insert({
+      guild: this.guild.id,
+      channel: this.channel.id,
+      message: this.id,
+      botMessage: bmsg.id,
+    });
+    return bmsg;
+  }
   async getPluralKitSender(): Promise<undefined | Discord.GuildMember> {
     try {
       if (!this.guild) return undefined;

@@ -14,7 +14,7 @@ const invite = {
   permissions: () => true,
   version: 2,
   responder: async (ctx: Context) => {
-    await ctx.msg.channel.send(
+    await ctx.msg.dbReply(
       new Discord.MessageEmbed()
         .setURL(
           'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
