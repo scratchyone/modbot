@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const util_functions = require('../util_functions');
+import * as util_functions from '../util_functions';
 const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command } from '../types';
@@ -11,7 +11,7 @@ const announce = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'announce',
   permissions: (msg: Discord.Message) => msg.author.id === '234020040830091265',
   responder: async (
-    msg: Discord.Message,
+    msg: util_functions.EMessage,
     cmd: Command,
     client: Discord.Client
   ) => {
@@ -35,7 +35,7 @@ const announce = {
           .setDescription(an_text)
       );
     }
-    await msg.channel.send('Sent!');
+    await msg.dbReply('Sent!');
   },
 };
 exports.commandModule = {

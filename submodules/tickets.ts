@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const util_functions = require('../util_functions');
+import * as util_functions from '../util_functions';
 import Discord from 'discord.js';
 import { nanoid } from 'nanoid';
 import { Command } from '../types';
@@ -10,10 +10,10 @@ const ticket = {
     'Create a ticket. Moderator role is the role allowed to view the channel and user is the user who will be added to the ticket',
   matcher: (cmd: Command) => cmd.command == 'ticket',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'ticket',
-  permissions: (msg: Discord.Message) =>
+  permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
-    msg: Discord.Message,
+    msg: util_functions.EMessage,
     cmd: Command,
     client: Discord.Client
   ) => {
@@ -46,7 +46,7 @@ const ticket = {
             ],
           }
         );
-        msg.channel.send(`Created ${channel}`);
+        msg.dbReply(`Created ${channel}`);
         await channel.send(`<@${cmd.user}>, a ticket has been created for you`);
         setTimeout(() => {
           channel.overwritePermissions([
@@ -75,7 +75,7 @@ const ticket = {
         msg.channel.type == 'text' &&
         msg.channel.name.startsWith('ticket-')
       ) {
-        msg.channel.send('Deleting channel in 10 seconds');
+        msg.dbReply('Deleting channel in 10 seconds');
         msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
         setTimeout(() => {
           msg.channel.delete();

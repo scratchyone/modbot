@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const util_functions = require('../util_functions');
+import * as util_functions from '../util_functions';
 const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command } from '../types';
@@ -12,7 +12,7 @@ const lockdown = {
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
-    msg: Discord.Message,
+    msg: util_functions.EMessage,
     cmd: Command,
     client: Discord.Client
   ) => {
@@ -53,12 +53,12 @@ const lockdown = {
         SEND_MESSAGES: true,
       });
     } catch (e) {
-      await msg.channel.send(
+      await msg.dbReply(
         'Warning: An error has occured. Channel permissions might be messed up!'
       );
       throw e;
     }
-    await msg.channel.send('Locked!');
+    await msg.dbReply('Locked!');
   },
 };
 const unlockdown = {
@@ -70,7 +70,7 @@ const unlockdown = {
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
-    msg: Discord.Message,
+    msg: util_functions.EMessage,
     cmd: Command,
     client: Discord.Client
   ) => {
@@ -80,19 +80,19 @@ const unlockdown = {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     const channel = msg.guild.channels.cache.get(cmd.channel);
     if (!channel || channel.type !== 'text') {
-      await msg.channel.send("Channel doesn't exist!");
+      await msg.dbReply("Channel doesn't exist!");
       return;
     }
     const perm = db
       .prepare('SELECT * FROM locked_channels WHERE channel=?')
       .get(channel.id);
     if (!perm) {
-      await msg.channel.send("Channel isn't locked!");
+      await msg.dbReply("Channel isn't locked!");
       return;
     }
     await channel.overwritePermissions(JSON.parse(perm.permissions));
     await (channel as Discord.TextChannel).send('Unlocked!');
-    if (channel.id !== msg.channel.id) await msg.channel.send('Unlocked!');
+    if (channel.id !== msg.channel.id) await msg.dbReply('Unlocked!');
     db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
   },
 };

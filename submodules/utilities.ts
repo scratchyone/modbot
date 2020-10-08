@@ -1,5 +1,5 @@
 /* eslint-disable no-empty */
-const util_functions = require('../util_functions');
+import * as util_functions from '../util_functions';
 import moment from 'moment';
 import Discord from 'discord.js';
 import { Command, EGuild, Prefix, Context } from '../types';
@@ -57,7 +57,7 @@ const poll = {
   matcher: (cmd: Command) => cmd.command == 'poll',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
   permissions: () => true,
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'poll') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     try {
@@ -90,7 +90,7 @@ const spoil = {
   matcher: (cmd: Command) => cmd.command == 'spoil',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'spoil',
   permissions: () => true,
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'spoil') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
 
@@ -124,7 +124,7 @@ const suggestion = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'suggestion',
   permissions: () =>
     process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
-  responder: async (msg: Discord.Message) => {
+  responder: async (msg: util_functions.EMessage) => {
     if (
       process.env.SUGGESTIONMANAGER_URL &&
       process.env.SUGGESTIONMANAGER_TOKEN
@@ -173,7 +173,7 @@ const suggestion = {
           )
         ).json()
       );
-      await msg.channel.send(
+      await msg.dbReply(
         'Submitted, thank you! You can also submit suggestions at https://suggestionmanager.com/suggest/a621c969-5028-44f5-8482-74467e509639/'
       );
     }
@@ -185,12 +185,12 @@ const prefix = {
   explanation: 'Change bot prefixes',
   matcher: (cmd: Command) => cmd.command == 'prefix',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'prefix',
-  permissions: (msg: Discord.Message) =>
+  permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'prefix' || !msg.guild) return;
     if (cmd.action == 'list') {
-      msg.channel.send(
+      msg.dbReply(
         util_functions.desc_embed(
           [
             ...(await Prefix.query().where('server', msg.guild.id)),
@@ -213,9 +213,9 @@ const prefix = {
         throw new util_functions.BotError('user', 'Prefix is too long');
       try {
         await Prefix.query().insert({ server: msg.guild.id, prefix });
-        await msg.channel.send('Added!');
+        await msg.dbReply('Added!');
       } catch (e) {
-        await msg.channel.send('Failed to add prefix. Does it already exist?');
+        await msg.dbReply('Failed to add prefix. Does it already exist?');
       }
     }
     if (cmd.action == 'remove') {
@@ -234,9 +234,9 @@ const prefix = {
           .delete()
           .where('server', msg.guild.id)
           .where('prefix', prefix);
-        await msg.channel.send('Removed!');
+        await msg.dbReply('Removed!');
       } catch (e) {
-        await msg.channel.send('Failed to remove prefix');
+        await msg.dbReply('Failed to remove prefix');
       }
     }
   },
@@ -251,7 +251,8 @@ const userpic = {
   matcher: (cmd: Command) => cmd.command == 'userpic',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'userpic',
   permissions: () => true,
-  responder: async (msg: Discord.Message) => {
+  responder: async (msg: util_functions.EMessage) => {
+    msg.channel.startTyping();
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://picsum.photos/700/250');
@@ -295,7 +296,8 @@ const userpic = {
       canvas.toBuffer(),
       'image.png'
     );
-    msg.channel.send('', attachment);
+    msg.dbReply('', attachment);
+    msg.channel.stopTyping();
   },
 };
 const color = {
@@ -305,7 +307,7 @@ const color = {
   matcher: (cmd: Command) => cmd.command == 'color',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'color',
   permissions: () => true,
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'color') return;
     const Color = require('color');
     try {
@@ -320,7 +322,7 @@ const color = {
         canvas.toBuffer(),
         'image.png'
       );
-      await msg.channel.send(
+      await msg.dbReply(
         new Discord.MessageEmbed()
           .setTitle(cmd.color)
           .attachFiles([attachment])
@@ -342,14 +344,14 @@ const color = {
           canvas.toBuffer(),
           'image.png'
         );
-        await msg.channel.send(
+        await msg.dbReply(
           new Discord.MessageEmbed()
             .attachFiles([attachment])
             .setImage('attachment://image.png')
         );
       }
     } catch (e) {
-      msg.channel.send(e.toString());
+      msg.dbReply(e.toString());
     }
   },
 };
@@ -360,8 +362,8 @@ const ping = {
   matcher: (cmd: Command) => cmd.command == 'ping',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'ping',
   permissions: () => true,
-  responder: async (msg: Discord.Message) => {
-    await msg.channel.send(
+  responder: async (msg: util_functions.EMessage) => {
+    await msg.dbReply(
       `Pong! Took ${new Date().getTime() - msg.createdAt.getTime()}ms`
     );
   },
@@ -374,11 +376,11 @@ const about = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'about',
   permissions: () => true,
   responder: async (
-    msg: Discord.Message,
+    msg: util_functions.EMessage,
     _cmd: Command,
     client: Discord.Client
   ) => {
-    await msg.channel.send(
+    await msg.dbReply(
       new Discord.MessageEmbed()
         .setTitle('About ModBot')
         .setDescription(
@@ -411,9 +413,10 @@ const addemoji = {
     'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
   matcher: (cmd: Command) => cmd.command === 'addemoji',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'addemoji',
-  permissions: (msg: Discord.Message) =>
+  permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_EMOJIS'),
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
+    if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
     if (cmd.command !== 'addemoji' || !msg.guild) return;
     let emojiUrl = undefined;
@@ -437,16 +440,14 @@ const addemoji = {
       );
     try {
       const addedEmoji = await msg.guild.emojis.create(emojiUrl, cmd.name, {});
-      await msg.channel.send(
-        `Added ${addedEmoji} with name ${addedEmoji.name}`
-      );
+      await msg.dbReply(`Added ${addedEmoji} with name ${addedEmoji.name}`);
     } catch (e) {
-      await msg.channel.send('Failed\n' + e);
+      await msg.dbReply('Failed\n' + e);
     }
   },
 };
 async function designEmbed(
-  msg: Discord.Message,
+  msg: util_functions.EMessage,
   embed?: Discord.MessageEmbed
 ): Promise<Discord.MessageEmbed> {
   let currEmbed = embed || new Discord.MessageEmbed();
@@ -580,9 +581,9 @@ const embed = {
   explanation: 'Create/Edit a custom embed',
   matcher: (cmd: Command) => cmd.command == 'embed',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'embed',
-  permissions: (msg: Discord.Message) =>
+  permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg: Discord.Message, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'embed' || !msg.guild) return;
     if (cmd.action == 'create') {
       const channel = await util_functions.ask('What channel?', 20000, msg);
@@ -652,7 +653,7 @@ const cat = {
   matcher: (cmd: Command) => cmd.command == 'cat',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'cat',
   permissions: () => true,
-  responder: async (msg: Discord.Message) => {
+  responder: async (msg: util_functions.EMessage) => {
     const canvas = Canvas.createCanvas(600, 600);
     const ctx = canvas.getContext('2d');
     const background = await Canvas.loadImage('https://cataas.com/cat');
@@ -679,7 +680,7 @@ const cat = {
       canvas.toBuffer(),
       'image.png'
     );
-    await msg.channel.send(attachment);
+    await msg.dbReply(attachment);
   },
 };
 exports.commandModule = {
