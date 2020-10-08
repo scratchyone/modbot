@@ -2190,7 +2190,7 @@ client.on(
             error
           );
           // Return as `reaction.message.author` may be undefined/null
-          return;
+          // return;
         }
       }
       await starboard.onMessageDelete(msg, client);
