@@ -378,11 +378,17 @@ const about = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'about',
   permissions: () => true,
   responder: async (ctx: Types.Context) => {
+    let pj;
+    try {
+      pj = require('../package.json').version;
+    } catch (e) {
+      pj = '?.?.?';
+    }
     await ctx.msg.dbReply(
       new Discord.MessageEmbed()
         .setTitle('About ModBot')
         .setDescription(
-          `ModBot v${require('../package.json').version} is in ${
+          `ModBot v${pj} is in ${
             ctx.client.guilds.cache.array().length
           } servers, with ${
             ctx.client.channels.cache
