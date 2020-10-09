@@ -271,7 +271,8 @@ const main_commands = {
       explanation: 'Set/cancel/copy a reminder, or list all reminders',
       version: 2,
       matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
+      simplematcher: (cmd: Array<string>) =>
+        cmd[0] === 'reminder' || cmd[0] === 'reminders' || cmd[0] === 'rm',
       permissions: () => true,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'reminder' || !ctx.msg.guild) return;
