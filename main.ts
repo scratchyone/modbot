@@ -16,7 +16,6 @@ const knex = Knex({
     filename: 'perms.db3',
   },
 });
-
 // Give the knex instance to objection.
 Model.knex(knex);
 require('dotenv').config();
@@ -2623,6 +2622,11 @@ client.on('message', async (msg: Discord.Message) => {
                     client,
                     db
                   );
+              const mrt = store.getOrSet('stats.msgResponseTimes', []) as Array<
+                number
+              >;
+              mrt.push(new Date().getTime() - msg.createdAt.getTime());
+              store.set('stats.msgResponseTimes', mrt);
             } catch (e) {
               if (e.type == 'user') {
                 await message.dbReply(util_functions.desc_embed(e.message));

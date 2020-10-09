@@ -368,35 +368,39 @@ const ping = {
     );
   },
 };
+const average = require('average');
 const about = {
   name: 'about',
   syntax: 'm: about',
   explanation: 'Get bot info',
+  version: 2,
   matcher: (cmd: Command) => cmd.command == 'about',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'about',
   permissions: () => true,
-  responder: async (
-    msg: util_functions.EMessage,
-    _cmd: Command,
-    client: Discord.Client
-  ) => {
-    await msg.dbReply(
+  responder: async (ctx: Types.Context) => {
+    await ctx.msg.dbReply(
       new Discord.MessageEmbed()
         .setTitle('About ModBot')
         .setDescription(
           `ModBot v${require('../package.json').version} is in ${
-            client.guilds.cache.array().length
+            ctx.client.guilds.cache.array().length
           } servers, with ${
-            client.channels.cache
+            ctx.client.channels.cache
               .array()
               .filter((channel) => channel.type === 'text').length
-          } channels, and ${client.users.cache.array().length} users.${
-            (msg.guild as EGuild).hasPluralKit
+          } channels, and ${ctx.client.users.cache.array().length} users.${
+            (ctx.msg.guild as EGuild).hasPluralKit
               ? ' ModBot is designed to work well with PluralKit.'
               : ''
           } ModBot was last restarted ${moment
             .duration(process.uptime() * -1000)
-            .humanize(true)}`
+            .humanize(true)}.${
+            ctx.store.get('stats.msgResponseTimes')
+              ? ` The average time it takes ModBot to reply to a command is ${average(
+                  ctx.store.get('stats.msgResponseTimes')
+                )}ms`
+              : ''
+          }`
         )
         .setFooter(
           process.env.AUTHOR_NAME

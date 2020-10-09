@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-export type ValueType = string | number | boolean;
+export type ValueType = string | number | boolean | Array<unknown>;
 export default class KeyValueStore {
   data: Map<
     string,
@@ -65,6 +65,14 @@ export default class KeyValueStore {
   }
   public get(key: string): ValueType | null {
     return this.data.get(key)?.value || null;
+  }
+  public getOrSet(key: string, ifNotExists: ValueType): ValueType {
+    const origKey = this.data.get(key);
+    if (origKey) return origKey.value;
+    this.set(key, ifNotExists);
+    const newKey = this.data.get(key);
+    if (newKey) return newKey?.value;
+    else throw new Error('Failed to set');
   }
   public delete(key: string): boolean {
     return this.data.delete(key);
