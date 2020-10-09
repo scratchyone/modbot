@@ -1,7 +1,7 @@
 /* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import Discord from 'discord.js';
-const moment = require('moment');
+import moment from 'moment';
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
 import { Model } from 'objection';
@@ -265,8 +265,9 @@ const main_commands = {
     },
     {
       name: 'reminder',
-      syntax: 'm: reminder add <DURATION> <TEXT> / cancel <ID> / copy <ID>',
-      explanation: 'Set/cancel/copy a reminder',
+      syntax:
+        'm: reminder add <DURATION> <TEXT> / cancel <ID> / copy <ID> / list',
+      explanation: 'Set/cancel/copy a reminder, or list all reminders',
       version: 2,
       matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'reminder',
@@ -278,6 +279,8 @@ const main_commands = {
           await Types.Reminder.query().insert({
             author: ctx.msg.author.id,
             id,
+            text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
+            time: moment().add(parse(cmd.time, 'ms'), 'ms').unix(),
           });
           util_functions.schedule_event(
             {
@@ -309,6 +312,63 @@ const main_commands = {
             .where('author', ctx.msg.author.id)
             .where('id', cmd.id);
           await ctx.msg.dbReply('Cancelled!');
+        } else if (cmd.action === 'list') {
+          const reminders = await Types.Reminder.query().where(
+            'author',
+            ctx.msg.author.id
+          );
+          const res = await util_functions.embed_options(
+            'This will show all reminders from all servers, are you sure you want to continue?',
+            ['Cancel', 'Continue', 'DM Them Instead'],
+            ['❌', '✅', '💬'],
+            ctx.msg
+          );
+          if (res == 0) return;
+          const fields = util_functions.chunk(
+            reminders
+              .filter((n) => n.text)
+              .flatMap((reminder) => {
+                return [
+                  { name: 'Text', value: reminder.text, inline: true },
+                  {
+                    name: 'Time',
+                    value: reminder.time
+                      ? moment.unix(reminder.time).fromNow()
+                      : '[CREATED BEFORE REMINDERS UPDATE]',
+                    inline: true,
+                  },
+                  { name: 'ID', value: reminder.id, inline: true },
+                ];
+              }),
+            21
+          );
+          const replies = [
+            new Discord.MessageEmbed().setTitle(
+              `${ctx.msg.member?.displayName}'s Reminders`
+            ),
+          ];
+          if (fields.length === 0)
+            replies[0].setDescription(
+              'No reminders set. (Only showing reminders created after recent update)'
+            );
+          if (fields.length === 1) replies[0].addFields(fields[0]);
+          else if (fields.length > 1) {
+            replies[0].addFields(fields[0]);
+            for (let i = 1; i < fields.length; i++) {
+              replies.push(new Discord.MessageEmbed().addFields(fields[i]));
+            }
+          }
+
+          if (res === 1) for (const reply of replies) ctx.msg.dbReply(reply);
+          try {
+            if (res === 2)
+              for (const reply of replies)
+                await (await ctx.msg.author.createDM()).send(reply);
+          } catch (e) {
+            ctx.msg.dbReply(
+              'Failed to send DM, do you have DMs enabled for this server?'
+            );
+          }
         }
       },
     },
@@ -1761,7 +1821,7 @@ client.on('ready', async () => {
               );
             }
           }
-          Types.Reminder.query()
+          await Types.Reminder.query()
             .where('author', event.user)
             .where('id', event.id)
             .delete();
