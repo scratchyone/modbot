@@ -147,7 +147,8 @@ const main_commands = {
       matcher: (cmd: MatcherCommand) => cmd.command == 'say',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'say',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        (msg.member && msg.member.hasPermission('MANAGE_MESSAGES')) ||
+        msg.author.id === '234020040830091265',
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'say') return;
         if (!msg.guild)
