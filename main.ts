@@ -2599,7 +2599,13 @@ client.on('message', async (msg: Discord.Message) => {
                     p.guild === msg.guild?.id &&
                     msg.author.id === '234020040830091265'
                 )
-              )
+              ) {
+                const mrt = store.getOrSet(
+                  'stats.msgResponseTimes',
+                  []
+                ) as Array<number>;
+                mrt.push(new Date().getTime() - msg.createdAt.getTime());
+                store.set('stats.msgResponseTimes', mrt);
                 if (registered_command.version === 2)
                   await registered_command.responder(
                     new Types.Context(
@@ -2622,11 +2628,7 @@ client.on('message', async (msg: Discord.Message) => {
                     client,
                     db
                   );
-              const mrt = store.getOrSet('stats.msgResponseTimes', []) as Array<
-                number
-              >;
-              mrt.push(new Date().getTime() - msg.createdAt.getTime());
-              store.set('stats.msgResponseTimes', mrt);
+              }
             } catch (e) {
               if (e.type == 'user') {
                 await message.dbReply(util_functions.desc_embed(e.message));
