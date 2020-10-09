@@ -68,7 +68,7 @@ export async function embed_options(
   title: string,
   options: string[],
   set: string[],
-  message: Discord.Message,
+  message: EMessage,
   time?: number
 ): Promise<number | null> {
   const n_options = [];
@@ -77,7 +77,7 @@ export async function embed_options(
     else n_options.push('<:emoji:' + set[i] + '>' + ' ' + options[i]);
   }
 
-  const msg = await message.channel.send(
+  const msg = await message.dbReply(
     new Discord.MessageEmbed()
       .setTitle(title)
       .setDescription(n_options.join('\n'))
@@ -185,9 +185,9 @@ export class BotError extends Error {
 export async function ask(
   question: string,
   time: number,
-  msg: Discord.Message
+  msg: EMessage
 ): Promise<string> {
-  await msg.channel.send(question);
+  await msg.dbReply(question);
   const sb_name = await msg.channel.awaitMessages(
     (m) => m.author.id == msg.author.id,
     {

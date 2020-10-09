@@ -2229,7 +2229,10 @@ client.on(
       !(await message.isAnonMessage())
     ) {
       try {
-        (await msg.channel.messages.fetch(bm[0].botMessage)).delete();
+        for (const m of bm) {
+          console.log(m);
+          (await msg.channel.messages.fetch(m.botMessage)).delete();
+        }
       } catch (e) {
         console.error(e);
       }
