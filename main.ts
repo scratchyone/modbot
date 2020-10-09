@@ -2232,7 +2232,7 @@ client.on(
       try {
         for (const m of bm) {
           console.log(m);
-          (await msg.channel.messages.fetch(m.botMessage)).delete();
+          await (await msg.channel.messages.fetch(m.botMessage)).delete();
         }
       } catch (e) {
         console.error(e);
