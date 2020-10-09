@@ -402,8 +402,8 @@ const about = {
             .duration(process.uptime() * -1000)
             .humanize(true)}.${
             ctx.store.get('stats.msgResponseTimes')
-              ? ` The average time it takes ModBot to reply to a command is ${average(
-                  ctx.store.get('stats.msgResponseTimes')
+              ? ` The average time it takes ModBot to reply to a command is ${Math.round(
+                  average(ctx.store.get('stats.msgResponseTimes'))
                 )}ms`
               : ''
           }`
