@@ -348,8 +348,12 @@ const main_commands = {
             ),
           ];
           if (fields.length === 0)
+            // Show Explanation for why reminders might be missing, but only for 1 month after update release
             replies[0].setDescription(
-              'No reminders set. (Only showing reminders created after recent update)'
+              'No reminders set.' +
+                (moment().isBefore(moment('11/8/2020', 'MM-DD-YY'))
+                  ? ' (Only showing reminders created after October 8th, 2020)'
+                  : '')
             );
           if (fields.length === 1) replies[0].addFields(fields[0]);
           else if (fields.length > 1) {
