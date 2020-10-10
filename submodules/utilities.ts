@@ -134,7 +134,7 @@ const suggestion = {
         120000,
         msg
       );
-      let sn = msg.member ? msg.member.displayName : msg.author.username;
+      const sn = msg.member ? msg.member.displayName : msg.author.username;
       console.log(
         await (
           await fetch(
