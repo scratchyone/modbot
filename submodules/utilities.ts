@@ -134,16 +134,7 @@ const suggestion = {
         120000,
         msg
       );
-      let sn;
-      try {
-        sn = await util_functions.ask(
-          "What is your name? If you don't answer your nickname will be used!",
-          13000,
-          msg
-        );
-      } catch (e) {
-        sn = msg.member ? msg.member.displayName : msg.author.username;
-      }
+      const sn = msg.member ? msg.member.displayName : msg.author.username;
       console.log(
         await (
           await fetch(
