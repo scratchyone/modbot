@@ -22,6 +22,16 @@ export function randomIntFromInterval(min: number, max: number): number {
 export function desc_embed(text: string): Discord.MessageEmbed {
   return new Discord.MessageEmbed().setDescription(text);
 }
+export function embed(
+  text: string,
+  type: 'success' | 'warning',
+  title?: string
+): Discord.MessageEmbed {
+  return new Discord.MessageEmbed()
+    .setTitle(title || { success: 'Success!', warning: 'Warning!' }[type])
+    .setDescription(text)
+    .setColor({ success: '#1dbb4f', warning: '#d8ae2b' }[type]);
+}
 export function schedule_event(event: unknown, time: string): void {
   db.prepare('INSERT INTO timerevents VALUES (@timestamp, @event)').run({
     timestamp:

@@ -79,10 +79,9 @@ const main_commands = {
       name: 'pin',
       syntax: 'm: pin <MESSAGE>',
       explanation: 'Allows you to pin something anonymously',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'pin',
-      permissions: (msg: Discord.Message) => {
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES');
-      },
+      matcher: (cmd: MatcherCommand) => cmd.command === 'pin',
+      permissions: (msg: Discord.Message) =>
+        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       simplematcher: (cmd: Array<string>) => cmd[0] === 'pin',
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'pin') return;
@@ -90,8 +89,9 @@ const main_commands = {
         try {
           await (await msg.channel.send(cmd.text)).pin();
         } catch (e) {
-          await msg.channel.send(
-            util_functions.desc_embed('Failed to pin: ' + e)
+          throw new util_functions.BotError(
+            'user',
+            'Failed to pin: ' + e.toString().replace('DiscordAPIError: ', '')
           );
         }
       },
@@ -135,7 +135,7 @@ const main_commands = {
               )}})().catch(e=>msg.channel.send(\`Error: \${e}\`)).then(r=>r ? msg.channel.send(r) : 'Ran')`
           );
         } catch (e) {
-          msg.channel.send(util_functions.desc_embed(`Error: ${e}`));
+          throw new util_functions.BotError('user', e);
         }
       },
     },
@@ -164,12 +164,10 @@ const main_commands = {
             server: msg.guild.id,
           })
         ) {
-          const bm = await msg.channel.send(
-            util_functions.desc_embed(
-              `${msg.author}, you're banned from sending messages there!`
-            )
+          throw new util_functions.BotError(
+            'user',
+            `${msg.author}, you're banned from sending messages there!`
           );
-          setTimeout(async () => await bm.delete(), 2000);
         } else {
           if (!cmd.keep) await msg.delete();
           const chan = msg.guild.channels.cache.find(
@@ -210,8 +208,9 @@ const main_commands = {
             );
           }
         msg.dbReply(
-          util_functions.desc_embed(
-            `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>`
+          util_functions.embed(
+            `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>`,
+            'success'
           )
         );
       },
@@ -294,7 +293,11 @@ const main_commands = {
             cmd.time
           );
           await ctx.msg.dbReply(
-            `Set reminder, you can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`
+            util_functions.embed(
+              `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
+              'success',
+              'Set Reminder!'
+            )
           );
         } else if (cmd.action === 'copy') {
           const orig = await Types.Reminder.query().where('id', cmd.id);
@@ -456,8 +459,9 @@ const main_commands = {
               await msg.dbReply(util_functions.desc_embed('Finished.'));
             } else {
               await msg.dbReply(
-                util_functions.desc_embed(
-                  'Finished. Deleting channel in 10 seconds'
+                util_functions.embed(
+                  'Finished. Deleting channel in 10 seconds',
+                  'warning'
                 )
               );
               await sleep(10000);
@@ -493,7 +497,7 @@ const main_commands = {
         if (msg.channel.id == '707361413894504489') return;
         if (await util_functions.confirm(msg)) {
           msg.dbReply(
-            util_functions.desc_embed('Deleting channel in 5 seconds')
+            util_functions.embed('Deleting channel in 5 seconds', 'warning')
           );
           await sleep(5000);
           await msg.channel.delete();
@@ -549,10 +553,11 @@ const main_commands = {
           await realchannel.updateOverwrite(user, { VIEW_CHANNEL: true });
         }
         await msg.dbReply(
-          util_functions.desc_embed(
+          util_functions.embed(
             `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
               cmd.allowed ? 'to' : 'from'
-            } ${cmd.allowed ? 'read' : 'reading'} messages in ${channel}`
+            } ${cmd.allowed ? 'read' : 'reading'} messages in ${channel}`,
+            'success'
           )
         );
       },
@@ -589,7 +594,7 @@ const main_commands = {
             allow: ['VIEW_CHANNEL'],
           },
         ]);
-        await msg.dbReply(util_functions.desc_embed('Archived channel!'));
+        await msg.dbReply(util_functions.embed('Archived channel!', 'success'));
       },
     },
     {
@@ -618,10 +623,15 @@ const main_commands = {
             cmd.time
           );
           await msg.dbReply(
-            util_functions.desc_embed(`Banned <@${cmd.user}> for ${cmd.time}`)
+            util_functions.embed(
+              `Banned <@${cmd.user}> for ${cmd.time}`,
+              'success'
+            )
           );
         } else {
-          await msg.dbReply(util_functions.desc_embed(`Banned <@${cmd.user}>`));
+          await msg.dbReply(
+            util_functions.embed(`Banned <@${cmd.user}>`, 'success')
+          );
         }
       },
     },
@@ -639,7 +649,9 @@ const main_commands = {
           user: cmd.user,
           server: msg.guild.id,
         });
-        await msg.dbReply(util_functions.desc_embed(`Unbanned <@${cmd.user}>`));
+        await msg.dbReply(
+          util_functions.embed(`Unbanned <@${cmd.user}>`, 'success')
+        );
       },
     },
     {
@@ -688,10 +700,10 @@ const main_commands = {
                 ],
           });
         } catch (e) {
-          await msg.dbReply(
-            util_functions.desc_embed('Failed to create channel: ' + e)
+          throw new util_functions.BotError(
+            'user',
+            'Failed to create channel: ' + e
           );
-          return;
         }
         util_functions.schedule_event(
           { type: 'deletechannel', channel: channel.id },
@@ -715,7 +727,10 @@ const main_commands = {
           }
         }, 5000);
         await msg.dbReply(
-          util_functions.desc_embed(`Creating ${channel} for ${cmd.duration}`)
+          util_functions.embed(
+            `Creating ${channel} for ${cmd.duration}`,
+            'success'
+          )
         );
       },
     },
@@ -736,8 +751,9 @@ const main_commands = {
             msg.guild.id
           );
           msg.dbReply(
-            util_functions.desc_embed(
-              `<@&${cmd.role}> are now allowed to pin messages with :pushpin:`
+            util_functions.embed(
+              `<@&${cmd.role}> are now allowed to pin messages with :pushpin:`,
+              'success'
             )
           );
         } else {
@@ -746,8 +762,9 @@ const main_commands = {
             msg.guild.id
           );
           msg.dbReply(
-            util_functions.desc_embed(
-              `<@&${cmd.role}> are no longer allowed to pin messages with :pushpin:`
+            util_functions.embed(
+              `<@&${cmd.role}> are no longer allowed to pin messages with :pushpin:`,
+              'success'
             )
           );
         }
@@ -871,7 +888,9 @@ const main_commands = {
             } else {
               return;
             }
-            await msg.dbReply(util_functions.desc_embed('Added AutoResponder'));
+            await msg.dbReply(
+              util_functions.embed('Added AutoResponder', 'success')
+            );
           } catch (e) {
             console.log(e);
             await msg.dbReply(
@@ -975,7 +994,11 @@ const main_commands = {
       permissions: () => true,
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'support') return;
-        msg.dbReply(util_functions.desc_embed('https://discord.gg/wJ2TCpx'));
+        msg.dbReply(
+          new Discord.MessageEmbed()
+            .setURL('https://discord.gg/wJ2TCpx')
+            .setTitle('Click here to join the support server')
+        );
       },
     },
     {
@@ -995,10 +1018,10 @@ const main_commands = {
               .prepare('SELECT * FROM join_roles WHERE server=?')
               .get(msg.guild.id)
           ) {
-            await msg.dbReply(
+            throw new util_functions.BotError(
+              'user',
               'This server already has a join role. You can disable it with `m: joinroles disable`'
             );
-            return;
           }
           await msg.dbReply(
             'What role would you like to set as the join role?'
@@ -1034,8 +1057,10 @@ const main_commands = {
               .prepare('SELECT * FROM join_roles WHERE server=?')
               .get(msg.guild.id)
           ) {
-            await msg.dbReply("This server doesn't have a join role.");
-            return;
+            throw new util_functions.BotError(
+              'user',
+              "This server doesn't have a join role."
+            );
           }
           db.prepare('DELETE FROM join_roles WHERE server=?').run(msg.guild.id);
           await msg.dbReply(util_functions.desc_embed('Disabled!'));
@@ -1423,10 +1448,9 @@ const main_commands = {
           );
         const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp) {
-          await msg.dbReply(
-            util_functions.desc_embed(
-              'Your highest role is below or equal to the user you are tying to kick'
-            )
+          throw new util_functions.BotError(
+            'user',
+            'Your highest role is below or equal to the user you are tying to kick'
           );
         } else {
           const conf = await util_functions.confirm(msg);
@@ -1457,20 +1481,17 @@ const main_commands = {
           );
         const kickee_hp = kickee.roles.highest.position;
         if (kickee_hp >= hp && kickee.id != msg.author.id) {
-          await msg.dbReply(
-            util_functions.desc_embed(
-              'Your highest role is below or equal to the user you are trying to change roles on'
-            )
+          throw new util_functions.BotError(
+            'user',
+            'Your highest role is below or equal to the user you are trying to change roles on'
           );
         } else {
           if (cmd.action === 'remove') {
             if (!kickee.roles.cache.get(cmd.role)) {
-              await msg.dbReply(
-                util_functions.desc_embed(
-                  `${kickee} doesn't have <@&${cmd.role}>`
-                )
+              throw new util_functions.BotError(
+                'user',
+                `${kickee} doesn't have <@&${cmd.role}>`
               );
-              return;
             }
             await kickee.roles.remove(cmd.role);
             util_functions.schedule_event(
@@ -1484,8 +1505,9 @@ const main_commands = {
               cmd.duration
             );
             await msg.dbReply(
-              util_functions.desc_embed(
-                `Removed <@&${cmd.role}> from ${kickee} for ${cmd.duration}`
+              util_functions.embed(
+                `Removed <@&${cmd.role}> from ${kickee} for ${cmd.duration}`,
+                'success'
               )
             );
           } else if (cmd.action === 'add') {
@@ -1497,12 +1519,10 @@ const main_commands = {
               return;
             }
             if (hp <= role_to_be_added.position) {
-              await msg.dbReply(
-                util_functions.desc_embed(
-                  `<@&${cmd.role}> is equal to or above you in the role list`
-                )
+              throw new util_functions.BotError(
+                'user',
+                `<@&${cmd.role}> is equal to or above you in the role list`
               );
-              return;
             }
             await kickee.roles.add(cmd.role);
             util_functions.schedule_event(
@@ -1516,8 +1536,9 @@ const main_commands = {
               cmd.duration
             );
             await msg.dbReply(
-              util_functions.desc_embed(
-                `Added <@&${cmd.role}> to ${kickee} for ${cmd.duration}`
+              util_functions.embed(
+                `Added <@&${cmd.role}> to ${kickee} for ${cmd.duration}`,
+                'success'
               )
             );
           }
@@ -1539,12 +1560,10 @@ const main_commands = {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
         if (count > 50) {
-          await msg.dbReply(
-            util_functions.desc_embed(
-              'Must be less than or equal to 50 messages'
-            )
+          throw new util_functions.BotError(
+            'user',
+            'Must be less than or equal to 50 messages'
           );
-          return;
         }
         try {
           const purged_msg_num = await (msg.channel as Discord.TextChannel).bulkDelete(
@@ -1557,7 +1576,7 @@ const main_commands = {
             purged_info_msg.delete();
           }, 2000);
         } catch (e) {
-          await msg.dbReply(util_functions.desc_embed(e));
+          throw new util_functions.BotError('user', e);
         }
       },
     },
@@ -1580,8 +1599,9 @@ const main_commands = {
         }
         if (!mentioned_member)
           msg.dbReply(
-            util_functions.desc_embed(
-              "Warning: User doesn't seem to be in this server, information display will be limited"
+            util_functions.embed(
+              "User doesn't seem to be in this server, information display will be limited",
+              'warning'
             )
           );
         const mm_nick =
@@ -2546,6 +2566,7 @@ client.on('message', async (msg: Discord.Message) => {
               await message.dbReply(
                 new Discord.MessageEmbed()
                   .setTitle('Syntax Error')
+                  .setColor('#e74d4d')
                   .setDescription(
                     `**Help:**\n\`${registered_command.syntax.replace(
                       'm: ',
@@ -2631,9 +2652,14 @@ client.on('message', async (msg: Discord.Message) => {
               }
             } catch (e) {
               if (e.type == 'user') {
-                await message.dbReply(util_functions.desc_embed(e.message));
                 await message.dbReply(
-                  `Use \`${matchingPrefix}support\` to get an invite to the support server`
+                  new Discord.MessageEmbed()
+                    .setColor('#e74d4d')
+                    .setTitle('Error')
+                    .setDescription(e.message)
+                    .setFooter(
+                      `Use ${matchingPrefix}support to get an invite to the support server`
+                    )
                 );
               } else if (e.type == 'bot') {
                 await message.dbReply(
