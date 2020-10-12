@@ -399,7 +399,7 @@ const owo = {
   explanation: 'Get a gif',
   matcher: (cmd: Command) => cmd.command == 'owo',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
-  permissions: () => true,
+  permissions: () => true && process.env.MEDIAGEN_URL,
   version: 2,
   responder: async (ctx: Types.Context, cmd: Types.Command) => {
     if (cmd.command !== 'owo') return;
@@ -408,7 +408,7 @@ const owo = {
       ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
       : undefined;
     const data = await fetch(
-      `https://modbot.scratchyone.com/mediagen/owoJson?action=${encodeURIComponent(
+      `${process.env.MEDIAGEN_URL}owoJson?action=${encodeURIComponent(
         cmd.action
       )}&author=${encodeURIComponent(ctx.msg.member?.displayName || '')}${
         authee ? '&authee=' + encodeURIComponent(authee) : ''
@@ -423,34 +423,37 @@ const owo = {
     await ctx.msg.dbReply(
       new Discord.MessageEmbed()
         .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
-        .setImage(dataJson.imageURL)
+        .setImage(
+          `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURI(
+            dataJson.imageURL
+          )}`
+        )
     );
   },
 };
-(async () => {
-  try {
-    owo.syntax =
-      '!owo <' +
-      (
-        await (
-          await fetch('https://modbot.scratchyone.com/mediagen/owoActions')
-        ).json()
-      ).join('/') +
-      '> [USER]';
-    setInterval(
-      async () =>
-        (owo.syntax =
-          '!owo <' +
-          (
-            await (
-              await fetch('https://modbot.scratchyone.com/mediagen/owoActions')
-            ).json()
-          ).join('/') +
-          '> [USER]'),
-      1000 * 60 * 60 // One Hour
-    );
-  } catch (e) {}
-})();
+if (process.env.MEDIAGEN_URL)
+  (async () => {
+    try {
+      owo.syntax =
+        '!owo <' +
+        (
+          await (await fetch(process.env.MEDIAGEN_URL + 'owoActions')).json()
+        ).join('/') +
+        '> [USER]';
+      setInterval(
+        async () =>
+          (owo.syntax =
+            '!owo <' +
+            (
+              await (
+                await fetch(process.env.MEDIAGEN_URL + 'owoActions')
+              ).json()
+            ).join('/') +
+            '> [USER]'),
+        1000 * 60 * 60 // One Hour
+      );
+    } catch (e) {}
+  })();
 const average = require('average');
 const about = {
   name: 'about',
