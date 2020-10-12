@@ -2686,6 +2686,11 @@ client.on('message', async (msg: Discord.Message) => {
                     client,
                     db
                   );
+              } else {
+                throw new util_functions.BotError(
+                  'user',
+                  "You don't have permission to run that command"
+                );
               }
             } catch (e) {
               if (e.type == 'user') {

@@ -1,7 +1,8 @@
 @include "./discord_elements.ne"
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
-unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce | spoil | pick | owo
+unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce | spoil | pick | owo | disablecommand |
+enablecommand
 ) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -56,3 +57,5 @@ announce -> "announce" {% (n)=>{return {command: "announce"}}%}
 spoil -> "spoil" (__ anything):? {% n => {return {command: "spoil", text: n[1] ? n[1][1] : ""}} %}
 pick -> "pick" __ anything {% n => {return {command: "pick", text: n[2]}} %}
 owo -> "owo" __ word (__ user):? {% (n)=>{return {command: "owo", action: n[2], authee: n[3] ? n[3][1] : undefined}}%}
+disablecommand -> "disablecommand" __ word {% (n)=>{return {command: "disablecommand", command: n[2]}}%}
+enablecommand -> "enablecommand" __ word {% (n)=>{return {command: "enablecommand", command: n[2]}}%}
