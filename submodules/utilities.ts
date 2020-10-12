@@ -395,7 +395,7 @@ const ping = {
 };
 const owo = {
   name: 'OwO',
-  syntax: '!owo <hug> [USER]',
+  syntax: '!owo <ACTION> [USER]',
   explanation: 'Get a gif',
   matcher: (cmd: Command) => cmd.command == 'owo',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
@@ -427,6 +427,18 @@ const owo = {
     );
   },
 };
+(async () => {
+  try {
+    owo.syntax =
+      '!owo <' +
+      (
+        await (
+          await fetch('https://modbot.scratchyone.com/mediagen/owoActions')
+        ).json()
+      ).join('/') +
+      '> [USER]';
+  } catch (e) {}
+})();
 const average = require('average');
 const about = {
   name: 'about',
