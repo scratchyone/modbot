@@ -393,6 +393,40 @@ const ping = {
     );
   },
 };
+const owo = {
+  name: 'OwO',
+  syntax: '!owo <hug> [USER]',
+  explanation: 'Get a gif',
+  matcher: (cmd: Command) => cmd.command == 'owo',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Types.Command) => {
+    if (cmd.command !== 'owo') return;
+    console.log(cmd.authee);
+    const authee = cmd.authee
+      ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
+      : undefined;
+    const data = await fetch(
+      `https://modbot.scratchyone.com/mediagen/owoJson?action=${
+        cmd.action
+      }&author=${ctx.msg.member?.displayName}${
+        authee ? '&authee=' + authee : ''
+      }`
+    );
+    const dataJson = await data.json();
+    if (data.status === 404)
+      throw new util_functions.BotError(
+        'user',
+        'Action not found. Run `!help owo` to see all actions'
+      );
+    await ctx.msg.dbReply(
+      new Discord.MessageEmbed()
+        .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
+        .setImage(dataJson.imageURL)
+    );
+  },
+};
 const average = require('average');
 const about = {
   name: 'about',
@@ -727,7 +761,7 @@ exports.commandModule = {
     ping,
     cat,
     about,
-    // update_cmd,
+    owo,
     poll,
     suggestion,
     color,

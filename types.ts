@@ -201,6 +201,11 @@ export type Command =
       text: string;
     }
   | {
+      command: 'owo';
+      action: string;
+      authee?: string;
+    }
+  | {
       command: 'pick';
       text: string;
     }
