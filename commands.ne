@@ -55,4 +55,4 @@ ticket -> "ticket" __ (("create" __ role __ user) | ("delete")) {% (n)=>{return 
 announce -> "announce" {% (n)=>{return {command: "announce"}}%}
 spoil -> "spoil" (__ anything):? {% n => {return {command: "spoil", text: n[1] ? n[1][1] : ""}} %}
 pick -> "pick" __ anything {% n => {return {command: "pick", text: n[2]}} %}
-owo -> "owo" __ word (__ user):? {% (n)=>{return {command: "owo", action: n[2], user: n[3] ? n[3][1] : undefined}}%}
+owo -> "owo" __ word (__ user):? {% (n)=>{return {command: "owo", action: n[2], authee: n[3] ? n[3][1] : undefined}}%}
