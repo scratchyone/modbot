@@ -437,6 +437,18 @@ const owo = {
         ).json()
       ).join('/') +
       '> [USER]';
+    setInterval(
+      async () =>
+        (owo.syntax =
+          '!owo <' +
+          (
+            await (
+              await fetch('https://modbot.scratchyone.com/mediagen/owoActions')
+            ).json()
+          ).join('/') +
+          '> [USER]'),
+      1000 * 60 * 60 // One Hour
+    );
   } catch (e) {}
 })();
 const average = require('average');
