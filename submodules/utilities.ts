@@ -408,10 +408,10 @@ const owo = {
       ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
       : undefined;
     const data = await fetch(
-      `https://modbot.scratchyone.com/mediagen/owoJson?action=${
+      `https://modbot.scratchyone.com/mediagen/owoJson?action=${encodeURIComponent(
         cmd.action
-      }&author=${ctx.msg.member?.displayName}${
-        authee ? '&authee=' + authee : ''
+      )}&author=${encodeURIComponent(ctx.msg.member?.displayName || '')}${
+        authee ? '&authee=' + encodeURIComponent(authee) : ''
       }`
     );
     const dataJson = await data.json();
