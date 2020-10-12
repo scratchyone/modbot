@@ -2,7 +2,7 @@
 import * as util_functions from '../util_functions';
 const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
-import { Command } from '../types';
+import { Command, Context, DisabledCommand } from '../types';
 const lockdown = {
   name: 'lockdown',
   syntax: 'm: lockdown [TIME]',
@@ -96,8 +96,99 @@ const unlockdown = {
     db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
   },
 };
+const disablecommand = {
+  name: 'disablecommand',
+  syntax: 'm: disablecommand <COMMAND>',
+  explanation: 'Disable a command in a server',
+  matcher: (cmd: Command) => cmd.command == 'disablecommand',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'disablecommand',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_MESSAGES'),
+  version: 2,
+  responder: async (ctx: Context, cmd: Command) => {
+    if (cmd.command !== 'disablecommand') return;
+    if (
+      !ctx.validCommands
+        .map((c) => c.toLowerCase())
+        .includes(cmd.text.toLowerCase())
+    )
+      throw new util_functions.BotError('user', 'Command not found');
+    if (cmd.text.toLowerCase() === 'enablecommand')
+      throw new util_functions.BotError(
+        'user',
+        "You can't disable that command"
+      );
+    const commandRealName =
+      ctx.validCommands[
+        ctx.validCommands
+          .map((c) => c.toLowerCase())
+          .indexOf(cmd.text.toLowerCase())
+      ];
+    if (
+      (
+        await DisabledCommand.query()
+          .where('command', commandRealName)
+          .where('server', ctx.msg.guild?.id || '')
+      ).length
+    )
+      throw new util_functions.BotError('user', 'Command is already disabled');
+
+    try {
+      await DisabledCommand.query().insert({
+        server: ctx.msg.guild?.id,
+        command: commandRealName,
+      });
+    } catch (e) {
+      throw new util_functions.BotError('user', 'Failed!');
+    }
+    ctx.msg.dbReply(util_functions.embed('Disabled command!', 'success'));
+  },
+};
+const enablecommand = {
+  name: 'enablecommand',
+  syntax: 'm: enablecommand <COMMAND>',
+  explanation: 'Enable a command in a server',
+  matcher: (cmd: Command) => cmd.command == 'enablecommand',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'enablecommand',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_MESSAGES'),
+  version: 2,
+  responder: async (ctx: Context, cmd: Command) => {
+    if (cmd.command !== 'enablecommand') return;
+    if (
+      !ctx.validCommands
+        .map((c) => c.toLowerCase())
+        .includes(cmd.text.toLowerCase())
+    )
+      throw new util_functions.BotError('user', 'Command not found');
+    const commandRealName =
+      ctx.validCommands[
+        ctx.validCommands
+          .map((c) => c.toLowerCase())
+          .indexOf(cmd.text.toLowerCase())
+      ];
+    if (
+      !(
+        await DisabledCommand.query()
+          .where('command', commandRealName)
+          .where('server', ctx.msg.guild?.id || '')
+      ).length
+    )
+      throw new util_functions.BotError('user', 'Command is already enabled');
+
+    try {
+      await DisabledCommand.query()
+        .delete()
+        .where('command', commandRealName)
+        .where('server', ctx.msg.guild?.id || '');
+    } catch (e) {
+      throw new util_functions.BotError('user', 'Failed!');
+    }
+    ctx.msg.dbReply(util_functions.embed('Enabled command!', 'success'));
+  },
+};
 exports.commandModule = {
   title: 'Moderation',
   description: 'Helpful uncatergorized moderation commands',
-  commands: [lockdown, unlockdown],
+  commands: [lockdown, unlockdown, disablecommand, enablecommand],
 };

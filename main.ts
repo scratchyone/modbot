@@ -2640,6 +2640,17 @@ client.on('message', async (msg: Discord.Message) => {
                 ) as Array<number>;
                 mrt.push(new Date().getTime() - msg.createdAt.getTime());
                 store.set('stats.msgResponseTimes', mrt);
+                if (
+                  (
+                    await Types.DisabledCommand.query()
+                      .where('server', msg.guild.id)
+                      .where('command', results[0][0].command)
+                  ).length
+                )
+                  throw new util_functions.BotError(
+                    'user',
+                    'Sorry, that command has been disabled by a server moderator'
+                  );
                 if (registered_command.version === 2) {
                   const result = await registered_command.responder(
                     new Types.Context(
@@ -2649,7 +2660,10 @@ client.on('message', async (msg: Discord.Message) => {
                         msg.guild
                       ),
                       client,
-                      store
+                      store,
+                      all_command_modules.flatMap((mod) =>
+                        mod.commands.map((c: { name: string }) => c.name)
+                      )
                     ),
                     results[0][0],
                     client,

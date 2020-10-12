@@ -193,6 +193,14 @@ export type Command =
       time?: string;
     }
   | {
+      command: 'disablecommand';
+      text: string;
+    }
+  | {
+      command: 'enablecommand';
+      text: string;
+    }
+  | {
       command: 'unlockdown';
       channel: string;
     }
@@ -273,16 +281,19 @@ export class Context {
   prefix: string;
   client: Discord.Client;
   store: KeyValueStore;
+  validCommands: Array<string>;
   constructor(
     msg: Discord.Message,
     prefix: string,
     client: Discord.Client,
-    store: KeyValueStore
+    store: KeyValueStore,
+    validCommands: Array<string>
   ) {
     this.msg = msg as Types.EMessage;
     this.prefix = prefix;
     this.client = client;
     this.store = store;
+    this.validCommands = validCommands;
   }
 }
 export class Poll extends Model {
@@ -298,5 +309,12 @@ export class BotMessage extends Model {
   botMessage!: string;
   static get tableName(): string {
     return 'botMessages';
+  }
+}
+export class DisabledCommand extends Model {
+  server!: string;
+  command!: string;
+  static get tableName(): string {
+    return 'disabledCommands';
   }
 }

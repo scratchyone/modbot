@@ -57,5 +57,5 @@ announce -> "announce" {% (n)=>{return {command: "announce"}}%}
 spoil -> "spoil" (__ anything):? {% n => {return {command: "spoil", text: n[1] ? n[1][1] : ""}} %}
 pick -> "pick" __ anything {% n => {return {command: "pick", text: n[2]}} %}
 owo -> "owo" __ word (__ user):? {% (n)=>{return {command: "owo", action: n[2], authee: n[3] ? n[3][1] : undefined}}%}
-disablecommand -> "disablecommand" __ word {% (n)=>{return {command: "disablecommand", command: n[2]}}%}
-enablecommand -> "enablecommand" __ word {% (n)=>{return {command: "enablecommand", command: n[2]}}%}
+disablecommand -> "disablecommand" __ word {% (n)=>{return {command: "disablecommand", text: n[2]}}%}
+enablecommand -> "enablecommand" __ word {% (n)=>{return {command: "enablecommand", text: n[2]}}%}
