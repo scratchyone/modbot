@@ -308,6 +308,7 @@ const userpic = {
     msg.channel.stopTyping();
   },
 };
+import Color from 'color';
 const color = {
   name: 'color',
   syntax: 'm: color <COLOR>',
@@ -317,12 +318,11 @@ const color = {
   permissions: () => true,
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'color') return;
-    const Color = require('color');
     try {
       let canvas = Canvas.createCanvas(100, 100);
       let ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = Color(cmd.color);
+      ctx.fillStyle = Color(cmd.color).string();
 
       ctx.fillRect(0, 0, 500, 500);
       // Use helpful Attachment class structure to process the file for you
@@ -333,6 +333,23 @@ const color = {
       await msg.dbReply(
         new Discord.MessageEmbed()
           .setTitle(cmd.color)
+          .addFields(
+            {
+              name: 'RGB',
+              value: Color(cmd.color).rgb().string(),
+              inline: false,
+            },
+            {
+              name: 'Hex',
+              value: Color(cmd.color).hex(),
+              inline: false,
+            },
+            {
+              name: 'HSL',
+              value: Color(cmd.color).hsl(),
+              inline: false,
+            }
+          )
           .attachFiles([attachment])
           .setImage('attachment://image.png')
       );
@@ -344,7 +361,7 @@ const color = {
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, 200, 100);
         // Write username
-        ctx.fillStyle = Color(cmd.color);
+        ctx.fillStyle = Color(cmd.color).string();
         ctx.font = 'Semibold 15px Whitney';
         ctx.fillText('Example User', 10, 27);
         // Use helpful Attachment class structure to process the file for you
