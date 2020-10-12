@@ -428,6 +428,7 @@ const owo = {
             dataJson.imageURL
           )}`
         )
+        .setColor('#bb42cc')
     );
   },
 };
