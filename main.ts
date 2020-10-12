@@ -1091,7 +1091,7 @@ const main_commands = {
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
-              time: 20000,
+              time: 40000,
             }
           );
           if (!chan.array().length) {
@@ -1107,14 +1107,14 @@ const main_commands = {
             ['Yes', 'No'],
             ['✅', '❌'],
             msg,
-            20000
+            40000
           );
           await msg.dbReply('What should the embed title be?');
           const embed_title = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
-              time: 20000,
+              time: 80000,
             }
           );
           if (!embed_title.array().length) {
@@ -1126,7 +1126,7 @@ const main_commands = {
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
-              time: 70000,
+              time: 90000,
             }
           );
           if (!embed_description.array().length) {
@@ -1140,7 +1140,7 @@ const main_commands = {
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
-              time: 70000,
+              time: 90000,
             }
           );
           if (!reacts.array().length) {

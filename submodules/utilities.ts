@@ -486,25 +486,25 @@ async function designEmbed(
       throw new util_functions.BotError('user', 'Timed out, embed not saved');
     if (change === 1)
       currEmbed.setTitle(
-        await util_functions.ask('What should the title be?', 30000, msg)
+        await util_functions.ask('What should the title be?', 60000, msg)
       );
     if (change === 2)
       currEmbed.setDescription(
-        await util_functions.ask('What should the description be?', 80000, msg)
+        await util_functions.ask('What should the description be?', 60000, msg)
       );
     if (change === 3)
       currEmbed.setColor(
-        await util_functions.ask('What should the color be?', 30000, msg)
+        await util_functions.ask('What should the color be?', 60000, msg)
       );
     if (change === 4)
       currEmbed.setFooter(
-        await util_functions.ask('What should the footer be?', 30000, msg)
+        await util_functions.ask('What should the footer be?', 60000, msg)
       );
     if (change === 5)
       currEmbed.setImage(
         await util_functions.ask(
           'What should the URL of the image be?',
-          60000,
+          80000,
           msg
         )
       );
@@ -512,7 +512,7 @@ async function designEmbed(
       currEmbed.setURL(
         await util_functions.ask(
           'What URL should the embed link to?',
-          60000,
+          80000,
           msg
         )
       );
@@ -522,7 +522,7 @@ async function designEmbed(
       currEmbed.setAuthor(
         await util_functions.ask(
           'What should the name of the author be?',
-          60000,
+          80000,
           msg
         )
       );
@@ -530,12 +530,12 @@ async function designEmbed(
       currEmbed.addField(
         await util_functions.ask(
           'What should the name of the field be?',
-          60000,
+          80000,
           msg
         ),
         await util_functions.ask(
           'What should the content of the field be?',
-          60000,
+          80000,
           msg
         )
       );
@@ -546,7 +546,7 @@ async function designEmbed(
           ['Delete', 'Edit'],
           ['🗑️', '✏️'],
           msg,
-          20000
+          40000
         )
       )
         currEmbed.spliceFields(
@@ -557,12 +557,12 @@ async function designEmbed(
           {
             name: await util_functions.ask(
               'What should the name of the field be?',
-              60000,
+              80000,
               msg
             ),
             value: await util_functions.ask(
               'What should the content of the field be?',
-              60000,
+              80000,
               msg
             ),
           }
@@ -570,7 +570,7 @@ async function designEmbed(
       else
         currEmbed.spliceFields(
           parseInt(
-            await util_functions.ask('Which embed (by number)?', 60000, msg)
+            await util_functions.ask('Which embed (by number)?', 80000, msg)
           ) - 1,
           1
         );
@@ -587,7 +587,7 @@ const embed = {
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'embed' || !msg.guild) return;
     if (cmd.action == 'create') {
-      const channel = await util_functions.ask('What channel?', 20000, msg);
+      const channel = await util_functions.ask('What channel?', 40000, msg);
       const dChannel = msg.guild.channels.cache.get(
         channel.replace('<#', '').replace('>', '')
       );
@@ -597,13 +597,13 @@ const embed = {
       await msg.channel.send('Sent!');
     }
     if (cmd.action == 'edit') {
-      const channel = await util_functions.ask('What channel?', 20000, msg);
+      const channel = await util_functions.ask('What channel?', 40000, msg);
       const dChannel = msg.guild.channels.cache.get(
         channel.replace('<#', '').replace('>', '')
       );
       if (!dChannel || dChannel.type !== 'text')
         throw new util_functions.BotError('user', 'Failed to get channel');
-      const m = await util_functions.ask('What messsage ID?', 20000, msg);
+      const m = await util_functions.ask('What messsage ID?', 40000, msg);
       const dMessage = await (dChannel as Discord.TextChannel).messages.fetch(
         m
       );
