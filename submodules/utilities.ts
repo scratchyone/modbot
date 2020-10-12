@@ -110,10 +110,27 @@ const spoil = {
       });
       await loghook.delete();
     }
-
     try {
       await msg.delete();
     } catch (e) {}
+  },
+};
+const pick = {
+  name: 'pick',
+  syntax: 'm: pick <option one; option two; etc>',
+  explanation: 'Pick a random item from a list of options, seperated by `;`',
+  matcher: (cmd: Command) => cmd.command == 'pick',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'pick',
+  version: 2,
+  permissions: () => true,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'pick' || !ctx.msg.guild) return;
+    ctx.msg.dbReply(
+      `I choose ${await util_functions.cleanPings(
+        util_functions.randArrayItem(cmd.text.split('; ').join(';').split(';')),
+        ctx.msg.guild
+      )}`
+    );
   },
 };
 const suggestion = {
@@ -701,6 +718,7 @@ exports.commandModule = {
     embed,
     addemoji,
     spoil,
+    pick,
   ],
 };
 function getLines(

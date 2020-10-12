@@ -201,6 +201,10 @@ export type Command =
       text: string;
     }
   | {
+      command: 'pick';
+      text: string;
+    }
+  | {
       command: 'poll';
       text: string;
     }

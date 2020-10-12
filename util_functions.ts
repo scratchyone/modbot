@@ -32,6 +32,9 @@ export function embed(
     .setDescription(text)
     .setColor({ success: '#1dbb4f', warning: '#d8ae2b' }[type]);
 }
+export function randArrayItem<T>(items: Array<T>): T {
+  return items[~~(items.length * Math.random())];
+}
 export function schedule_event(event: unknown, time: string): void {
   db.prepare('INSERT INTO timerevents VALUES (@timestamp, @event)').run({
     timestamp:
