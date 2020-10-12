@@ -272,8 +272,12 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) =>
         cmd[0] === 'reminder' || cmd[0] === 'reminders' || cmd[0] === 'rm',
       permissions: () => true,
-      responder: async (ctx: Types.Context, cmd: Command) => {
+      responder: async (
+        ctx: Types.Context,
+        cmd: Command
+      ): Promise<Array<() => void> | undefined> => {
         if (cmd.command !== 'reminder' || !ctx.msg.guild) return;
+        const undoStack: Array<() => void> = [];
         if (cmd.action === 'add') {
           const id = nanoid.nanoid(5);
           await Types.Reminder.query().insert({
@@ -291,6 +295,9 @@ const main_commands = {
               id,
             },
             cmd.time
+          );
+          undoStack.push(
+            async () => await Types.Reminder.query().delete().where('id', id)
           );
           await ctx.msg.dbReply(
             util_functions.embed(
@@ -378,6 +385,7 @@ const main_commands = {
             );
           }
         }
+        return undoStack;
       },
     },
     {
@@ -491,16 +499,21 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'deletechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage) => {
-        if (!msg.guild) return;
-        util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-        if (msg.channel.id == '707361413894504489') return;
-        if (await util_functions.confirm(msg)) {
-          msg.dbReply(
+      version: 2,
+      responder: async (
+        ctx: Types.Context
+      ): Promise<Array<() => void> | undefined> => {
+        if (!ctx.msg.guild) return;
+        util_functions.assertHasPerms(ctx.msg.guild, ['MANAGE_CHANNELS']);
+        if (ctx.msg.channel.id == '707361413894504489') return;
+        if (await util_functions.confirm(ctx.msg)) {
+          ctx.msg.dbReply(
             util_functions.embed('Deleting channel in 5 seconds', 'warning')
           );
-          await sleep(5000);
-          await msg.channel.delete();
+          const tmpTimeout = setTimeout(async () => {
+            await ctx.msg.channel.delete();
+          }, 5000);
+          return [() => clearTimeout(tmpTimeout)];
         }
       },
     },
@@ -2627,8 +2640,8 @@ client.on('message', async (msg: Discord.Message) => {
                 ) as Array<number>;
                 mrt.push(new Date().getTime() - msg.createdAt.getTime());
                 store.set('stats.msgResponseTimes', mrt);
-                if (registered_command.version === 2)
-                  await registered_command.responder(
+                if (registered_command.version === 2) {
+                  const result = await registered_command.responder(
                     new Types.Context(
                       msg,
                       await util_functions.cleanPings(
@@ -2642,7 +2655,31 @@ client.on('message', async (msg: Discord.Message) => {
                     client,
                     db
                   );
-                else
+                  const cancelMsg = await msg.channel.awaitMessages(
+                    (m) =>
+                      m.author.id === msg.author.id && m.content === 'cancel',
+                    { time: 20000, max: 1 }
+                  );
+
+                  if (cancelMsg.array().length) {
+                    if (typeof result === 'object' && result.length > 0) {
+                      for (const func of result) {
+                        await func();
+                      }
+                      message.dbReply(
+                        util_functions.embed(
+                          'Finished cancelling!',
+                          'success',
+                          'Cancelled'
+                        )
+                      );
+                    } else
+                      throw new util_functions.BotError(
+                        'user',
+                        "Sorry, that command can't be cancelled"
+                      );
+                  }
+                } else
                   await registered_command.responder(
                     msg,
                     results[0][0],
