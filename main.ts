@@ -999,12 +999,14 @@ const main_commands = {
         } catch (e) {
           ctx.msg.dbReply(
             new Discord.MessageEmbed()
+              .setAuthor(
+                'Wolfram Alpha',
+                'https://media.discordapp.net/attachments/745460367173484624/765623618297790464/wolfram-alpha-2-569293.png',
+                'https://www.wolframalpha.com/'
+              )
               .setTitle('No Result')
               .setDescription("Wolfram Alpha didn't have an answer for that")
               .setColor('#cc4d42')
-              .setThumbnail(
-                'https://cdn.iconscout.com/icon/free/png-256/wolfram-alpha-2-569293.png'
-              )
           );
           ctx.msg.channel.stopTyping();
         }
@@ -2318,8 +2320,10 @@ function sendAlphaResult(
     new Discord.MessageEmbed()
       .setTitle('Result')
       .setDescription(ctx.store.get(`alpha.${cmd.text}`) as string)
-      .setThumbnail(
-        'https://cdn.iconscout.com/icon/free/png-256/wolfram-alpha-2-569293.png'
+      .setAuthor(
+        'Wolfram Alpha',
+        'https://media.discordapp.net/attachments/745460367173484624/765623618297790464/wolfram-alpha-2-569293.png',
+        'https://www.wolframalpha.com/'
       )
       .setColor('#4269cc')
   );
