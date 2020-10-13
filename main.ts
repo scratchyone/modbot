@@ -960,6 +960,10 @@ const main_commands = {
       permissions: () => process.env.WOLFRAMALPHA_KEY,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
+        if (ctx.store.get(`alpha.${cmd.text}`)) {
+          sendAlphaResult(ctx, cmd);
+          return;
+        }
         ctx.store.addOrCreate(
           `rateLimits.alpha.${ctx.msg.author.id}`,
           1,
@@ -986,14 +990,22 @@ const main_commands = {
                 '&format=plaintext&output=json'
             )
           ).json();
-          ctx.msg.dbReply(
-            util_functions.desc_embed(
-              res.queryresult.pods[1].subpods[0].plaintext
-            )
+          ctx.store.set(
+            `alpha.${cmd.text}`,
+            res.queryresult.pods[1].subpods[0].plaintext
           );
+          sendAlphaResult(ctx, cmd);
           ctx.msg.channel.stopTyping();
         } catch (e) {
-          ctx.msg.dbReply(util_functions.desc_embed('Failed'));
+          ctx.msg.dbReply(
+            new Discord.MessageEmbed()
+              .setTitle('No Result')
+              .setDescription("Wolfram Alpha didn't have an answer for that")
+              .setColor('#cc4d42')
+              .setThumbnail(
+                'https://cdn.iconscout.com/icon/free/png-256/wolfram-alpha-2-569293.png'
+              )
+          );
           ctx.msg.channel.stopTyping();
         }
       },
@@ -2298,6 +2310,21 @@ client.on(
     }
   }
 );
+function sendAlphaResult(
+  ctx: Types.Context,
+  cmd: { command: 'alpha'; text: string }
+) {
+  ctx.msg.dbReply(
+    new Discord.MessageEmbed()
+      .setTitle('Result')
+      .setDescription(ctx.store.get(`alpha.${cmd.text}`) as string)
+      .setThumbnail(
+        'https://cdn.iconscout.com/icon/free/png-256/wolfram-alpha-2-569293.png'
+      )
+      .setColor('#4269cc')
+  );
+}
+
 function getArrayRandomElement<T>(arr: Array<T>): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
