@@ -193,20 +193,19 @@ const main_commands = {
         if (!msg.guild || !msg.guild.id) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const channel = cmd.channel ? cmd.channel : msg.channel.id;
-        if (!msg.guild)
-          if (cmd.enabled) {
-            db.prepare(
-              'INSERT INTO anonchannels VALUES (@channel, @server)'
-            ).run({
+        if (cmd.enabled) {
+          db.prepare('INSERT INTO anonchannels VALUES (@channel, @server)').run(
+            {
               channel: channel,
               server: (msg.guild as Discord.Guild).id,
-            });
-          } else {
-            db.prepare('DELETE FROM anonchannels WHERE id=? AND server=?').run(
-              channel,
-              (msg.guild as Discord.Guild).id
-            );
-          }
+            }
+          );
+        } else {
+          db.prepare('DELETE FROM anonchannels WHERE id=? AND server=?').run(
+            channel,
+            (msg.guild as Discord.Guild).id
+          );
+        }
         msg.dbReply(
           util_functions.embed(
             `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>`,
