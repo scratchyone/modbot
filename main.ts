@@ -975,9 +975,7 @@ const main_commands = {
                 0) / 1000
             )}s** before trying again`
           );
-        const tmpMsg = await ctx.msg.dbReply(
-          util_functions.desc_embed('Loading...')
-        );
+        ctx.msg.channel.startTyping();
         try {
           const res = await (
             await nodefetch(
@@ -988,13 +986,15 @@ const main_commands = {
                 '&format=plaintext&output=json'
             )
           ).json();
-          tmpMsg.edit(
+          ctx.msg.dbReply(
             util_functions.desc_embed(
               res.queryresult.pods[1].subpods[0].plaintext
             )
           );
+          ctx.msg.channel.stopTyping();
         } catch (e) {
-          tmpMsg.edit(util_functions.desc_embed('Failed'));
+          ctx.msg.dbReply(util_functions.desc_embed('Failed'));
+          ctx.msg.channel.stopTyping();
         }
       },
     },
