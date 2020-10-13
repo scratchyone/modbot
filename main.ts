@@ -960,7 +960,12 @@ const main_commands = {
       permissions: () => process.env.WOLFRAMALPHA_KEY,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
-        if (ctx.store.get(`alpha.${cmd.text}`)) {
+        if (
+          ctx.store.get(`alpha.${cmd.text}`) &&
+          !['random', 'dice', 'die', 'roll', 'pick'].some((s) =>
+            cmd.text.includes(s)
+          )
+        ) {
           sendAlphaResult(ctx, cmd);
           return;
         }
