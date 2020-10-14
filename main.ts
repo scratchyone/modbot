@@ -2435,11 +2435,13 @@ client.on('message', async (msg: Discord.Message) => {
       msg.member &&
       msg.member.hasPermission('MANAGE_CHANNELS') &&
       !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
-      !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id)
+      !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
+      !msg.content.includes('alertchannel')
     ) {
       await message.dbReply(
-        util_functions.desc_embed(
-          "Warning: You don't have an alert channel setup. This is very important for the bot to be able to warn you if there is an issue. Please set one up with `m: alertchannel enable`, or type `m: alertchannel ignore` to stop getting this message"
+        util_functions.embed(
+          "You don't have an alert channel setup. This is very important for the bot to be able to warn you if there is an issue. Please set one up with `m: alertchannel enable`, or type `m: alertchannel ignore` to stop getting this message",
+          'warning'
         )
       );
     }

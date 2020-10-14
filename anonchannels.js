@@ -30,7 +30,7 @@ async function handle_anon_message(msg) {
   //let anonhook = hooks.find((n) => n.name == 'Anon ' + msg.author.id);
   //if (!anonhook) {
   //  console.log('Making webhook!');
-  const anonhook = await msg.channel.createWebhook('Anon ' + msg.author.id);
+  const anonhook = await msg.channel.createWebhook('Anon');
   //}
   let am = await anonhook.send(
     await util_functions.cleanPings(msg.content, msg.guild),
