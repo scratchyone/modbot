@@ -19,6 +19,7 @@ async function handle_anon_message(msg) {
   /*if (msg.attachments.array()) {
     let attachments = msg.attachments.array();
   }*/
+  if (msg.content.startsWith('\\')) return;
   let nd = true;
   if (!msg.attachments || msg.attachments.array().length == 0) {
     try {
@@ -37,7 +38,6 @@ async function handle_anon_message(msg) {
     {
       embeds: msg.embeds,
       files: msg.attachments.array().map((n) => n.url),
-      username: 'Anon',
     }
   );
   add_anonmessage.run({

@@ -208,7 +208,11 @@ const main_commands = {
         }
         msg.dbReply(
           util_functions.embed(
-            `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>`,
+            `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>${
+              cmd.enabled
+                ? '. Start a message with \\ to prevent it from being sent anonymously'
+                : ''
+            }`,
             'success'
           )
         );
