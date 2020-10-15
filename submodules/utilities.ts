@@ -403,7 +403,6 @@ const owo = {
   version: 2,
   responder: async (ctx: Types.Context, cmd: Types.Command) => {
     if (cmd.command !== 'owo') return;
-    console.log(cmd.authee);
     const authee = cmd.authee
       ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
       : undefined;
