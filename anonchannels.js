@@ -56,3 +56,24 @@ exports.check_anon_channel = check_anon_channel;
 exports.insert_anon_ban = insert_anon_ban;
 exports.remove_anon_ban = remove_anon_ban;
 exports.check_anon_ban = check_anon_ban;
+exports.onNewMessage = async (msg) => {
+  if (
+    msg.guild &&
+    exports.check_anon_channel.get(msg.channel.id, msg.guild.id)
+  ) {
+    if (
+      !exports.check_anon_ban.get({
+        user: msg.author.id,
+        server: msg.guild.id,
+      })
+    )
+      await exports.handle_anon_message(msg);
+    else {
+      await msg.delete();
+      const bm = await msg.channel.send(
+        util_functions.desc_embed(`${msg.author}, you're banned!`)
+      );
+      setTimeout(async () => await bm.delete(), 2000);
+    }
+  }
+};

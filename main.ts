@@ -2340,161 +2340,208 @@ function sendAlphaResult(
 function getArrayRandomElement<T>(arr: Array<T>): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
-const adminServerPermissionOverwrites: Array<{
-  guild: string;
-  timestamp: number;
-}> = [];
-import Humanize, { toFixed } from 'humanize-plus';
-client.on('message', async (msg: Discord.Message) => {
-  const message = msg as util_functions.EMessage;
-  try {
-    if (!msg.guild) return;
-    if (!client.user) return;
-    if (msg.mentions.has(client.user, { ignoreEveryone: true }))
-      msg.react(
-        getArrayRandomElement([
-          '759186176094765057',
-          '759943179175854100',
-          '759943973338087425',
-          '736452416282689617',
-          '736440605311369237',
-          '736440605311369237',
-          '755599209952182364',
-          '759943973375836190',
-          '759943973107924995',
-          '759943973157470208',
-          '759943973514248242',
-        ])
-      );
-    if (msg.author.id === client.user.id) return;
-    await automod.checkForTriggers(msg);
-    if (msg.author.bot) return;
-    /*if (msg.author.id == '671486892457590846') {
-      const Canvas = require('canvas');
-      const canvas = Canvas.createCanvas(502, 453);
-      const ctx = canvas.getContext('2d');
-      const background = await Canvas.loadImage('./Mocking-Spongebob.png');
-      // This uses the canvas dimensions to stretch the image onto the entire canvas
-      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-      ctx.font = '25px sans-serif';
-      // Select the style that will be used to fill the text in
-      ctx.fillStyle = '#000000';
-      // Actually fill the text with a solid color
-      ctx.textAlign = 'left';
-      ctx.fillText(msg.content.toRandomCase(), 10, 40);
-      // Use helpful Attachment class structure to process the file for you
-      const attachment = new Discord.MessageAttachment(
-        canvas.toBuffer(),
-        'image.png'
-      );
-      let im = await msg.channel.send('', attachment);
-      setTimeout(() => {
-        im.delete();
-      }, 30000);
-    }*/
-    /*if (
-    msg.content.startsWith('m: ') &&
-    !(await util_functions.checkSelfPermissions(client, msg.guild))
-  ) {
-    msg.channel.send(
-      util_functions.desc_embed('This bot needs admin permissions!')
+function addReactOnMention(msg: Discord.Message) {
+  if (!client.user) return;
+  if (msg.mentions.has(client.user, { ignoreEveryone: true }))
+    msg.react(
+      getArrayRandomElement([
+        '759186176094765057',
+        '759943179175854100',
+        '759943973338087425',
+        '736452416282689617',
+        '736440605311369237',
+        '736440605311369237',
+        '755599209952182364',
+        '759943973375836190',
+        '759943973107924995',
+        '759943973157470208',
+        '759943973514248242',
+      ])
     );
+}
+async function processAutoresponders(msg: Discord.Message) {
+  const message = msg as util_functions.EMessage;
+  if (!msg.guild) return;
+  const ar = check_for_ar.get(msg.content, msg.guild.id);
+  if (ar) {
+    if (ar.type == 'text') message.dbReply(ar.text_response);
+    else if (ar.type == 'embed')
+      message.dbReply(
+        new Discord.MessageEmbed()
+          .setTitle(ar.embed_title)
+          .setDescription(ar.embed_description)
+      );
+  }
+}
+async function getPrefix(msg: Discord.Message): Promise<string | null> {
+  if (!msg.guild) return null;
+  const prefixes = await Prefix.query().where('server', msg.guild.id);
+  return (
+    prefixes.find((p: Prefix) => msg.content.startsWith(p.prefix))?.prefix ||
+    (msg.content.startsWith('m: ') ? 'm: ' : null)
+  );
+}
+async function requestPermsCommand(
+  msg: Discord.Message,
+  matchingPrefix: string
+) {
+  if (!msg.guild) return;
+  const message = msg as util_functions.EMessage;
+  const args = msg.content
+    .replace(`${matchingPrefix}requestperms `, '')
+    .split(' ');
+  const timeParse = parse(args[0], 's');
+  if (!timeParse) {
+    message.dbReply('Invalid time');
     return;
-  }*/
-    if (
-      msg.guild &&
-      anonchannels.check_anon_channel.get(msg.channel.id, msg.guild.id)
-    ) {
-      if (
-        !anonchannels.check_anon_ban.get({
-          user: msg.author.id,
-          server: msg.guild.id,
-        })
+  }
+  const confMsg = await message.dbReply(
+    util_functions.desc_embed(
+      `${msg.author} would like to request bot permissions for ${args[0]}. A server administrator can react with ✅ to confirm`
+    )
+  );
+  await confMsg.react('✅');
+  const reactions = await confMsg.awaitReactions(
+    (reaction: Discord.MessageReaction, user: Discord.User) =>
+      !!reaction.message.guild?.members.cache
+        .get(user.id)
+        ?.hasPermission('ADMINISTRATOR') && reaction.emoji.name === '✅',
+    {
+      max: 1,
+      time: 60000,
+    }
+  );
+  if (reactions.first()) {
+    message.dbReply(util_functions.desc_embed('Permissions granted!'));
+    adminServerPermissionOverwrites.push({
+      guild: msg.guild.id,
+      timestamp: Date.now() / 1000 + timeParse,
+    });
+    return;
+  } else {
+    confMsg.edit(util_functions.desc_embed('Confirmation failed!'));
+    confMsg.reactions.removeAll();
+    return;
+  }
+}
+async function noAlertChannelWarning(msg: Discord.Message) {
+  if (!msg.guild) return;
+  const message = msg as util_functions.EMessage;
+  if (
+    msg.member?.hasPermission('MANAGE_CHANNELS') &&
+    !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
+    !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
+    !msg.content.includes('alertchannel')
+  ) {
+    // This server does not have an alert channel, has not disabled this warning, and the user has permission to make one
+    await message.dbReply(
+      util_functions.embed(
+        "You don't have an alert channel setup. This is very important for the bot to be able to warn you if there is an issue. Please set one up with `m: alertchannel enable`, or type `m: alertchannel ignore` to stop getting this message",
+        'warning'
       )
-        await anonchannels.handle_anon_message(msg);
-      else {
-        await msg.delete();
-        const bm = await msg.channel.send(
-          util_functions.desc_embed(`${msg.author}, you're banned!`)
-        );
-        setTimeout(async () => await bm.delete(), 2000);
-      }
-    }
-    const ar = check_for_ar.get(msg.content, msg.guild.id);
-    if (ar) {
-      if (ar.type == 'text') message.dbReply(ar.text_response);
-      else if (ar.type == 'embed')
-        message.dbReply(
-          new Discord.MessageEmbed()
-            .setTitle(ar.embed_title)
-            .setDescription(ar.embed_description)
-        );
-    }
-    const prefixes = await Prefix.query().where('server', msg.guild.id);
-    const matchingPrefix =
-      prefixes.find((p: Prefix) => msg.content.startsWith(p.prefix))?.prefix ||
-      (msg.content.startsWith('m: ') ? 'm: ' : null);
-    if (!matchingPrefix || msg.author.bot) return;
-    if (
-      msg.member &&
-      msg.member.hasPermission('MANAGE_CHANNELS') &&
-      !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
-      !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
-      !msg.content.includes('alertchannel')
-    ) {
-      await message.dbReply(
-        util_functions.embed(
-          "You don't have an alert channel setup. This is very important for the bot to be able to warn you if there is an issue. Please set one up with `m: alertchannel enable`, or type `m: alertchannel ignore` to stop getting this message",
-          'warning'
+    );
+  }
+}
+async function runHelpCommands(
+  msg: Discord.Message,
+  matchingPrefix: string
+): Promise<boolean> {
+  const message = msg as util_functions.EMessage;
+  if (msg.content == `${matchingPrefix}help`) {
+    const chunks = all_command_modules
+      .map((mod) => {
+        const cmds = mod.commands
+          .filter(
+            (command: { permissions: (arg0: Discord.Message) => boolean }) =>
+              command.permissions(msg) ||
+              adminServerPermissionOverwrites.find(
+                (p) =>
+                  p.timestamp > Date.now() / 1000 &&
+                  p.guild === msg.guild?.id &&
+                  msg.author.id === '234020040830091265'
+              )
+          )
+          .map(
+            (cmd: { syntax: string }) =>
+              `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
+          )
+          .join('\n');
+        return {
+          name: mod.title,
+          value: '*' + mod.description + '*\n' + cmds,
+          inline: false,
+          cmds: cmds,
+        };
+      })
+      .filter((n) => n.cmds.length);
+    //.chunk_inefficient(25);
+    message.dbReply(
+      new Discord.MessageEmbed()
+        .setTitle(util_functions.fillStringVars('Help for __botName__'))
+        .setDescription(
+          '<> means required, [] means optional. Type `' +
+            matchingPrefix +
+            'help <NAME>` to get help for a specific command module or command'
         )
-      );
-    }
-    if (
-      msg.content.startsWith(`${matchingPrefix}requestperms `) &&
-      msg.author.id === '234020040830091265'
-    ) {
-      const args = msg.content
-        .replace(`${matchingPrefix}requestperms `, '')
-        .split(' ');
-      const timeParse = parse(args[0], 's');
-      if (!timeParse) {
-        message.dbReply('Invalid time');
-        return;
+        .addFields(chunks)
+    );
+    return true;
+  } else if (msg.content.startsWith(`${matchingPrefix}help `)) {
+    const chosen_module = all_command_modules.find(
+      (mod) =>
+        mod.title.toLowerCase() ==
+        msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
+    );
+    if (!chosen_module) {
+      for (const module of all_command_modules) {
+        for (const registered_command of module.commands)
+          try {
+            if (
+              registered_command.name.toLowerCase() ==
+              msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
+            ) {
+              message.dbReply(
+                new Discord.MessageEmbed()
+                  .setTitle(
+                    util_functions.fillStringVars('Help for __botName__')
+                  )
+                  .setDescription(
+                    '**' +
+                      Humanize.capitalize(registered_command.name) +
+                      '**\n' +
+                      (registered_command.explanation ||
+                        registered_command.long_explanation) +
+                      '\n*<> means required, [] means optional.*'
+                  )
+                  .addField(
+                    'Syntax',
+                    `\`${registered_command.syntax.replace(
+                      'm: ',
+                      matchingPrefix
+                    )}\``
+                  )
+              );
+              return true;
+            }
+          } catch (e) {}
       }
-      const confMsg = await message.dbReply(
-        util_functions.desc_embed(
-          `${msg.author} would like to request bot permissions for ${args[0]}. A server administrator can react with ✅ to confirm`
+      await message.dbReply('Module/Command not found!');
+      return true;
+    }
+    message.dbReply(
+      new Discord.MessageEmbed()
+        .setTitle(util_functions.fillStringVars('Help for __botName__'))
+        .setDescription(
+          '**' +
+            chosen_module.title +
+            '**\n' +
+            chosen_module.description +
+            '\n*<> means required, [] means optional.*\nType ' +
+            matchingPrefix +
+            'help <NAME> to get help for a specific command'
         )
-      );
-      await confMsg.react('✅');
-      const reactions = await confMsg.awaitReactions(
-        (reaction: Discord.MessageReaction, user: Discord.User) =>
-          !!reaction.message.guild?.members.cache
-            .get(user.id)
-            ?.hasPermission('ADMINISTRATOR') && reaction.emoji.name === '✅',
-        {
-          max: 1,
-          time: 60000,
-        }
-      );
-
-      if (reactions.first()) {
-        message.dbReply(util_functions.desc_embed('Permissions granted!'));
-        adminServerPermissionOverwrites.push({
-          guild: msg.guild.id,
-          timestamp: Date.now() / 1000 + timeParse,
-        });
-        return;
-      } else {
-        confMsg.edit(util_functions.desc_embed('Confirmation failed!'));
-        confMsg.reactions.removeAll();
-        return;
-      }
-    }
-    if (msg.content == `${matchingPrefix}help`) {
-      const chunks = all_command_modules
-        .map((mod) => {
-          const cmds = mod.commands
+        .addFields(
+          chosen_module.commands
             .filter(
               (command: { permissions: (arg0: Discord.Message) => boolean }) =>
                 command.permissions(msg) ||
@@ -2505,158 +2552,129 @@ client.on('message', async (msg: Discord.Message) => {
                     msg.author.id === '234020040830091265'
                 )
             )
-            .map(
-              (cmd: { syntax: string }) =>
-                `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
-            )
-            .join('\n');
-          return {
-            name: mod.title,
-            value: '*' + mod.description + '*\n' + cmds,
-            inline: false,
-            cmds: cmds,
-          };
-        })
-        .filter((n) => n.cmds.length);
-      //.chunk_inefficient(25);
-      message.dbReply(
-        new Discord.MessageEmbed()
-          .setTitle(util_functions.fillStringVars('Help for __botName__'))
-          .setDescription(
-            '<> means required, [] means optional. Type `' +
-              matchingPrefix +
-              'help <NAME>` to get help for a specific command module or command'
+            .map((n: { name: string; syntax: string; explanation: string }) => {
+              return {
+                name: Humanize.capitalize(n.name),
+                value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
+                  n.explanation
+                }`,
+                inline: false,
+              };
+            })
+        )
+    );
+    return true;
+  }
+  return false;
+}
+async function showSyntaxError(
+  msg: Discord.Message,
+  input: string,
+  matchingPrefix: string
+): Promise<boolean> {
+  const message = msg as util_functions.EMessage;
+  for (const module of all_command_modules) {
+    for (const registered_command of module.commands)
+      try {
+        if (
+          registered_command.simplematcher(
+            input.replace(matchingPrefix, '').split(' ')
           )
-          .addFields(chunks)
-      );
-      return;
-    } else if (msg.content.startsWith(`${matchingPrefix}help `)) {
-      const chosen_module = all_command_modules.find(
-        (mod) =>
-          mod.title.toLowerCase() ==
-          msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
-      );
-      if (!chosen_module) {
-        for (const module of all_command_modules) {
-          for (const registered_command of module.commands)
-            try {
-              if (
-                registered_command.name.toLowerCase() ==
-                msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
-              ) {
-                message.dbReply(
-                  new Discord.MessageEmbed()
-                    .setTitle(
-                      util_functions.fillStringVars('Help for __botName__')
-                    )
-                    .setDescription(
-                      '**' +
-                        Humanize.capitalize(registered_command.name) +
-                        '**\n' +
-                        (registered_command.explanation ||
-                          registered_command.long_explanation) +
-                        '\n*<> means required, [] means optional.*'
-                    )
-                    .addField('Syntax', `\`${registered_command.syntax}\``)
-                );
-                return;
-              }
-            } catch (e) {}
+        ) {
+          await message.dbReply(
+            new Discord.MessageEmbed()
+              .setTitle('Syntax Error')
+              .setColor('#e74d4d')
+              .setDescription(
+                `**Help:**\n\`${registered_command.syntax.replace(
+                  'm: ',
+                  matchingPrefix
+                )}\`\n*${
+                  registered_command.long_explanation ||
+                  registered_command.explanation
+                }*`
+              )
+          );
+          return true;
         }
-        await message.dbReply('Module/Command not found!');
-        return;
-      }
-      message.dbReply(
-        new Discord.MessageEmbed()
-          .setTitle(util_functions.fillStringVars('Help for __botName__'))
-          .setDescription(
-            '**' +
-              chosen_module.title +
-              '**\n' +
-              chosen_module.description +
-              '\n*<> means required, [] means optional.*\nType ' +
-              matchingPrefix +
-              'help <NAME> to get help for a specific command'
-          )
-          .addFields(
-            chosen_module.commands
-              .filter(
-                (command: {
-                  permissions: (arg0: Discord.Message) => boolean;
-                }) =>
-                  command.permissions(msg) ||
-                  adminServerPermissionOverwrites.find(
-                    (p) =>
-                      p.timestamp > Date.now() / 1000 &&
-                      p.guild === msg.guild?.id &&
-                      msg.author.id === '234020040830091265'
-                  )
-              )
-              .map(
-                (n: { name: string; syntax: string; explanation: string }) => {
-                  return {
-                    name: Humanize.capitalize(n.name),
-                    value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
-                      n.explanation
-                    }`,
-                    inline: false,
-                  };
-                }
-              )
-          )
-      );
+      } catch (e) {}
+  }
+  return false;
+}
+function logStats(msg: Discord.Message) {
+  const mrt = store.getOrSet('stats.msgResponseTimes', []) as Array<number>;
+  mrt.push(new Date().getTime() - msg.createdAt.getTime());
+  store.set('stats.msgResponseTimes', mrt);
+}
+async function checkDisabledCommand(msg: Discord.Message, command: string) {
+  if (!msg.guild) return;
+  if (
+    (
+      await Types.DisabledCommand.query()
+        .where('server', msg.guild.id)
+        .where('command', command)
+    ).length
+  )
+    throw new util_functions.BotError(
+      'user',
+      'Sorry, that command has been disabled by a server moderator'
+    );
+}
+const adminServerPermissionOverwrites: Array<{
+  guild: string;
+  timestamp: number;
+}> = [];
+import Humanize, { toFixed } from 'humanize-plus';
+client.on('message', async (msg: Discord.Message) => {
+  // Force msg to EMessage because it *always* will be an EMessage
+  const message = msg as util_functions.EMessage;
+  try {
+    if (!msg.guild) return;
+    if (!client.user) return;
+    // In a guild and logged in
+    addReactOnMention(msg);
+    if (msg.author.id === client.user.id) return;
+    // Message author is not ModBot
+    automod.checkForTriggers(msg);
+    if (msg.author.bot) return;
+    // Message author is not a bot
+    anonchannels.onNewMessage(msg);
+    processAutoresponders(msg);
+    const matchingPrefix = await getPrefix(msg);
+    if (!matchingPrefix) return;
+    // A prefix has matched, this is a command
+    noAlertChannelWarning(msg);
+    if (
+      msg.content.startsWith(`${matchingPrefix}requestperms `) &&
+      msg.author.id === '234020040830091265'
+    ) {
+      // User is bot owner and has run the requestperms meta command
+      await requestPermsCommand(msg, matchingPrefix);
       return;
     }
+    if (await runHelpCommands(msg, matchingPrefix)) return;
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
-    const showSyntaxError = async (input: string): Promise<boolean> => {
-      for (const module of all_command_modules) {
-        for (const registered_command of module.commands)
-          try {
-            if (
-              registered_command.simplematcher(
-                input.replace(matchingPrefix, '').split(' ')
-              )
-            ) {
-              await message.dbReply(
-                new Discord.MessageEmbed()
-                  .setTitle('Syntax Error')
-                  .setColor('#e74d4d')
-                  .setDescription(
-                    `**Help:**\n\`${registered_command.syntax.replace(
-                      'm: ',
-                      matchingPrefix
-                    )}\`\n*${
-                      registered_command.long_explanation ||
-                      registered_command.explanation
-                    }*`
-                  )
-              );
-              return true;
-            }
-          } catch (e) {}
-      }
-      return false;
-    };
+
     try {
       parser.feed(msg.content.replace(matchingPrefix, ''));
-      console.log(parser.results[0]);
     } catch (e) {
-      const foundSyntax = await showSyntaxError(msg.content);
+      const foundSyntax = await showSyntaxError(
+        msg,
+        msg.content,
+        matchingPrefix
+      );
       if (!foundSyntax) {
-        console.log(e);
         message.dbReply(
           new Discord.MessageEmbed()
             .setTitle('Command not found')
             .setDescription(
               `Use \`${matchingPrefix}help\` to view all commands`
             )
+            .setColor('#e74d4d')
         );
       }
     }
     const results = parser.results;
-    /*await msg.channel.send(util_functions.desc_embed(
-    'Parsed command as:\n```json\n' + JSON.stringify(results[0][0]) + '```'
- ));*/
     for (const module of all_command_modules) {
       for (const registered_command of module.commands)
         try {
@@ -2675,23 +2693,8 @@ client.on('message', async (msg: Discord.Message) => {
                     msg.author.id === '234020040830091265'
                 )
               ) {
-                const mrt = store.getOrSet(
-                  'stats.msgResponseTimes',
-                  []
-                ) as Array<number>;
-                mrt.push(new Date().getTime() - msg.createdAt.getTime());
-                store.set('stats.msgResponseTimes', mrt);
-                if (
-                  (
-                    await Types.DisabledCommand.query()
-                      .where('server', msg.guild.id)
-                      .where('command', results[0][0].command)
-                  ).length
-                )
-                  throw new util_functions.BotError(
-                    'user',
-                    'Sorry, that command has been disabled by a server moderator'
-                  );
+                logStats(msg);
+                await checkDisabledCommand(msg, results[0][0].command);
                 if (registered_command.version === 2) {
                   const result = await registered_command.responder(
                     new Types.Context(
@@ -2715,7 +2718,6 @@ client.on('message', async (msg: Discord.Message) => {
                       m.author.id === msg.author.id && m.content === 'cancel',
                     { time: 20000, max: 1 }
                   );
-
                   if (cancelMsg.array().length) {
                     if (typeof result === 'object' && result.length > 0) {
                       for (const func of result) {
@@ -2790,7 +2792,6 @@ client.on('message', async (msg: Discord.Message) => {
                   `Use \`${matchingPrefix}support\` to get an invite to the support server`
                 );
               } else {
-                console.log(e);
                 if (e.httpStatus === 403) {
                   await message.dbReply(
                     util_functions.desc_embed(
@@ -2836,7 +2837,7 @@ client.on('message', async (msg: Discord.Message) => {
               msg.content.replace(matchingPrefix, '').split(' ')
             )
           ) {
-            await showSyntaxError(msg.content);
+            await showSyntaxError(msg, msg.content, matchingPrefix);
           }
         } catch (e) {
           //
@@ -2856,166 +2857,4 @@ client.on('message', async (msg: Discord.Message) => {
     Sentry.captureException(e);
   }
 });
-/*client.on('typingStart', async (channel, user) => {
-  if (anonchannels.check_anon_channel.get(channel.id, channel.guild.id)) {
-    let anonnick = anonchannels.check_anon_nick.get(user.id, channel.guild.id);
-    if (!anonnick) {
-      let member = await channel.guild.member(user);
-      anonchannels.insert_anon_nick.run(
-        user.id,
-        channel.guild.id,
-        member.nickname
-      );
-      await member.setNickname('Anon');
-    }
-  } else {
-    await anonchannels.fixNick(user, channel.guild);
-  }
-});*/
 client.login(process.env.DISCORD_TOKEN);
-/*
-var express = require('express');
-var cors = require('cors');
-var app = express();
-app.use(cors());
-app.use(express.json());
-app.get('/servers/', async (req, res, next) => {
-  let guilds = client.guilds.cache.array();
-  let servers_data = guilds.map((guild) => {
-    let starboard = db
-      .prepare('SELECT * FROM starboards WHERE server=?')
-      .get(guild.id);
-    let sb_channel;
-    if (starboard) {
-      sb_channel = client.channels.cache.get(starboard.channel);
-    }
-    return {
-      name: guild.name,
-      image:
-        guild.iconURL() ||
-        'https://www.androidcentral.com/sites/androidcentral.com/files/styles/small/public/article_images/2019/04/discord-logo-gplay.png',
-      info: {
-        starboard: {
-          enabled: !!starboard,
-          channel: {
-            name: sb_channel && sb_channel.name,
-            id: sb_channel && sb_channel.id,
-          },
-          starsRequired: starboard && starboard.stars,
-          messageCount: db
-            .prepare('SELECT * FROM starboard_messages WHERE server=?')
-            .all(guild.id).length,
-          has_perms: true,
-        },
-      },
-      id: guild.id,
-    };
-  });
-  res.json({ error: false, servers: servers_data });
-});
-app.post('/starboard/setstars', async (req, res, next) => {
-  let channel = client.channels.cache.get(req.body.channel);
-  if (
-    req.body.stars == '' ||
-    isNaN(req.body.stars) ||
-    parseInt(req.body.stars) <= 0
-  ) {
-    res.json({ error: true });
-    return;
-  }
-
-  db.prepare('UPDATE starboards SET stars=? WHERE channel=?').run(
-    req.body.stars,
-    req.body.channel
-  );
-
-  res.json({ error: false });
-});
-app.post('/starboard/setchannel', async (req, res, next) => {
-  let channel = client.channels.cache.get(req.body.channel);
-  let server = client.guilds.cache.get(req.body.server);
-  if (channel.guild.id != server.id) {
-    res.json({ error: true });
-    return;
-  }
-  await channel.overwritePermissions([
-    {
-      id: server.id,
-      deny: ['SEND_MESSAGES'],
-    },
-    {
-      id: client.user.id,
-      allow: ['SEND_MESSAGES'],
-    },
-  ]);
-  db.prepare('UPDATE starboards SET channel=? WHERE server=?').run(
-    req.body.channel,
-    req.body.server
-  );
-  db.prepare('DELETE FROM starboard_messages WHERE server=?').run(
-    req.body.server
-  );
-  res.json({ error: false });
-});
-app.post('/starboard/disable/', async (req, res, next) => {
-  let server = client.guilds.cache.get(req.body.server);
-  db.prepare('DELETE FROM starboards WHERE server=?').run(req.body.server);
-  db.prepare('DELETE FROM starboard_messages WHERE server=?').run(
-    req.body.server
-  );
-  res.json({ error: false });
-});
-app.get('/servers/:server/channels/', async (req, res, next) => {
-  let server;
-  try {
-    server = client.guilds.cache.get(req.params.server);
-  } catch (e) {
-    res.json({
-      error: false,
-      error_message: 'Invalid server',
-    });
-    return;
-  }
-  res.json({
-    error: false,
-    channels: server.channels.cache
-      .array()
-      .filter((channel) => channel.type == 'text')
-      .map((channel) => {
-        return { name: channel.name, id: channel.id };
-      }),
-  });
-});
-if (process.env.PORT) {
-  app.listen(process.env.PORT, function () {
-    console.log('CORS-enabled web server listening on port 80');
-  });
-}
-*/
-if (process.env.STATUSTRACKER_URL && process.env.STATUSTRACKER_TIME_MS) {
-  const reportStatus = async () => {
-    try {
-      const res = await (
-        await nodefetch(process.env.STATUSTRACKER_URL + '/ping', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: 'ModBot',
-            secret: process.env.STATUSTRACKER_SECRET,
-          }),
-        })
-      ).json();
-      if (res.error) {
-        console.error('Failed to update statustracker: ' + res.error);
-      }
-    } catch (e) {
-      console.error('Failed to update statustracker: ' + e);
-    }
-  };
-  reportStatus();
-  setInterval(async () => {
-    await reportStatus();
-  }, parseInt(process.env.STATUSTRACKER_TIME_MS));
-}
