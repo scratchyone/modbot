@@ -2225,17 +2225,12 @@ client.on('messageReactionRemove', async (reaction, user) => {
     Sentry.captureException(e);
   }
 });
+import fs from 'fs';
 const all_command_modules = [
   main_commands,
-  mutes.commandModule,
-  starboard.commandModule,
-  utilities.commandModule,
-  alertchannels.commandModule,
-  moderation.commandModule,
-  automod.commandModule,
-  slowmode.commandModule,
-  tickets.commandModule,
-  admin.commandModule,
+  ...fs
+    .readdirSync('submodules')
+    .map((mod) => require('./submodules/' + mod).commandModule),
 ];
 for (const module of all_command_modules) {
   if (module.cog) module.cog(client);
