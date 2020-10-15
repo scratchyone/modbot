@@ -423,7 +423,7 @@ const owo = {
       new Discord.MessageEmbed()
         .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
         .setImage(
-          `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURI(
+          `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURIComponent(
             dataJson.imageURL
           )}`
         )
