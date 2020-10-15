@@ -405,7 +405,6 @@ exports.commandModule = {
   commands: [starboardCommand, starGetCommand],
   cog: async (client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
-      const message = reaction.message;
       if (user.id === client.user?.id) return;
       try {
         // When we receive a reaction we check if the reaction is partial or not
@@ -429,7 +428,6 @@ exports.commandModule = {
       } catch (e) {}
     });
     client.on('messageReactionRemove', async (reaction, user) => {
-      const message = reaction.message;
       if (user.id === client.user?.id) return;
       try {
         // When we receive a reaction we check if the reaction is partial or not
