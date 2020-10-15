@@ -105,7 +105,7 @@ const spoil = {
       });
       console.log(files);
       await loghook.send({
-        content: cmd.text,
+        content: await util_functions.cleanPings(cmd.text, msg.guild),
         files: files,
       });
       await loghook.delete();
@@ -309,6 +309,7 @@ const userpic = {
   },
 };
 import Color from 'color';
+import { util } from 'prettier';
 const color = {
   name: 'color',
   syntax: 'm: color <COLOR>',
