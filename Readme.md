@@ -9,14 +9,14 @@ DISCORD_TOKEN # Required
 SENTRY_TOKEN # Optional
 SUGGESTIONMANAGER_URL # Base URL of suggestionmanager backend, optional but required for suggestion command to work
 SUGGESTIONMANAGER_TOKEN # Token from url for submit suggestion page on suggestionmanager, optional but required for suggestion command to work
+MEDIAGEN_URL # URL for a mediagen deployment (scratchyone/mediagen), optional but required for poll and owo commands to work
 ```
 
 Then start the bot with:
 
 ```powershell
 npm install
-npm run nearley # Compile parsing grammar
-npm run tsc # Compile typescript
+npm run build # Compile everything
 npx knex migrate:latest # Runs all DB migrations
 node build/main.js # Make sure to start the bot from the root directory and not the build directory or the DB won't work
 ```
