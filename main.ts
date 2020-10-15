@@ -2208,8 +2208,8 @@ import fs from 'fs';
 const all_command_modules = [
   main_commands,
   ...fs
-    .readdirSync('submodules')
-    .map((mod) => require('./submodules/' + mod).commandModule),
+    .readdirSync(__dirname + '/submodules')
+    .map((mod) => require(__dirname + '/submodules/' + mod).commandModule),
 ];
 for (const module of all_command_modules) {
   if (module.cog) module.cog(client);
