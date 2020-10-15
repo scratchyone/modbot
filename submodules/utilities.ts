@@ -6,6 +6,7 @@ import { Command, EGuild, Prefix, Context } from '../types';
 import * as Types from '../types';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
+// Get bot invite link
 const invite = {
   name: 'invite',
   syntax: 'm: invite',
@@ -30,6 +31,7 @@ const invite = {
     );
   },
 };
+// Edit a poll message with an updated image
 async function reRenderPoll(message: Discord.Message) {
   try {
     await message.edit({
@@ -66,6 +68,7 @@ const poll = {
     const warning = await msg.channel.send(
       'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
     );
+    // Delete warning after 8 seconds
     setTimeout(() => warning.delete(), 8000);
     const pollMsg = await msg.channel.send(
       new Discord.MessageEmbed()
@@ -78,8 +81,10 @@ const poll = {
           'https://modbot.scratchyone.com/mediagen/poll?up=' + 0 + '&down=' + 0
         )
     );
+    // Add reactions for voting
     await pollMsg.react('👍');
     await pollMsg.react('👎');
+    // Save poll in database
     await Types.Poll.query().insert({ message: pollMsg.id });
   },
 };
@@ -93,21 +98,23 @@ const spoil = {
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'spoil') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
-
     if (msg.guild !== null && msg.channel.type == 'text') {
       const uuser = msg.member;
       if (!uuser) throw new Error('User not found');
+      // Create a webhook for sending message
       const loghook = await msg.channel.createWebhook(uuser.displayName, {
         avatar: uuser.user.displayAvatarURL(),
       });
+      // Add SPOILER_ to all message attachments to make them be spoiled
       const files = msg.attachments.array().map((attachment) => {
         return { ...attachment, name: 'SPOILER_' + attachment.name };
       });
-      console.log(files);
+      // Send with a webhook for custom username and profile picture
       await loghook.send({
         content: await util_functions.cleanPings(cmd.text, msg.guild),
         files: files,
       });
+      // Delete webhook
       await loghook.delete();
     }
     try {
@@ -152,6 +159,7 @@ const suggestion = {
         msg
       );
       const sn = msg.member ? msg.member.displayName : msg.author.username;
+      // Make a GraphQL mutation on the SuggestionManager API
       console.log(
         await (
           await fetch(
@@ -249,6 +257,7 @@ const prefix = {
     }
   },
 };
+// Random number in range
 function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -263,6 +272,7 @@ const userpic = {
     msg.channel.startTyping();
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
+    // Load random background image
     const background = await Canvas.loadImage('https://picsum.photos/700/250');
     // This uses the canvas dimensions to stretch the image onto the entire canvas
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -293,6 +303,7 @@ const userpic = {
       `I think we could get along well, ${name}`,
     ];
     let message = get_random(messages);
+    // Rare chance of insulting the user instead
     if (randomIntFromInterval(0, 100) == 50) {
       message = `Fuck you, ${name}`;
     }
@@ -323,7 +334,7 @@ const color = {
       let ctx = canvas.getContext('2d');
 
       ctx.fillStyle = Color(cmd.color).string();
-
+      // Generate thumbnail of image color
       ctx.fillRect(0, 0, 500, 500);
       // Use helpful Attachment class structure to process the file for you
       let attachment: Discord.MessageAttachment = new Discord.MessageAttachment(
@@ -351,7 +362,7 @@ const color = {
             }
           )
           .attachFiles([attachment])
-          .setImage('attachment://image.png')
+          .setThumbnail('attachment://image.png')
       );
       // Run for each discord background color
       for (const color of ['#36393F', '#FFFFFF']) {
@@ -360,11 +371,10 @@ const color = {
         // Fill discord background color
         ctx.fillStyle = color;
         ctx.fillRect(0, 0, 200, 100);
-        // Write username
+        // Write username in color
         ctx.fillStyle = Color(cmd.color).string();
         ctx.font = 'Semibold 15px Whitney';
         ctx.fillText('Example User', 10, 27);
-        // Use helpful Attachment class structure to process the file for you
         attachment = new Discord.MessageAttachment(
           canvas.toBuffer(),
           'image.png'
@@ -403,9 +413,11 @@ const owo = {
   version: 2,
   responder: async (ctx: Types.Context, cmd: Types.Command) => {
     if (cmd.command !== 'owo') return;
+    // Get the tagged user, or none
     const authee = cmd.authee
       ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
       : undefined;
+    // Get a message, image, and metadata from mediagen
     const data = await fetch(
       `${process.env.MEDIAGEN_URL}owoJson?action=${encodeURIComponent(
         cmd.action
@@ -415,6 +427,7 @@ const owo = {
     );
     const dataJson = await data.json();
     if (data.status === 404)
+      // 404 is returned on invalid actions
       throw new util_functions.BotError(
         'user',
         'Action not found. Run `!help owo` to see all actions'
@@ -423,14 +436,17 @@ const owo = {
       new Discord.MessageEmbed()
         .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
         .setImage(
+          // Use mediagen to resize and process gif
           `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURIComponent(
             dataJson.imageURL
           )}`
         )
+        // Set dominant color from mediagen
         .setColor(dataJson.color)
     );
   },
 };
+// If mediagen is setup, update syntax for OwO command to include all available actions in mediagen
 if (process.env.MEDIAGEN_URL)
   (async () => {
     try {
@@ -465,6 +481,7 @@ const about = {
   permissions: () => true,
   responder: async (ctx: Types.Context) => {
     let pj;
+    // Get version, or unknown if package.json doesn't exist (Might not exist during rebuilds)
     try {
       pj = require('../package.json').version;
     } catch (e) {
@@ -517,17 +534,21 @@ const addemoji = {
     if (cmd.command !== 'addemoji' || !msg.guild) return;
     let emojiUrl = undefined;
     if (/<:.*:(\d+)>/.test(cmd.emojiData || '')) {
+      // If non-animated emoji is supplied
       emojiUrl =
         'https://cdn.discordapp.com/emojis/' +
         (cmd.emojiData || '').match(/<:.*:(\d+)>/)?.[1] +
         '.png';
     } else if (/<a:.*:(\d+)>/.test(cmd.emojiData || '')) {
+      // If animated emoji is supplied
       emojiUrl =
         'https://cdn.discordapp.com/emojis/' +
         (cmd.emojiData || '').match(/<a:.*:(\d+)>/)?.[1] +
         '.gif';
     } else if (msg.attachments.array().length)
+      // If an attachment is supplied, use that
       emojiUrl = msg.attachments.array()[0].url;
+    // Otherwise use whatever data was given (Probably an image URL)
     else if (cmd.emojiData) emojiUrl = cmd.emojiData;
     if (!emojiUrl)
       throw new util_functions.BotError(
@@ -535,6 +556,7 @@ const addemoji = {
         "You don't seem to have supplied me an image"
       );
     try {
+      // Add emoji
       const addedEmoji = await msg.guild.emojis.create(emojiUrl, cmd.name, {});
       await msg.dbReply(`Added ${addedEmoji} with name ${addedEmoji.name}`);
     } catch (e) {
@@ -542,17 +564,21 @@ const addemoji = {
     }
   },
 };
+// UI flow to create embed
 async function designEmbed(
   msg: util_functions.EMessage,
   embed?: Discord.MessageEmbed
 ): Promise<Discord.MessageEmbed> {
   let currEmbed = embed || new Discord.MessageEmbed();
+  // Loop until user is done
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       await msg.channel.send('Current Embed:', currEmbed);
     } catch (e) {
+      // User supplied an invalid option previously, and the embed can't be sent
       msg.channel.send('Invalid data provided, embed reset');
+      // Reset the embed
       currEmbed = embed || new Discord.MessageEmbed();
       await msg.channel.send('Current Embed:', currEmbed);
     }
@@ -576,7 +602,9 @@ async function designEmbed(
       msg,
       80000
     );
+    // User chose to save
     if (change === 0) return currEmbed;
+    // User chose nothing
     if (change === null)
       throw new util_functions.BotError('user', 'Timed out, embed not saved');
     if (change === 1)
@@ -709,39 +737,6 @@ const embed = {
     }
   },
 };
-/*
-const update_cmd = {
-  name: 'update',
-  syntax: 'm: update <ID>',
-  explanation: 'Update bot',
-  matcher: (cmd) => cmd.command == 'update',
-  permissions: (msg) =>
-    msg.author.id === '234020040830091265' && process.env.UPDATE_COMMAND,
-  responder: async (msg, cmd) => {
-    const { exec } = require('child_process');
-    try {
-      await msg.channel.send('Updating!');
-      exec(
-        process.env.UPDATE_COMMAND.replace('__ID__', cmd.id),
-        (error, stdout, stderr) => {
-          if (error) {
-            msg.channel.send(
-              util_functions.desc_embed(`Error: ${error.message}`)
-            );
-            return;
-          }
-          if (stderr) {
-            msg.channel.send(util_functions.desc_embed(`Error: ${stderr}`));
-            return;
-          }
-          msg.channel
-            .send(util_functions.desc_embed(`${stdout}`))
-            .then(() => process.exit(0));
-        }
-      );
-    } catch (e) {}
-  },
-};*/
 const cat = {
   name: 'cat',
   syntax: 'm: cat',
@@ -757,21 +752,17 @@ const cat = {
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, canvas.height / 1.4, 800, 500);
-    // Select the style that will be used to fill the text in
     ctx.fillStyle = '#ffffff';
-    // Actually fill the text with a solid color
     ctx.textAlign = 'center';
-
+    // Add cat fact
     const message = (await (await fetch('https://catfact.ninja/fact')).json())
       .fact;
     ctx.font = '20pt Consolas';
-
     ctx.fillText(
       getLines(ctx, message, 600).join('\n'),
       canvas.width / 2,
       canvas.height / 1.3
     );
-    // Use helpful Attachment class structure to process the file for you
     const attachment = new Discord.MessageAttachment(
       canvas.toBuffer(),
       'image.png'
@@ -822,6 +813,8 @@ exports.commandModule = {
           (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
           (await message.isPoll())
         ) {
+          // This is a poll and somebody reacted with poll emojis
+          // Get other poll emojis on this message by user
           const t = reaction.message.reactions.cache
             .array()
             .filter(
@@ -830,6 +823,7 @@ exports.commandModule = {
                 r.users.cache.array().filter((u) => u.id == user.id).length &&
                 r.emoji.name != reaction.emoji.name
             );
+          // If the user has already voted, don't let them add another
           if (t.length) reaction.users.remove(user as Discord.User);
           else await reRenderPoll(reaction.message);
         }
@@ -858,6 +852,8 @@ exports.commandModule = {
           (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
           message.isPoll
         ) {
+          // A user removed a poll react
+          // Ensure the emoji wasn't removed by ModBot because it was a duplicate
           const t = reaction.message.reactions.cache
             .array()
             .filter(
@@ -872,6 +868,7 @@ exports.commandModule = {
     });
   },
 };
+// Convert text to array of lines for canvas
 function getLines(
   ctx: Canvas.CanvasRenderingContext2D,
   text: string,
