@@ -35,16 +35,28 @@ const parse_duration = require('parse-duration');
 const nodefetch = require('node-fetch');
 const nearley = require('nearley');
 const commands = require('./commands.js');
-const mutes = require('./submodules/mutes.js');
-const utilities = require('./submodules/utilities');
-const slowmode = require('./submodules/slowmode.js');
-const moderation = require('./submodules/moderation');
-const tickets = require('./submodules/tickets');
-const admin = require('./submodules/admin');
-const starboard = require('./submodules/starboard.js');
-const alertchannels = require('./submodules/alertchannels.js');
-const automod = require('./submodules/automod.js');
-const nanoid = require('nanoid');
+const mutes = (() => {
+  try {
+    return require('./submodules/mutes.js');
+  } catch (e) {
+    return undefined;
+  }
+})();
+const alertchannels = (() => {
+  try {
+    return require('./submodules/alertchannels.js');
+  } catch (e) {
+    return undefined;
+  }
+})();
+const automod = (() => {
+  try {
+    return require('./submodules/automod.js');
+  } catch (e) {
+    return undefined;
+  }
+})();
+import nanoid from 'nanoid';
 const db = require('better-sqlite3')('perms.db3', {});
 const check_if_can_pin = db.prepare('SELECT * FROM pinners');
 const check_for_ar = db.prepare(
@@ -1641,7 +1653,9 @@ const main_commands = {
           );
         const mm_nick =
           mentioned_member?.displayName || mentioned_user.username;
-        const mute_role = mutes.getMuteRole.get(msg.guild.id);
+        const mute_role = mutes
+          ? mutes.getMuteRole.get(msg.guild.id)
+          : undefined;
         const desc: Array<string> = [];
         let use_pronouns = false;
         if (mute_role && mentioned_member) {
@@ -1993,7 +2007,6 @@ client.on('ready', async () => {
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
-  const message = reaction.message as util_functions.EMessage;
   if (user.id === client.user?.id) return;
   try {
     // When we receive a reaction we check if the reaction is partial or not
@@ -2008,24 +2021,6 @@ client.on('messageReactionAdd', async (reaction, user) => {
       }
     }
     if (!reaction.message.guild) return;
-    if (
-      (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
-      (await message.isPoll())
-    ) {
-      const t = reaction.message.reactions.cache
-        .array()
-        .filter(
-          (r) =>
-            (r.emoji.name == '👍' || r.emoji.name == '👎') &&
-            r.users.cache.array().filter((u) => u.id == user.id).length &&
-            r.emoji.name != reaction.emoji.name
-        );
-      if (t.length) reaction.users.remove(user as Discord.User);
-      else await utilities.reRenderPoll(reaction.message, client);
-    }
-    if (reaction.emoji.name == '⭐') {
-      await starboard.onStarReactAdd(reaction, client);
-    }
     const member = reaction.message.guild.member(user as Discord.User);
     const roles_that_can_pin = check_if_can_pin.all();
     if (
@@ -2089,11 +2084,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
         if (member) await member.roles.add(rr.role);
       } catch (e) {
         if (
-          alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
+          alertchannels?.check_for_alert_channel.get(reaction.message.guild.id)
         ) {
           const tmp = reaction.message.guild.channels.cache.get(
-            alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
-              .channel
+            alertchannels?.check_for_alert_channel.get(
+              reaction.message.guild.id
+            ).channel
           );
           if (tmp && tmp.type == 'text')
             (tmp as Discord.TextChannel).send(
@@ -2131,7 +2127,6 @@ client.on('channelCreate', async (channel) => {
   }
 });
 client.on('messageReactionRemove', async (reaction, user) => {
-  const message = reaction.message as util_functions.EMessage;
   if (!reaction.message.guild) return;
   try {
     // When we receive a reaction we check if the reaction is partial or not
@@ -2144,23 +2139,6 @@ client.on('messageReactionRemove', async (reaction, user) => {
         // Return as `reaction.message.author` may be undefined/null
         return;
       }
-    }
-    if (reaction.emoji.name == '⭐') {
-      await starboard.onStarReactRemove(reaction, client);
-    }
-    if (
-      (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
-      message.isPoll
-    ) {
-      const t = reaction.message.reactions.cache
-        .array()
-        .filter(
-          (r) =>
-            (r.emoji.name == '👍' || r.emoji.name == '👎') &&
-            r.users.cache.array().filter((u) => u.id == user.id).length &&
-            r.emoji.name != reaction.emoji.name
-        );
-      if (!t.length) await utilities.reRenderPoll(reaction.message, client);
     }
     const member = reaction.message.guild.member(user as Discord.User);
     const roles_that_can_pin = check_if_can_pin.all();
@@ -2200,11 +2178,12 @@ client.on('messageReactionRemove', async (reaction, user) => {
         if (member) await member.roles.remove(rr.role);
       } catch (e) {
         if (
-          alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
+          alertchannels?.check_for_alert_channel.get(reaction.message.guild.id)
         ) {
           const tmp = reaction.message.guild.channels.cache.get(
-            alertchannels.check_for_alert_channel.get(reaction.message.guild.id)
-              .channel
+            alertchannels?.check_for_alert_channel.get(
+              reaction.message.guild.id
+            ).channel
           );
           if (tmp)
             (tmp as Discord.TextChannel).send(
@@ -2244,19 +2223,6 @@ client.on('guildMemberAdd', async (member) => {
         .role
     );
 });
-client.on('messageUpdate', async (omsg, nmsg) => {
-  if (nmsg.partial) {
-    // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
-    try {
-      await nmsg.fetch();
-    } catch (error) {
-      console.log('Something went wrong when fetching the message: ', error);
-      // Return as `reaction.message.author` may be undefined/null
-      return;
-    }
-  }
-  await starboard.onMessageEdit(omsg, nmsg, client);
-});
 client.on(
   'messageDelete',
   async (msg: Discord.Message | Discord.PartialMessage) => {
@@ -2271,7 +2237,6 @@ client.on(
       }
     }
     const message = msg as util_functions.EMessage;
-    await starboard.onMessageDelete(msg, client);
     const bm = await Types.BotMessage.query().where('message', msg.id);
     if (
       bm.length &&
@@ -2311,7 +2276,6 @@ client.on(
           // return;
         }
       }
-      await starboard.onMessageDelete(msg, client);
     }
   }
 );
@@ -2423,6 +2387,7 @@ async function noAlertChannelWarning(msg: Discord.Message) {
   if (!msg.guild) return;
   const message = msg as util_functions.EMessage;
   if (
+    alertchannels &&
     msg.member?.hasPermission('MANAGE_CHANNELS') &&
     !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
     !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
@@ -2630,7 +2595,7 @@ client.on('message', async (msg: Discord.Message) => {
     addReactOnMention(msg);
     if (msg.author.id === client.user.id) return;
     // Message author is not ModBot
-    automod.checkForTriggers(msg);
+    if (automod) automod.checkForTriggers(msg);
     if (msg.author.bot) return;
     // Message author is not a bot
     anonchannels.onNewMessage(msg);

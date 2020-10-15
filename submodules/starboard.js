@@ -1,7 +1,7 @@
 const db = require('better-sqlite3')('perms.db3', {});
 let util_functions = require('../util_functions');
 const Discord = require('discord.js');
-exports.onStarReactRemove = async (reaction, client) => {
+const onStarReactRemove = async (reaction, client) => {
   if (
     db
       .prepare('SELECT * FROM starboard_messages WHERE message=?')
@@ -121,7 +121,7 @@ async function genSBMessage(message) {
         .setImage(image),
     };
 }
-exports.onStarReactAdd = async (reaction, client) => {
+const onStarReactAdd = async (reaction, client) => {
   if (
     !db
       .prepare('SELECT * FROM starboard_messages WHERE message=?')
@@ -171,7 +171,7 @@ async function starboardMessageToRealSBMsg(s, client) {
   let sb_disc_msg = await sb_chan.messages.fetch(s.starboard_message);
   return sb_disc_msg;
 }
-exports.onMessageEdit = async (old, newm, client) => {
+const onMessageEdit = async (old, newm, client) => {
   if (
     db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(newm.id)
   ) {
@@ -182,7 +182,7 @@ exports.onMessageEdit = async (old, newm, client) => {
     await real_msg.edit(await genSBMessage(newm));
   }
 };
-exports.onMessageDelete = async (msg, client) => {
+const onMessageDelete = async (msg, client) => {
   if (
     db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(msg.id)
   ) {
@@ -403,4 +403,78 @@ exports.commandModule = {
   description:
     'Commands related to creating, deleting, and configuring the starboard',
   commands: [starboardCommand, starGetCommand],
+  cog: async (client) => {
+    client.on('messageReactionAdd', async (reaction, user) => {
+      const message = reaction.message;
+      if (user.id === client.user?.id) return;
+      try {
+        // When we receive a reaction we check if the reaction is partial or not
+        if (reaction.partial) {
+          // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+          try {
+            await reaction.fetch();
+          } catch (error) {
+            console.log(
+              'Something went wrong when fetching the message: ',
+              error
+            );
+            // Return as `reaction.message.author` may be undefined/null
+            return;
+          }
+        }
+        if (!reaction.message.guild) return;
+        if (reaction.emoji.name == '⭐') {
+          await onStarReactAdd(reaction, client);
+        }
+      } catch (e) {}
+    });
+    client.on('messageReactionRemove', async (reaction, user) => {
+      const message = reaction.message;
+      if (user.id === client.user?.id) return;
+      try {
+        // When we receive a reaction we check if the reaction is partial or not
+        if (reaction.partial) {
+          // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+          try {
+            await reaction.fetch();
+          } catch (error) {
+            console.log(
+              'Something went wrong when fetching the message: ',
+              error
+            );
+            // Return as `reaction.message.author` may be undefined/null
+            return;
+          }
+        }
+        if (!reaction.message.guild) return;
+        if (reaction.emoji.name == '⭐') {
+          await onStarReactRemove(reaction, client);
+        }
+      } catch (e) {}
+    });
+    client.on('messageUpdate', async (omsg, nmsg) => {
+      if (nmsg.partial) {
+        // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+        try {
+          await nmsg.fetch();
+        } catch (error) {
+          console.log(
+            'Something went wrong when fetching the message: ',
+            error
+          );
+          // Return as `reaction.message.author` may be undefined/null
+          return;
+        }
+      }
+      await onMessageEdit(omsg, nmsg, client);
+    });
+    client.on('messageDelete', async (msg) => {
+      await onMessageDelete(msg, client);
+    });
+    client.on('messageDeleteBulk', async (msgs) => {
+      for (const msg of msgs.array()) {
+        await onMessageDelete(msg, client);
+      }
+    });
+  },
 };

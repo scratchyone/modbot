@@ -30,7 +30,7 @@ const invite = {
     );
   },
 };
-exports.reRenderPoll = async (message: Discord.Message) => {
+async function reRenderPoll(message: Discord.Message) {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
@@ -49,7 +49,7 @@ exports.reRenderPoll = async (message: Discord.Message) => {
   } catch (e) {
     console.log(e);
   }
-};
+}
 const poll = {
   name: 'poll',
   syntax: 'm: poll <TEXT>',
@@ -798,6 +798,79 @@ exports.commandModule = {
     spoil,
     pick,
   ],
+  cog: async (client: Discord.Client) => {
+    client.on('messageReactionAdd', async (reaction, user) => {
+      const message = reaction.message as util_functions.EMessage;
+      if (user.id === client.user?.id) return;
+      try {
+        // When we receive a reaction we check if the reaction is partial or not
+        if (reaction.partial) {
+          // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+          try {
+            await reaction.fetch();
+          } catch (error) {
+            console.log(
+              'Something went wrong when fetching the message: ',
+              error
+            );
+            // Return as `reaction.message.author` may be undefined/null
+            return;
+          }
+        }
+        if (!reaction.message.guild) return;
+        if (
+          (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
+          (await message.isPoll())
+        ) {
+          const t = reaction.message.reactions.cache
+            .array()
+            .filter(
+              (r) =>
+                (r.emoji.name == '👍' || r.emoji.name == '👎') &&
+                r.users.cache.array().filter((u) => u.id == user.id).length &&
+                r.emoji.name != reaction.emoji.name
+            );
+          if (t.length) reaction.users.remove(user as Discord.User);
+          else await reRenderPoll(reaction.message);
+        }
+      } catch (e) {}
+    });
+    client.on('messageReactionRemove', async (reaction, user) => {
+      const message = reaction.message as util_functions.EMessage;
+      if (user.id === client.user?.id) return;
+      try {
+        // When we receive a reaction we check if the reaction is partial or not
+        if (reaction.partial) {
+          // If the message this reaction belongs to was removed the fetching might result in an API error, which we need to handle
+          try {
+            await reaction.fetch();
+          } catch (error) {
+            console.log(
+              'Something went wrong when fetching the message: ',
+              error
+            );
+            // Return as `reaction.message.author` may be undefined/null
+            return;
+          }
+        }
+        if (!reaction.message.guild) return;
+        if (
+          (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
+          message.isPoll
+        ) {
+          const t = reaction.message.reactions.cache
+            .array()
+            .filter(
+              (r) =>
+                (r.emoji.name == '👍' || r.emoji.name == '👎') &&
+                r.users.cache.array().filter((u) => u.id == user.id).length &&
+                r.emoji.name != reaction.emoji.name
+            );
+          if (!t.length) await reRenderPoll(reaction.message);
+        }
+      } catch (e) {}
+    });
+  },
 };
 function getLines(
   ctx: Canvas.CanvasRenderingContext2D,
