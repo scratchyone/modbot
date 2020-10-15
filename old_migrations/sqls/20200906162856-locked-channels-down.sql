@@ -1,1 +1,0 @@
-DROP TABLE locked_channels;

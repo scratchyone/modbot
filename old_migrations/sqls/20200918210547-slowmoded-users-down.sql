@@ -1,1 +1,0 @@
-DROP TABLE slowmoded_users;
