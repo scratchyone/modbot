@@ -309,7 +309,6 @@ const userpic = {
   },
 };
 import Color from 'color';
-import { util } from 'prettier';
 const color = {
   name: 'color',
   syntax: 'm: color <COLOR>',
