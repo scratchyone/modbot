@@ -534,6 +534,7 @@ const addemoji = {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
     if (cmd.command !== 'addemoji' || !msg.guild) return;
+
     let emojiUrl = undefined;
     if (/<:.*:(\d+)>/.test(cmd.emojiData || '')) {
       // If non-animated emoji is supplied
@@ -576,7 +577,10 @@ const addemoji = {
       const addedEmoji = await msg.guild.emojis.create(emojiUrl, cmd.name, {});
       await msg.dbReply(`Added ${addedEmoji} with name ${addedEmoji.name}`);
     } catch (e) {
-      await msg.dbReply('Failed\n' + e);
+      throw new util_functions.BotError(
+        'user',
+        e.toString().replace('DiscordAPIError: ', '')
+      );
     }
   },
 };

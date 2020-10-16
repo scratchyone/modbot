@@ -1975,7 +1975,9 @@ client.on('ready', async () => {
           const channel = client.channels.cache.get(
             event.channel
           ) as Discord.TextChannel;
-          await channel.send('Deleting channel in 5 seconds');
+          await channel.send(
+            util_functions.embed('Deleting channel in 5 seconds', 'warning')
+          );
           setTimeout(async () => {
             await channel.delete();
           }, 5000);
