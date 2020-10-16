@@ -307,6 +307,7 @@ const main_commands = {
               text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
               channel: ctx.msg.channel.id,
               user: ctx.msg.author.id,
+              message: ctx.msg.url,
               id,
             },
             cmd.time
@@ -1823,6 +1824,26 @@ const main_commands = {
     },
   ],
 };
+function reminderEmbed(
+  userId: string,
+  origAuthor: Discord.GuildMember | null,
+  text: string,
+  message: string | undefined
+): Discord.MessageOptions {
+  return {
+    content: `<@${userId}>`,
+    embed: new Discord.MessageEmbed()
+      .setTitle('Reminder!')
+      .setDescription(
+        text + (message ? '\n\n[Jump to message](' + message + ')' : '')
+      )
+      .setAuthor(
+        origAuthor ? origAuthor.displayName : '',
+        origAuthor?.user.displayAvatarURL()
+      )
+      .setColor('#3e8ac5'),
+  };
+}
 client.on('ready', async () => {
   if (!client.user) {
     console.error('No client user!');
@@ -1883,16 +1904,31 @@ client.on('ready', async () => {
             const c = client.channels.cache.get(
               event.channel
             ) as Discord.TextChannel;
-            if (!c) return;
-            await c.send(
-              `<@${event.user}>, you have a reminder: ${event.text}`
-            );
-            if (subs.length) {
-              await (client.channels.cache.get(
-                event.channel
-              ) as Discord.TextChannel).send(
-                subs.map((sub) => `<@${sub.user}> `).join('')
+            if (c) {
+              const origAuthor = c.guild.member(event.user);
+              await c.send(
+                reminderEmbed(event.user, origAuthor, event.text, event.message)
               );
+              if (subs.length) {
+                await (client.channels.cache.get(
+                  event.channel
+                ) as Discord.TextChannel).send(
+                  subs.map((sub) => `<@${sub.user}> `).join('')
+                );
+              }
+            } else {
+              for (const user of [...subs.map((n) => n.user), event.user]) {
+                try {
+                  const discordUser = await client.users.fetch(user);
+                  if (discordUser) {
+                    (await discordUser.createDM()).send(
+                      reminderEmbed(user, null, event.text, undefined)
+                    );
+                  }
+                } catch (e) {
+                  console.log(e);
+                }
+              }
             }
           }
           await Types.Reminder.query()

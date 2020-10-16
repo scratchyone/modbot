@@ -562,7 +562,9 @@ const addemoji = {
       emojiUrl =
         process.env.MEDIAGEN_URL &&
         path.extname(url.parse(cmd.emojiData).pathname) !== '.gif'
-          ? process.env.MEDIAGEN_URL + 'emojiResize.png?url=' + cmd.emojiData
+          ? process.env.MEDIAGEN_URL +
+            'emojiResize.png?url=' +
+            encodeURIComponent(cmd.emojiData)
           : cmd.emojiData;
     if (!emojiUrl)
       throw new util_functions.BotError(
