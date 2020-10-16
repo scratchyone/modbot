@@ -519,6 +519,8 @@ const about = {
     );
   },
 };
+const path = require('path');
+const url = require('url');
 const addemoji = {
   name: 'addemoji',
   syntax: 'm: addemoji <NAME> <EMOJI/URL/ATTACH A FILE>',
@@ -547,9 +549,21 @@ const addemoji = {
         '.gif';
     } else if (msg.attachments.array().length)
       // If an attachment is supplied, use that
-      emojiUrl = msg.attachments.array()[0].url;
+      emojiUrl =
+        process.env.MEDIAGEN_URL &&
+        path.extname(url.parse(msg.attachments.array()[0].url).pathname) !==
+          '.gif'
+          ? process.env.MEDIAGEN_URL +
+            'emojiResize.png?url=' +
+            encodeURIComponent(msg.attachments.array()[0].url)
+          : msg.attachments.array()[0].url;
     // Otherwise use whatever data was given (Probably an image URL)
-    else if (cmd.emojiData) emojiUrl = cmd.emojiData;
+    else if (cmd.emojiData)
+      emojiUrl =
+        process.env.MEDIAGEN_URL &&
+        path.extname(url.parse(cmd.emojiData).pathname) !== '.gif'
+          ? process.env.MEDIAGEN_URL + 'emojiResize.png?url=' + cmd.emojiData
+          : cmd.emojiData;
     if (!emojiUrl)
       throw new util_functions.BotError(
         'user',
