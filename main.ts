@@ -128,7 +128,7 @@ const main_commands = {
               const loghook = await msg.channel.createWebhook(
                 uuser.displayName,
                 {
-                  avatar: uuser.user.displayAvatarURL(),
+                  avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
                 }
               );
               await loghook.send(text);

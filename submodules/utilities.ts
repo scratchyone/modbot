@@ -102,7 +102,7 @@ const spoil = {
       if (!uuser) throw new Error('User not found');
       // Create a webhook for sending message
       const loghook = await msg.channel.createWebhook(uuser.displayName, {
-        avatar: uuser.user.displayAvatarURL(),
+        avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
       });
       // Add SPOILER_ to all message attachments to make them be spoiled
       const files = msg.attachments.array().map((attachment) => {
