@@ -246,6 +246,10 @@ export type Command =
       action: 'create' | 'edit';
     }
   | {
+      command: 'pfp';
+      user: string;
+    }
+  | {
       command: 'addemoji';
       name: string;
       emojiData?: string;

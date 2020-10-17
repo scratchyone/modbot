@@ -121,6 +121,28 @@ const spoil = {
     } catch (e) {}
   },
 };
+const pfp = {
+  name: 'pfp',
+  syntax: 'm: pfp <USER>',
+  explanation: "Get a user's profile picture",
+  matcher: (cmd: Command) => cmd.command == 'pfp',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'pfp',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'pfp' || !ctx.msg.guild) return;
+    const user = await ctx.client.users.fetch(cmd.user);
+    const member = ctx.msg.guild.members.cache.get(cmd.user);
+    if (!user) throw new util_functions.BotError('user', 'User not found');
+    await ctx.msg.dbReply(
+      new Discord.MessageEmbed()
+        .setTitle(
+          `${member ? member.displayName : user.username}'s Profile Picture`
+        )
+        .setImage(user.displayAvatarURL() + '?height=500')
+    );
+  },
+};
 const pick = {
   name: 'pick',
   syntax: 'm: pick <option one; option two; etc>',
@@ -807,6 +829,7 @@ exports.commandModule = {
     addemoji,
     spoil,
     pick,
+    pfp,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
