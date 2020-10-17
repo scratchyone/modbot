@@ -331,7 +331,10 @@ const main_commands = {
             id: cmd.id,
           });
           await ctx.msg.dbReply(
-            'You will be notifed when the reminder is ready!'
+            util_functions.embed(
+              'You will be notifed when the reminder is ready!',
+              'success'
+            )
           );
         } else if (cmd.action === 'cancel') {
           await Types.Reminder.query()
@@ -1833,7 +1836,7 @@ function reminderEmbed(
   return {
     content: `<@${userId}>`,
     embed: new Discord.MessageEmbed()
-      .setTitle('Reminder!')
+      .setTitle('New Reminder!')
       .setDescription(
         text + (message ? '\n\n[Jump to message](' + message + ')' : '')
       )
