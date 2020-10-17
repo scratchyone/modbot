@@ -36,7 +36,8 @@ async function reRenderPoll(message: Discord.Message) {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
-        'https://modbot.scratchyone.com/mediagen/poll?up=' +
+        process.env.MEDIAGEN_URL +
+          'poll?up=' +
           ((message.reactions.cache
             .array()
             .filter((r) => r.emoji.name == '👍')[0].count || 1) -
@@ -58,7 +59,7 @@ const poll = {
   explanation: 'Run a yes/no poll',
   matcher: (cmd: Command) => cmd.command == 'poll',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
-  permissions: () => true,
+  permissions: () => process.env.MEDIAGEN_URL,
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'poll') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
@@ -77,9 +78,7 @@ const poll = {
           msg.author.displayAvatarURL()
         )
         .setTitle(cmd.text)
-        .setImage(
-          'https://modbot.scratchyone.com/mediagen/poll?up=' + 0 + '&down=' + 0
-        )
+        .setImage(process.env.MEDIAGEN_URL + 'poll?up=' + 0 + '&down=' + 0)
     );
     // Add reactions for voting
     await pollMsg.react('👍');
