@@ -131,7 +131,12 @@ const pfp = {
   version: 2,
   responder: async (ctx: Types.Context, cmd: Command) => {
     if (cmd.command !== 'pfp' || !ctx.msg.guild) return;
-    const user = await ctx.client.users.fetch(cmd.user);
+    let user;
+    try {
+      user = await ctx.client.users.fetch(cmd.user);
+    } catch (e) {
+      throw new util_functions.BotError('user', 'User not found');
+    }
     const member = ctx.msg.guild.members.cache.get(cmd.user);
     if (!user) throw new util_functions.BotError('user', 'User not found');
     await ctx.msg.dbReply(
