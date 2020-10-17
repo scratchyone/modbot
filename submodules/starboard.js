@@ -82,9 +82,9 @@ async function genSBMessage(message) {
     );
   if (spoiler)
     return {
-      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
-        message.channel.name
-      } `,
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n${
+        message.channel
+      }`,
       files: [
         new Discord.MessageAttachment(
           image,
@@ -97,9 +97,9 @@ async function genSBMessage(message) {
     };
   else if (!isImage && image)
     return {
-      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
-        message.channel.name
-      } `,
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n${
+        message.channel
+      }`,
       files: [
         new Discord.MessageAttachment(
           image,
@@ -112,9 +112,9 @@ async function genSBMessage(message) {
     };
   else
     return {
-      content: `${message.reactions.cache.get('⭐').count} ⭐\n#${
-        message.channel.name
-      } `,
+      content: `${message.reactions.cache.get('⭐').count} ⭐\n${
+        message.channel
+      }`,
       embed: new Discord.MessageEmbed()
         .setAuthor(msg_username, await message.author.displayAvatarURL())
         .setDescription(desc + '\n\n**[Source](' + message.url + ')**')
