@@ -139,7 +139,7 @@ const pfp = {
         .setTitle(
           `${member ? member.displayName : user.username}'s Profile Picture`
         )
-        .setImage(user.displayAvatarURL())
+        .setImage(user.displayAvatarURL() + '?size=256')
     );
   },
 };
