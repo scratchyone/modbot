@@ -379,7 +379,7 @@ export class LogChannel extends Model {
         .setColor('#429acc')
         .setAuthor(
           author && (action === 'action' || action === undefined)
-            ? author.displayName
+            ? author.displayName + ` (@${author.user.tag})`
             : '',
           author && (action === 'action' || action === undefined)
             ? author.user.displayAvatarURL()
