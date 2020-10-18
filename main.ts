@@ -1818,7 +1818,7 @@ const main_commands = {
     },
     {
       name: 'note',
-      syntax: 'm: note <USER>',
+      syntax: 'm: note <USER> <REASON>',
       explanation: 'Add a note to a user',
       matcher: (cmd: MatcherCommand) => cmd.command == 'note',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'note',
@@ -1847,7 +1847,7 @@ const main_commands = {
     },
     {
       name: 'warn',
-      syntax: 'm: warn <USER>',
+      syntax: 'm: warn <USER> <REASON>',
       explanation: 'Add a warn to a user',
       matcher: (cmd: MatcherCommand) => cmd.command == 'warn',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'warn',
@@ -1957,7 +1957,7 @@ client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
   //
   //
-  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
+  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
   //
   //
   //
