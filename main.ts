@@ -268,7 +268,6 @@ const main_commands = {
               .join('\n')
           );
         }
-        await Types.LogChannel.tryToLog(msg, 'Listed all anonymous channels');
       },
     },
     {
@@ -885,10 +884,6 @@ const main_commands = {
               .join('\n') || 'None'
           )
         );
-        await Types.LogChannel.tryToLog(
-          msg,
-          'Viewed list of users with :pushpin: permissions'
-        );
       },
     },
     {
@@ -1041,7 +1036,6 @@ const main_commands = {
                 : 'None'
             )
           );
-          await Types.LogChannel.tryToLog(msg, 'Viewed list of AutoResponders');
         }
       },
     },

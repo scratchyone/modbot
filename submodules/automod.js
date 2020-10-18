@@ -184,10 +184,6 @@ let automod = {
           .map((n) => n.name)
           .join('\n') || 'No Triggers Configured Yet';
       await msg.channel.send(util_functions.desc_embed(triggers));
-      await Types.LogChannel.tryToLog(
-        msg,
-        'Viewed list of all AutoMod triggers'
-      );
     } else if (cmd.action === 'inspect') {
       let triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to inspect?',
@@ -220,10 +216,6 @@ let automod = {
               })
               .join(', ')
           )
-      );
-      await Types.LogChannel.tryToLog(
-        msg,
-        `Viewed details of AutoMod trigger \`${triggerName}\``
       );
     }
   },
