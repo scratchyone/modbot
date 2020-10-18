@@ -1953,7 +1953,7 @@ client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
   //
   //
-  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
+  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
   //
   //
   //
