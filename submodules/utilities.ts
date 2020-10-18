@@ -66,25 +66,47 @@ const poll = {
     try {
       await msg.delete();
     } catch (e) {}
-    const warning = await msg.channel.send(
-      'EPILEPSY WARNING, POLL WILL FLASH WHENEVER THERE IS A NEW VOTE'
-    );
-    // Delete warning after 8 seconds
-    setTimeout(() => warning.delete(), 8000);
+    // Show warning
     const pollMsg = await msg.channel.send(
       new Discord.MessageEmbed()
-        .setAuthor(
-          msg.member?.displayName || msg.author.username,
-          msg.author.displayAvatarURL()
+        .setTitle('Photosensitive Epilepsy Warning')
+        .setDescription(
+          'Poll can flash when votes are rapidly submitted. React with ✅ to continue'
         )
-        .setTitle(cmd.text)
-        .setImage(process.env.MEDIAGEN_URL + 'poll?up=' + 0 + '&down=' + 0)
     );
-    // Add reactions for voting
-    await pollMsg.react('👍');
-    await pollMsg.react('👎');
-    // Save poll in database
-    await Types.Poll.query().insert({ message: pollMsg.id });
+    await pollMsg.react('✅');
+    // Wait for confirmation
+    const react = await pollMsg.awaitReactions(
+      (r: Discord.MessageReaction, u: Discord.User) =>
+        u.id === msg.author.id && r.emoji.name === '✅',
+      { max: 1, time: 50000 }
+    );
+    // If confirmation given
+    if (react.array().length) {
+      // Remove check mark reaction
+      await pollMsg.reactions.removeAll();
+      // Edit confirmation message into poll
+      await pollMsg.edit(
+        new Discord.MessageEmbed()
+          .setAuthor(
+            msg.member?.displayName || msg.author.username,
+            msg.author.displayAvatarURL()
+          )
+          .setTitle(cmd.text)
+          .setImage(process.env.MEDIAGEN_URL + 'poll?up=' + 0 + '&down=' + 0)
+      );
+      // Add reactions for voting
+      await pollMsg.react('👍');
+      await pollMsg.react('👎');
+      // Save poll in database
+      await Types.Poll.query().insert({ message: pollMsg.id });
+    } else {
+      // If no confirmation given, edit message with error
+      await pollMsg.reactions.removeAll();
+      await pollMsg.edit(
+        new Discord.MessageEmbed().setTitle('Epilepsy Warning Not Accepted')
+      );
+    }
   },
 };
 const spoil = {
