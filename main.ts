@@ -1810,10 +1810,6 @@ const main_commands = {
               },
             ])
         );
-        await Types.LogChannel.tryToLog(
-          msg,
-          `Got ${mentioned_user}'s usercard`
-        );
       },
     },
     {
