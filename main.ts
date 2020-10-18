@@ -1096,10 +1096,6 @@ const main_commands = {
           );
           sendAlphaResult(ctx, cmd);
           ctx.msg.channel.stopTyping();
-          await Types.LogChannel.tryToLog(
-            ctx.msg,
-            `Ran alpha query\n> ${cmd.text}`
-          );
         } catch (e) {
           ctx.msg.dbReply(
             new Discord.MessageEmbed()
