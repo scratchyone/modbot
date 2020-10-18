@@ -116,10 +116,7 @@ let alertchannel = {
           msg.guild.id
         );
         await msg.channel.send(util_functions.desc_embed('Disabled!'));
-        await Types.LogChannel.tryToLog(
-          msg,
-          `Disabled alert channel ${channel}`
-        );
+        await Types.LogChannel.tryToLog(msg, 'Disabled alert channel');
       }
     }
   },
