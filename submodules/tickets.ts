@@ -3,6 +3,7 @@ import * as util_functions from '../util_functions';
 import Discord from 'discord.js';
 import { nanoid } from 'nanoid';
 import { Command } from '../types';
+import * as Types from '../types';
 const ticket = {
   name: 'ticket',
   syntax: 'm: ticket create <MODERATOR_ROLE> <USER> / delete',
@@ -64,6 +65,10 @@ const ticket = {
             },
           ]);
         }, 1000);
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Created ticket ${channel} for <@${cmd.user}>`
+        );
       } catch (e) {
         throw new util_functions.BotError(
           'user',
@@ -80,6 +85,10 @@ const ticket = {
         setTimeout(() => {
           msg.channel.delete();
         }, 10000);
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Deleted ticket #${msg.channel.name}`
+        );
       } else {
         throw new util_functions.BotError('user', 'Not a ticket');
       }

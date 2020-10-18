@@ -100,6 +100,10 @@ const main_commands = {
         msg.delete();
         try {
           await (await msg.channel.send(cmd.text)).pin();
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Pinned \n> ${cmd.text}\n to ${msg.channel}`
+          );
         } catch (e) {
           throw new util_functions.BotError(
             'user',
@@ -188,6 +192,12 @@ const main_commands = {
           if (!chan || chan.type !== 'text')
             throw new util_functions.BotError('user', 'Channel is not found!');
           await (chan as Discord.TextChannel).send(cmd.text);
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Made ModBot say\n> ${cmd.text}\nin <#${
+              cmd.channel ? cmd.channel : msg.channel.id
+            }>`
+          );
         }
       },
     },
@@ -228,6 +238,10 @@ const main_commands = {
             'success'
           )
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `${cmd.enabled ? 'Enabled' : 'Disabled'} anonchannel <#${channel}>`
+        );
       },
     },
     {
@@ -254,6 +268,7 @@ const main_commands = {
               .join('\n')
           );
         }
+        await Types.LogChannel.tryToLog(msg, 'Listed all anonymous channels');
       },
     },
     {
@@ -275,6 +290,10 @@ const main_commands = {
         } else {
           await msg.dbReply('No message found');
         }
+        await Types.LogChannel.tryToLog(
+          msg,
+          'Checked who said an anonymous message (id: `' + cmd.id + '`)'
+        );
       },
     },
     {
@@ -392,7 +411,6 @@ const main_commands = {
               replies.push(new Discord.MessageEmbed().addFields(fields[i]));
             }
           }
-
           if (res === 1) for (const reply of replies) ctx.msg.dbReply(reply);
           try {
             if (res === 2)
@@ -504,9 +522,17 @@ const main_commands = {
         if (type === 0) {
           if (await util_functions.confirm(msg)) {
             await clone(type);
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Clonepurged ${msg.channel as Discord.TextChannel}}`
+            );
           }
         } else if (type !== null) {
           await clone(type as 0 | 1 | 2 | null);
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Clonepurged #${(msg.channel as Discord.TextChannel).name}`
+          );
         }
       },
     },
@@ -532,6 +558,10 @@ const main_commands = {
           const tmpTimeout = setTimeout(async () => {
             await ctx.msg.channel.delete();
           }, 5000);
+          await Types.LogChannel.tryToLog(
+            ctx.msg,
+            `Deleted #${(ctx.msg.channel as Discord.TextChannel).name}`
+          );
           return [() => clearTimeout(tmpTimeout)];
         }
       },
@@ -592,6 +622,12 @@ const main_commands = {
             'success'
           )
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
+            cmd.allowed ? 'to' : 'from'
+          } ${cmd.allowed ? 'read' : 'reading'} messages in ${channel}`
+        );
       },
     },
     {
@@ -627,6 +663,7 @@ const main_commands = {
           },
         ]);
         await msg.dbReply(util_functions.embed('Archived channel!', 'success'));
+        await Types.LogChannel.tryToLog(msg, `Archived ${msg.channel}`);
       },
     },
     {
@@ -660,9 +697,17 @@ const main_commands = {
               'success'
             )
           );
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Banned <@${cmd.user}> from anonchannels for ${cmd.time}`
+          );
         } else {
           await msg.dbReply(
             util_functions.embed(`Banned <@${cmd.user}>`, 'success')
+          );
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Banned <@${cmd.user}> from anonchannels`
           );
         }
       },
@@ -683,6 +728,10 @@ const main_commands = {
         });
         await msg.dbReply(
           util_functions.embed(`Unbanned <@${cmd.user}>`, 'success')
+        );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Unbanned <@${cmd.user}> from anonchannels`
         );
       },
     },
@@ -764,6 +813,12 @@ const main_commands = {
             'success'
           )
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Created tmpchannel #${(channel as Discord.TextChannel).name} for ${
+            cmd.duration
+          }`
+        );
       },
     },
     {
@@ -788,6 +843,10 @@ const main_commands = {
               'success'
             )
           );
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Allowed <@&${cmd.role}> to pin messages with :pushpin:`
+          );
         } else {
           db.prepare('DELETE FROM pinners WHERE roleid=? AND guild=?').run(
             cmd.role,
@@ -798,6 +857,10 @@ const main_commands = {
               `<@&${cmd.role}> are no longer allowed to pin messages with :pushpin:`,
               'success'
             )
+          );
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Disallowed <@&${cmd.role}> from pinning messages with :pushpin:`
           );
         }
       },
@@ -821,6 +884,10 @@ const main_commands = {
               .map((n: { roleid: string }) => `${n.roleid} (<@&${n.roleid}>)`)
               .join('\n') || 'None'
           )
+        );
+        await Types.LogChannel.tryToLog(
+          msg,
+          'Viewed list of users with :pushpin: permissions'
         );
       },
     },
@@ -923,6 +990,10 @@ const main_commands = {
             await msg.dbReply(
               util_functions.embed('Added AutoResponder', 'success')
             );
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Added AutoResponder to \`${prompt.array()[0].content}\``
+            );
           } catch (e) {
             console.log(e);
             await msg.dbReply(
@@ -947,11 +1018,15 @@ const main_commands = {
               'DELETE FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
             )
             .run(prompt.array()[0].content, msg.guild.id);
-          if (rc.changes)
+          if (rc.changes) {
             await msg.dbReply(
               util_functions.desc_embed('Removed AutoResponder')
             );
-          else
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Removed AutoResponder for \`${prompt.array()[0].content}\``
+            );
+          } else
             await msg.dbReply(
               util_functions.desc_embed("Couldn't find AutoResponder")
             );
@@ -966,6 +1041,7 @@ const main_commands = {
                 : 'None'
             )
           );
+          await Types.LogChannel.tryToLog(msg, 'Viewed list of AutoResponders');
         }
       },
     },
@@ -1020,6 +1096,10 @@ const main_commands = {
           );
           sendAlphaResult(ctx, cmd);
           ctx.msg.channel.stopTyping();
+          await Types.LogChannel.tryToLog(
+            ctx.msg,
+            `Ran alpha query\n> ${cmd.text}`
+          );
         } catch (e) {
           ctx.msg.dbReply(
             new Discord.MessageEmbed()
@@ -1102,6 +1182,7 @@ const main_commands = {
             role
           );
           await msg.dbReply(util_functions.desc_embed('Setup!'));
+          await Types.LogChannel.tryToLog(msg, 'Added JoinRole');
         } else if (cmd.action === 'disable') {
           if (
             !db
@@ -1115,6 +1196,7 @@ const main_commands = {
           }
           db.prepare('DELETE FROM join_roles WHERE server=?').run(msg.guild.id);
           await msg.dbReply(util_functions.desc_embed('Disabled!'));
+          await Types.LogChannel.tryToLog(msg, 'Removed JoinRole');
         }
       },
     },
@@ -1288,6 +1370,10 @@ const main_commands = {
             }
           }
           await msg.dbReply(util_functions.desc_embed('Added!'));
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Added ReactionRole in ${rr_mes.channel}`
+          );
         } else if (cmd.action === 'edit') {
           await msg.dbReply('What channel is the message in?');
           const chan = await msg.channel.awaitMessages(
@@ -1476,6 +1562,10 @@ const main_commands = {
             }
           }
           await msg.dbReply(util_functions.desc_embed('Edited!'));
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Edited ReactionRole in ${rr_mes.channel}`
+          );
         }
       },
     },
@@ -1509,6 +1599,7 @@ const main_commands = {
             await kickee.kick();
             await msg.dbReply(util_functions.desc_embed('Kicked'));
           }
+          await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
         }
       },
     },
@@ -1592,6 +1683,10 @@ const main_commands = {
                 'success'
               )
             );
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Added <@&${cmd.role}> to ${kickee} for ${cmd.duration}`
+            );
           }
         }
       },
@@ -1626,6 +1721,10 @@ const main_commands = {
           setTimeout(() => {
             purged_info_msg.delete();
           }, 2000);
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Purged ${count} message${count === 1 ? '' : 's'} in ${msg.channel}`
+          );
         } catch (e) {
           throw new util_functions.BotError('user', e);
         }
@@ -1721,6 +1820,10 @@ const main_commands = {
               },
             ])
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Got ${mentioned_user}'s usercard`
+        );
       },
     },
     {
@@ -1745,6 +1848,10 @@ const main_commands = {
           util_functions.desc_embed(
             `Added note to <@${cmd.user}>, note ID \`${id}\`!`
           )
+        );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Added note \`${id}\` to <@${cmd.user}>\n> ${cmd.text}`
         );
       },
     },
@@ -1789,6 +1896,10 @@ const main_commands = {
         await msg.dbReply(
           util_functions.desc_embed(`Warned <@${cmd.user}>, warning ID ${id}`)
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Added warning \`${id}\` to <@${cmd.user}>\n> ${cmd.text}`
+        );
       },
     },
     {
@@ -1823,6 +1934,7 @@ const main_commands = {
           cmd.id
         );
         await msg.dbReply(util_functions.desc_embed(`Removed ${cmd.id}`));
+        await Types.LogChannel.tryToLog(msg, `Removed warn/note \`${cmd.id}\``);
       },
     },
   ],
@@ -1954,6 +2066,11 @@ client.on('ready', async () => {
           ) as Discord.TextChannel;
           if (!c) return;
           await c.send(util_functions.desc_embed(`Unbanned <@${event.user}>!`));
+          await Types.LogChannel.tryToLog(
+            c.guild,
+            `Unbanned <@${event.user}> from anonchannels!`,
+            'event'
+          );
         } catch (e) {
           //
         }
@@ -1984,6 +2101,11 @@ client.on('ready', async () => {
           setTimeout(async () => {
             await channel.delete();
           }, 5000);
+          await Types.LogChannel.tryToLog(
+            channel.guild,
+            `Deleted tmpchannel ${channel}`,
+            'event'
+          );
         } catch (e) {
           //
         }
@@ -2000,12 +2122,22 @@ client.on('ready', async () => {
             await channel.send(
               util_functions.desc_embed(`Gave <@&${event.role}> to ${user}`)
             );
+            await Types.LogChannel.tryToLog(
+              channel.guild,
+              `Gave <@&${event.role}> to ${user}`,
+              'event'
+            );
           } else {
             await user.roles.remove(event.role);
             await channel.send(
               util_functions.desc_embed(
                 `Removed <@&${event.role}> from ${user}`
               )
+            );
+            await Types.LogChannel.tryToLog(
+              channel.guild,
+              `Removed <@&${event.role}> from ${user}`,
+              'event'
             );
           }
         } catch (e) {
@@ -2021,6 +2153,11 @@ client.on('ready', async () => {
           if (!user) return;
           await user.roles.remove(event.role);
           await channel.send(util_functions.desc_embed(`Unmuted ${user}`));
+          await Types.LogChannel.tryToLog(
+            channel.guild,
+            `Unmuted ${user}`,
+            'event'
+          );
         } catch (e) {
           console.log(e);
         }
@@ -2037,6 +2174,11 @@ client.on('ready', async () => {
           await channel.send('Unlocked!');
           db.prepare('DELETE FROM locked_channels WHERE channel=?').run(
             channel.id
+          );
+          await Types.LogChannel.tryToLog(
+            channel.guild,
+            `Unlocked ${channel}`,
+            'event'
           );
         } catch (e) {
           console.log(e);

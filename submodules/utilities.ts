@@ -131,12 +131,16 @@ const spoil = {
         return { ...attachment, name: 'SPOILER_' + attachment.name };
       });
       // Send with a webhook for custom username and profile picture
-      await loghook.send({
+      const m = await loghook.send({
         content: await util_functions.cleanPings(cmd.text, msg.guild),
         files: files,
       });
       // Delete webhook
       await loghook.delete();
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Re-sent message with spoil command: [Re-sent Message](${m.url})`
+      );
     }
     try {
       await msg.delete();
@@ -278,6 +282,10 @@ const prefix = {
       try {
         await Prefix.query().insert({ server: msg.guild.id, prefix });
         await msg.dbReply('Added!');
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Added ModBot prefix \`${prefix}\``
+        );
       } catch (e) {
         await msg.dbReply('Failed to add prefix. Does it already exist?');
       }
@@ -299,6 +307,10 @@ const prefix = {
           .where('server', msg.guild.id)
           .where('prefix', prefix);
         await msg.dbReply('Removed!');
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Removed ModBot prefix \`${prefix}\``
+        );
       } catch (e) {
         await msg.dbReply('Failed to remove prefix');
       }
@@ -624,6 +636,10 @@ const addemoji = {
       // Add emoji
       const addedEmoji = await msg.guild.emojis.create(emojiUrl, cmd.name, {});
       await msg.dbReply(`Added ${addedEmoji} with name ${addedEmoji.name}`);
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Added emoji ${addedEmoji} with name ${addedEmoji.name}`
+      );
     } catch (e) {
       throw new util_functions.BotError(
         'user',
@@ -786,6 +802,10 @@ const embed = {
         throw new util_functions.BotError('user', 'Failed to get channel');
       await (dChannel as Discord.TextChannel).send(await designEmbed(msg));
       await msg.channel.send('Sent!');
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Sent custom embed message in ${dChannel}`
+      );
     }
     if (cmd.action == 'edit') {
       const channel = await util_functions.ask('What channel?', 40000, msg);
@@ -802,6 +822,10 @@ const embed = {
         throw new util_functions.BotError('user', 'Failed to get channel');
       await dMessage.edit(await designEmbed(msg, dMessage.embeds[0]));
       await msg.channel.send('Edited!');
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Edited custom embed message in ${dChannel}`
+      );
     }
   },
 };

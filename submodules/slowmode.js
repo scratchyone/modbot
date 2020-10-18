@@ -1,6 +1,7 @@
 let util_functions = require('../util_functions');
 const db = require('better-sqlite3')('perms.db3', {});
 var parse_duration = require('parse-duration');
+import * as Types from '../types';
 let slowmodeCommand = {
   name: 'slowmode',
   syntax: 'm: slowmode <enable/disable> <CHANNEL>',
@@ -47,6 +48,10 @@ let slowmodeCommand = {
         delete_mm ? 1 : 0
       );
       await msg.channel.send(util_functions.desc_embed('Enabled!'));
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Set slowmode of ${time} for <#${cmd.channel}>`
+      );
     } else if (cmd.action === 'disable') {
       let channel = msg.guild.channels.cache.get(cmd.channel);
       if (!channel)
@@ -66,6 +71,10 @@ let slowmodeCommand = {
         cmd.channel
       );
       await msg.channel.send(util_functions.desc_embed('Disabled!'));
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Disabled slowmode for <#${cmd.channel}>`
+      );
     }
   },
 };

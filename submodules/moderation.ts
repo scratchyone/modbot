@@ -3,6 +3,7 @@ import * as util_functions from '../util_functions';
 const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command, Context, DisabledCommand } from '../types';
+import * as Types from '../types';
 const lockdown = {
   name: 'lockdown',
   syntax: 'm: lockdown [TIME]',
@@ -59,6 +60,12 @@ const lockdown = {
       throw e;
     }
     await msg.dbReply('Locked!');
+    if (cmd.time)
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Locked ${msg.channel} for ${cmd.time}`
+      );
+    else await Types.LogChannel.tryToLog(msg, `Locked ${msg.channel}`);
   },
 };
 const unlockdown = {
@@ -93,7 +100,76 @@ const unlockdown = {
     await channel.overwritePermissions(JSON.parse(perm.permissions));
     await (channel as Discord.TextChannel).send('Unlocked!');
     if (channel.id !== msg.channel.id) await msg.dbReply('Unlocked!');
+    await Types.LogChannel.tryToLog(msg, `Unlocked ${channel}`);
     db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
+  },
+};
+const logging = {
+  name: 'logging',
+  syntax: 'm: logging <enable/disable>',
+  explanation: 'Enable or disable logging of actions done by ModBot',
+  matcher: (cmd: Command) => cmd.command == 'logging',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'logging',
+  permissions: (msg: Discord.Message) =>
+    msg.member?.hasPermission('MANAGE_CHANNELS'),
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'logging' || !ctx.msg.guild) return;
+    util_functions.warnIfNoPerms(ctx.msg, ['MANAGE_CHANNELS']);
+    if (cmd.action === 'enable') {
+      if (await Types.LogChannel.fromGuild(ctx.msg.guild))
+        throw new util_functions.BotError('user', 'Logging already enabled');
+      const channelName = await util_functions.ask(
+        'What should the logging channel be named?',
+        60000,
+        ctx.msg
+      );
+      const viewRole = (
+        await util_functions.ask(
+          'What role should be allowed to view it?',
+          60000,
+          ctx.msg
+        )
+      )
+        .replace('<@&', '')
+        .replace('>', '');
+      if (!ctx.msg.guild.roles.cache.get(viewRole))
+        throw new util_functions.BotError('user', 'Role not found');
+      const createdLogChannel = await ctx.msg.guild.channels.create(
+        channelName,
+        {
+          permissionOverwrites: [
+            { id: viewRole, allow: ['VIEW_CHANNEL'] },
+            {
+              id: ctx.msg.guild.id,
+              deny: ['VIEW_CHANNEL', 'SEND_MESSAGES', 'MANAGE_MESSAGES'],
+            },
+          ],
+        }
+      );
+      await Types.LogChannel.insertChannel(createdLogChannel);
+      await ctx.msg.dbReply(
+        util_functions.embed(`Created ${createdLogChannel}`, 'success')
+      );
+      (await Types.LogChannel.fromGuild(ctx.msg.guild))?.log(
+        ctx.msg.guild,
+        'Enabled ModBot action logging',
+        ctx.msg.member
+      );
+    } else if (cmd.action === 'disable') {
+      const logChannel = await Types.LogChannel.fromGuild(ctx.msg.guild);
+      if (!logChannel)
+        throw new util_functions.BotError('user', 'Logging already disabled');
+      await logChannel.log(
+        ctx.msg.guild,
+        'Disabled ModBot action logging',
+        ctx.msg.member
+      );
+      await logChannel.delete();
+      await ctx.msg.dbReply(
+        util_functions.embed('Disabled ModBot action logging!', 'success')
+      );
+    }
   },
 };
 const disablecommand = {
@@ -142,6 +218,10 @@ const disablecommand = {
       throw new util_functions.BotError('user', 'Failed!');
     }
     ctx.msg.dbReply(util_functions.embed('Disabled command!', 'success'));
+    await Types.LogChannel.tryToLog(
+      ctx.msg,
+      `Disabled command \`m: ${commandRealName}\``
+    );
   },
 };
 const enablecommand = {
@@ -185,10 +265,14 @@ const enablecommand = {
       throw new util_functions.BotError('user', 'Failed!');
     }
     ctx.msg.dbReply(util_functions.embed('Enabled command!', 'success'));
+    await Types.LogChannel.tryToLog(
+      ctx.msg,
+      `Enabled command \`m: ${commandRealName}\``
+    );
   },
 };
 exports.commandModule = {
   title: 'Moderation',
   description: 'Helpful uncatergorized moderation commands',
-  commands: [lockdown, unlockdown, disablecommand, enablecommand],
+  commands: [lockdown, unlockdown, disablecommand, enablecommand, logging],
 };

@@ -3,6 +3,7 @@
 const db = require('better-sqlite3')('perms.db3', {});
 const Discord = require('discord.js');
 let util_functions = require('../util_functions');
+import * as Types from '../types';
 let automod = {
   name: 'automod',
   syntax: 'm: automod <enable/disable/add/remove/list>',
@@ -70,6 +71,10 @@ let automod = {
           `Created ${channel} and enabled automod! Add some triggers with \`m: automod add\``
         )
       );
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Created ${channel} and enabled automod`
+      );
     } else if (cmd.action === 'disable') {
       if (
         !db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id)
@@ -84,6 +89,10 @@ let automod = {
       );
       await msg.channel.send(
         util_functions.desc_embed('Disabled AutoMod and deleted all triggers!')
+      );
+      await Types.LogChannel.tryToLog(
+        msg,
+        'Disabled AutoMod and deleted all triggers'
       );
     } else if (cmd.action === 'add') {
       if (
@@ -147,6 +156,10 @@ let automod = {
         JSON.stringify(punishments)
       );
       await msg.channel.send(util_functions.desc_embed('Trigger added!'));
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Added AutoMod trigger \`${triggerName}\``
+      );
     } else if (cmd.action === 'remove') {
       let triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to remove?',
@@ -159,6 +172,10 @@ let automod = {
       if (res.changes == 0)
         throw new util_functions.BotError('user', 'Trigger not found');
       await msg.channel.send(util_functions.desc_embed('Trigger removed!'));
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Removed AutoMod trigger \`${triggerName}\``
+      );
     } else if (cmd.action === 'list') {
       let triggers =
         db
@@ -167,6 +184,10 @@ let automod = {
           .map((n) => n.name)
           .join('\n') || 'No Triggers Configured Yet';
       await msg.channel.send(util_functions.desc_embed(triggers));
+      await Types.LogChannel.tryToLog(
+        msg,
+        'Viewed list of all AutoMod triggers'
+      );
     } else if (cmd.action === 'inspect') {
       let triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to inspect?',
@@ -199,6 +220,10 @@ let automod = {
               })
               .join(', ')
           )
+      );
+      await Types.LogChannel.tryToLog(
+        msg,
+        `Viewed details of AutoMod trigger \`${triggerName}\``
       );
     }
   },

@@ -253,6 +253,10 @@ export type Command =
       command: 'addemoji';
       name: string;
       emojiData?: string;
+    }
+  | {
+      command: 'logging';
+      action: 'enable' | 'disable';
     };
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
@@ -320,5 +324,92 @@ export class DisabledCommand extends Model {
   command!: string;
   static get tableName(): string {
     return 'disabledCommands';
+  }
+}
+export class LogChannel extends Model {
+  guild!: string;
+  channel!: string;
+  public static async fromGuild(
+    guild: Discord.Guild
+  ): Promise<undefined | LogChannel> {
+    const channels = await this.query().where('guild', guild.id);
+    if (channels.length > 0) {
+      return channels[0];
+    } else {
+      return undefined;
+    }
+  }
+  public toChannel(guild: Discord.Guild): Discord.TextChannel | undefined {
+    try {
+      const foundChannel = guild.channels.cache.get(this.channel);
+      if (!(foundChannel instanceof Discord.TextChannel)) return undefined;
+      return foundChannel;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  public static async insertChannel(
+    channel: Discord.TextChannel
+  ): Promise<LogChannel> {
+    return await this.query().insert({
+      channel: channel.id,
+      guild: channel.guild.id,
+    });
+  }
+  public async delete(): Promise<number> {
+    return await LogChannel.query()
+      .delete()
+      .where('channel', this.channel)
+      .where('guild', this.guild);
+  }
+  public async log(
+    guild: Discord.Guild,
+    text: string,
+    author?: Discord.GuildMember | null,
+    action?: 'action' | 'event'
+  ): Promise<Discord.Message | undefined> {
+    const discordChannel = this.toChannel(guild);
+    if (!discordChannel) return undefined;
+    return await discordChannel.send(
+      new Discord.MessageEmbed()
+        .setTitle(
+          action === 'action' || action === undefined ? 'Action' : 'Event'
+        )
+        .setDescription(text)
+        .setColor('#429acc')
+        .setAuthor(
+          author && (action === 'action' || action === undefined)
+            ? author.displayName
+            : '',
+          author && (action === 'action' || action === undefined)
+            ? author.user.displayAvatarURL()
+            : undefined
+        )
+    );
+  }
+  public static async tryToLog(
+    msg: Discord.Message | Discord.Guild,
+    text: string,
+    action?: 'action' | 'event'
+  ): Promise<Discord.Message | undefined> {
+    if (msg instanceof Discord.Message) {
+      if (!msg.guild) return undefined;
+      return (await LogChannel.fromGuild(msg.guild))?.log(
+        msg.guild,
+        text + `\n\n[Link](${msg.url})`,
+        msg.member,
+        action
+      );
+    } else {
+      return (await LogChannel.fromGuild(msg))?.log(
+        msg,
+        text,
+        undefined,
+        action
+      );
+    }
+  }
+  static get tableName(): string {
+    return 'logChannels';
   }
 }

@@ -2,7 +2,7 @@
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
 unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce | spoil | pick | owo | disablecommand |
-enablecommand | pfp
+enablecommand | pfp | logging
 ) {% n => n[0] %}
 pin -> "pin" __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say" __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -60,3 +60,4 @@ owo -> "owo" __ word (__ user):? {% (n)=>{return {command: "owo", action: n[2], 
 disablecommand -> "disablecommand" __ word {% (n)=>{return {command: "disablecommand", text: n[2]}}%}
 enablecommand -> "enablecommand" __ word {% (n)=>{return {command: "enablecommand", text: n[2]}}%}
 pfp -> "pfp" __ user {% (n)=>{return {command: "pfp", user: n[2]}}%}
+logging -> "logging" __ ("enable" | "disable") {% (n)=>{return {command: "logging", action: n[2][0]}}%}

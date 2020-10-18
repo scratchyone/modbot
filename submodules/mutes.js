@@ -1,6 +1,7 @@
 const db = require('better-sqlite3')('perms.db3', {});
 let util_functions = require('../util_functions');
 const alertchannels = require('./alertchannels.js');
+import * as Types from '../types';
 let setupmute = {
   name: 'setupmute',
   syntax: 'm: setupmute',
@@ -76,6 +77,7 @@ let setupmute = {
         await msg.channel.send(
           util_functions.desc_embed(`Created ${mute_role}`)
         );
+        await Types.LogChannel.tryToLog(msg, `Created mute role ${mute_role}`);
       }
     } else {
       let res = await util_functions.embed_options(
@@ -99,6 +101,10 @@ let setupmute = {
           await msg.channel.send(
             util_functions.desc_embed('Deleted mute role and unmuted all')
           );
+          await Types.LogChannel.tryToLog(
+            msg,
+            'Deleted mute role and unmuted everyone'
+          );
         }
       } else if (res === 1) {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
@@ -120,6 +126,10 @@ let setupmute = {
         }
         await msg.channel.send(
           util_functions.desc_embed(`Updated permissions for ${mute_role}`)
+        );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Updated channel permissions for mute role ${mute_role}`
         );
       }
     }
@@ -182,10 +192,15 @@ let mute = {
           await msg.channel.send(
             util_functions.desc_embed(`Muted ${mutee} for ${cmd.duration}`)
           );
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Muted ${mutee} for ${cmd.duration}`
+          );
         } else {
           await msg.channel.send(
             util_functions.desc_embed(`Muted ${mutee} indefinitely`)
           );
+          await Types.LogChannel.tryToLog(msg, `Muted ${mutee} indefinitely`);
         }
         let userCanTalkIn = checkChannelsThingCanTalkIn(msg.guild, mutee);
         if (userCanTalkIn.length > 0) {
@@ -277,6 +292,7 @@ let unmute = {
       } else {
         await mutee.roles.remove(mute_role);
         await msg.channel.send(util_functions.desc_embed(`Unmuted ${mutee}`));
+        await Types.LogChannel.tryToLog(msg, `Unmuted ${mutee}`);
       }
     } else {
       await msg.channel.send(

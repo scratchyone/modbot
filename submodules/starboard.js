@@ -194,6 +194,7 @@ const onMessageDelete = async (msg, client) => {
     db.prepare('DELETE FROM starboard_messages WHERE message=?').run(msg.id);
   }
 };
+import * as Types from '../types';
 let starboardCommand = {
   name: 'starboard',
   syntax: 'm: starboard <enable/disable/configure/fixperms>',
@@ -251,6 +252,7 @@ let starboardCommand = {
             `Created ${channel}. Default stars required are 3. You can change this with \`m: starboard configure\``
           )
         );
+        await Types.LogChannel.tryToLog(msg, `Created starboard ${channel}`);
       }
     } else if (cmd.action === 'fixperms') {
       let sb = db
@@ -270,6 +272,10 @@ let starboardCommand = {
           },
         ]);
         await msg.channel.send(util_functions.desc_embed('Fixed permissions'));
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Fixed permissions for starboard channel <#${sb.channel}>`
+        );
       } else {
         await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
@@ -305,6 +311,7 @@ let starboardCommand = {
             );
           }
         }
+        await Types.LogChannel.tryToLog(msg, 'Deleted starboard');
       } else {
         await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
@@ -343,6 +350,12 @@ let starboardCommand = {
               msg.guild.id
             );
             await msg.channel.send(util_functions.desc_embed('Updated!'));
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Changed required stars for starboard to ${
+                stars_req.array()[0].content
+              }`
+            );
           }
         }
       } else {

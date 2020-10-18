@@ -1,5 +1,6 @@
 const db = require('better-sqlite3')('perms.db3', {});
 let util_functions = require('../util_functions');
+import * as Types from '../types';
 exports.check_for_alert_channel = db.prepare(
   'SELECT * FROM alert_channels WHERE server=?'
 );
@@ -20,6 +21,10 @@ let alertchannel = {
       );
       msg.channel.send(
         'Disabled alert channel warning message. I strongly encourage you to setup an alert channel, it is very important'
+      );
+      await Types.LogChannel.tryToLog(
+        msg,
+        'Disabled alert channel warning message'
       );
     } else if (cmd.action === 'enable') {
       util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
@@ -93,6 +98,10 @@ let alertchannel = {
         await msg.channel.send(
           util_functions.desc_embed(`Created alert channel ${channel}`)
         );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Created alert channel ${channel}`
+        );
       }
     } else if (cmd.action === 'disable') {
       if (!exports.check_for_alert_channel.get(msg.guild.id)) {
@@ -106,8 +115,11 @@ let alertchannel = {
         db.prepare('DELETE FROM alert_channels WHERE server=?').run(
           msg.guild.id
         );
-
         await msg.channel.send(util_functions.desc_embed('Disabled!'));
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Disabled alert channel ${channel}`
+        );
       }
     }
   },
