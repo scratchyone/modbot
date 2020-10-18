@@ -115,7 +115,7 @@ const logging = {
   version: 2,
   responder: async (ctx: Types.Context, cmd: Command) => {
     if (cmd.command !== 'logging' || !ctx.msg.guild) return;
-    util_functions.warnIfNoPerms(ctx.msg, ['MANAGE_CHANNELS']);
+    util_functions.assertHasPerms(ctx.msg.guild, ['MANAGE_CHANNELS']);
     if (cmd.action === 'enable') {
       if (await Types.LogChannel.fromGuild(ctx.msg.guild))
         throw new util_functions.BotError('user', 'Logging already enabled');

@@ -117,8 +117,8 @@ const spoil = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'spoil',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'spoil') return;
-    util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
+    if (cmd.command !== 'spoil' || !msg.guild) return;
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
     if (msg.guild !== null && msg.channel.type == 'text') {
       const uuser = msg.member;
       if (!uuser) throw new Error('User not found');
