@@ -7,7 +7,7 @@ import * as Types from '../types';
 import { SubmissionStream } from 'snoostorm';
 import Snoowrap from 'snoowrap';
 import { truncate } from 'humanize-plus';
-const POLLTIME = 5000;
+const POLLTIME = 6000;
 try {
   require('../credentials.json');
 } catch (e) {
