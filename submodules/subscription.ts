@@ -4,10 +4,7 @@ const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command, Context } from '../types';
 import * as Types from '../types';
-import { SubmissionStream } from 'snoostorm';
-import Snoowrap from 'snoowrap';
-import { truncate } from 'humanize-plus';
-const POLLTIME = 6000;
+const POLLTIME = 5000;
 try {
   require('../credentials.json');
 } catch (e) {
@@ -16,7 +13,9 @@ try {
   );
 }
 const creds = require('../credentials.json');
-const client = new Snoowrap(creds);
+const Reddit = require('reddit');
+const reddit = new Reddit(creds);
+
 const subscribe = {
   name: 'subscribe',
   syntax: 'm: subscribe <reddit>',
@@ -42,14 +41,6 @@ const subscribe = {
         sub,
         webhook,
         ctx.msg
-      );
-      const submissions = new SubmissionStream(client, {
-        subreddit: sub,
-        limit: 10,
-        pollTime: POLLTIME,
-      });
-      submissions.on('item', (s) =>
-        newSubmission(s, submissions, subscription)
       );
       await ctx.msg.dbReply(
         util_functions.embed(
@@ -118,20 +109,19 @@ function truncateString(str: string, num: number): string {
   // Return str truncated with '...' concatenated to the end of str.
   return str.slice(0, num) + '...';
 }
+interface Submission {
+  title: string;
+  selftext: string;
+  permalink: string;
+  url: string;
+  author: string;
+  id: string;
+  subreddit: string;
+}
 async function newSubmission(
-  submission: Snoowrap.Submission,
-  listener: SubmissionStream,
+  submission: Submission,
   subscription: Types.Subscription
 ) {
-  if (
-    !(
-      await Types.Subscription.query().where(
-        'webhookid',
-        subscription.webhookid
-      )
-    ).length
-  )
-    listener.end();
   try {
     const webhookClient = new Discord.WebhookClient(
       subscription.webhookid,
@@ -140,32 +130,46 @@ async function newSubmission(
     await webhookClient.send(
       new Discord.MessageEmbed()
         .setTitle(submission.title)
-        .setDescription(truncateString(submission.selftext, 2000))
+        .setDescription(truncateString(submission.selftext || '', 2000))
         .setURL('https://reddit.com' + submission.permalink)
         .setImage(submission.url)
-        .setAuthor('By ' + submission.author.name)
-        .setFooter(`/r/${subscription.subreddit}`)
+        .setAuthor('By ' + submission.author)
+        .setFooter(`/r/${submission.subreddit}`)
     );
   } catch (e) {
     console.error(e);
   }
+}
+function reverse<T>(array: T[]) {
+  return array.map((item: T, idx: number) => array[array.length - 1 - idx]);
 }
 exports.commandModule = {
   title: 'Subscriptions',
   description: 'Commands for subscribing to various streams like Reddit',
   commands: [subscribe, unsubscribe],
   cog: async (discClient: Discord.Client) => {
-    const subscriptions = await Types.Subscription.query();
-    for (const sub of subscriptions) {
-      if (sub.type === 'reddit') {
-        const submissions = new SubmissionStream(client, {
-          subreddit: sub.subreddit,
-          limit: 10,
-          pollTime: POLLTIME,
-        });
-        submissions.on('item', (s) => newSubmission(s, submissions, sub));
+    const seenPosts: Set<string> = new Set();
+    const seenSubs: Set<string> = new Set();
+    setInterval(async () => {
+      const subscriptions = await Types.Subscription.query();
+      for (const sub of subscriptions) {
+        if (sub.type === 'reddit') {
+          const submissions: {
+            data: { children: { data: Submission }[] };
+          } = await reddit.get(
+            `/r/${sub.subreddit?.replace('/', '')}/new.json?sort=new`
+          );
+          for (const validSubmission of reverse(
+            submissions.data.children.filter((p) => !seenPosts.has(p.data.id))
+          )) {
+            if (seenSubs.has(sub.subreddit || ''))
+              newSubmission(validSubmission.data, sub);
+            seenPosts.add(validSubmission.data.id);
+          }
+          seenSubs.add(sub.subreddit || '');
+        }
       }
-    }
+    }, POLLTIME);
     discClient.on('channelDelete', async (channel) => {
       await Types.Subscription.query().delete().where('channel', channel.id);
     });
