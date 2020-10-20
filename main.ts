@@ -923,7 +923,7 @@ const main_commands = {
                 .setTitle('Tip!')
                 .setColor('#397cd1')
                 .setDescription(
-                  '{{author}} will be replaced with a mention of the user who triggered the AutoResponder'
+                  '`{{author}}` will be replaced with a mention of the user who triggered the AutoResponder'
                 )
             );
             if (message_type === 0) {
@@ -954,18 +954,11 @@ const main_commands = {
                 msg.guild.id
               );
             } else if (message_type === 1) {
-              await msg.dbReply('What should the embed title be?');
-              const embed_title = await msg.channel.awaitMessages(
-                (m) => m.author.id == msg.author.id,
-                {
-                  max: 1,
-                  time: 40000,
-                }
+              const embed_title = await util_functions.askOrNone(
+                'What should the embed title be?',
+                40000,
+                msg
               );
-              if (!embed_title.array().length) {
-                await msg.dbReply(util_functions.desc_embed('Timed out'));
-                return;
-              }
               await msg.dbReply('What should the embed description be?');
               const embed_desc = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
@@ -983,7 +976,7 @@ const main_commands = {
               ).run(
                 prompt.array()[0].content,
                 'embed',
-                embed_title.array()[0].content,
+                embed_title,
                 embed_desc.array()[0].content,
                 msg.guild.id
               );
@@ -998,6 +991,7 @@ const main_commands = {
               `Added AutoResponder to \`${prompt.array()[0].content}\``
             );
           } catch (e) {
+            if (e instanceof util_functions.BotError) throw e;
             console.log(e);
             await msg.dbReply(
               util_functions.desc_embed('Failed to create AutoResponder')
@@ -1240,18 +1234,11 @@ const main_commands = {
             msg,
             40000
           );
-          await msg.dbReply('What should the embed title be?');
-          const embed_title = await msg.channel.awaitMessages(
-            (m) => m.author.id == msg.author.id,
-            {
-              max: 1,
-              time: 80000,
-            }
+          const embed_title = await util_functions.askOrNone(
+            'What should the embed title be?',
+            80000,
+            msg
           );
-          if (!embed_title.array().length) {
-            await msg.dbReply(util_functions.desc_embed('Timed out'));
-            return;
-          }
           await msg.dbReply('What should the embed description be?');
           const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
@@ -1289,7 +1276,7 @@ const main_commands = {
             }
             rr_mes = await (tmp_chan as Discord.TextChannel).send(
               new Discord.MessageEmbed()
-                .setTitle(embed_title.array()[0].content)
+                .setTitle(embed_title)
                 .setDescription(embed_description.array()[0].content)
             );
           } catch (e) {
@@ -1424,18 +1411,11 @@ const main_commands = {
             msg,
             20000
           );
-          await msg.dbReply('What should the embed title be?');
-          const embed_title = await msg.channel.awaitMessages(
-            (m) => m.author.id == msg.author.id,
-            {
-              max: 1,
-              time: 20000,
-            }
+          const embed_title = await util_functions.askOrNone(
+            'What should the embed title be?',
+            80000,
+            msg
           );
-          if (!embed_title.array().length) {
-            await msg.dbReply(util_functions.desc_embed('Timed out'));
-            return;
-          }
           await msg.dbReply('What should the embed description be?');
           const embed_description = await msg.channel.awaitMessages(
             (m) => m.author.id == msg.author.id,
@@ -1450,7 +1430,7 @@ const main_commands = {
           }
           await rr_mes.edit(
             new Discord.MessageEmbed()
-              .setTitle(embed_title.array()[0].content)
+              .setTitle(embed_title)
               .setDescription(embed_description.array()[0].content)
           );
           await msg.dbReply(

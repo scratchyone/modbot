@@ -211,6 +211,45 @@ export async function ask(
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
   return sb_name.array()[0].content;
 }
+export async function askOrNone(
+  question: string,
+  time: number,
+  msg: EMessage
+): Promise<string | undefined> {
+  return new Promise((resolve, reject) => {
+    (async () => {
+      let addedEmoji = false;
+      const repm = await msg.dbReply(question);
+      await repm.react('🚫');
+      repm
+        .awaitReactions(
+          (r, u) => r.emoji.name === '🚫' && u.id === msg.author.id,
+          {
+            max: 1,
+            time: time,
+          }
+        )
+        .then((reactions) => {
+          if (reactions.array().length) {
+            addedEmoji = true;
+            resolve('');
+          }
+        });
+      const sb_name = await msg.channel.awaitMessages(
+        (m) => m.author.id == msg.author.id,
+        {
+          max: 1,
+          time: time,
+        }
+      );
+      if (!sb_name.array().length && !addedEmoji) {
+        reject(new exports.BotError('user', 'Timed out'));
+        return;
+      }
+      if (!addedEmoji) resolve(sb_name.array()[0].content);
+    })();
+  });
+}
 const stringVars = {
   botName: 'ModBot',
 };
