@@ -918,13 +918,21 @@ const main_commands = {
               ['📝', '🔗'],
               msg
             );
+            await msg.dbReply(
+              new Discord.MessageEmbed()
+                .setTitle('Tip!')
+                .setColor('#397cd1')
+                .setDescription(
+                  '{{author}} will be replaced with a mention of the user who triggered the AutoResponder'
+                )
+            );
             if (message_type === 0) {
               await msg.dbReply('What should I reply with?');
               const response = await msg.channel.awaitMessages(
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
-                  time: 10000,
+                  time: 40000,
                 }
               );
               if (!response.array().length) {
@@ -951,7 +959,7 @@ const main_commands = {
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
-                  time: 10000,
+                  time: 40000,
                 }
               );
               if (!embed_title.array().length) {
@@ -963,7 +971,7 @@ const main_commands = {
                 (m) => m.author.id == msg.author.id,
                 {
                   max: 1,
-                  time: 10000,
+                  time: 40000,
                 }
               );
               if (!embed_desc.array().length) {
@@ -2452,17 +2460,21 @@ function addReactOnMention(msg: Discord.Message) {
       ])
     );
 }
+async function arTextFill(text: string, msg: Discord.Message): Promise<string> {
+  return text.split('{{author}}').join(msg.author.toString());
+}
 async function processAutoresponders(msg: Discord.Message) {
   const message = msg as util_functions.EMessage;
   if (!msg.guild) return;
   const ar = check_for_ar.get(msg.content, msg.guild.id);
   if (ar) {
-    if (ar.type == 'text') message.dbReply(ar.text_response);
+    if (ar.type == 'text')
+      message.dbReply(await arTextFill(ar.text_response, msg));
     else if (ar.type == 'embed')
       message.dbReply(
         new Discord.MessageEmbed()
           .setTitle(ar.embed_title)
-          .setDescription(ar.embed_description)
+          .setDescription(await arTextFill(ar.embed_description, msg))
       );
   }
 }
@@ -2757,7 +2769,7 @@ client.on('message', async (msg: Discord.Message) => {
         msg.content,
         matchingPrefix
       );
-      if (!foundSyntax) {
+      if (!foundSyntax && matchingPrefix === 'm: ') {
         message.dbReply(
           new Discord.MessageEmbed()
             .setTitle('Command not found')
