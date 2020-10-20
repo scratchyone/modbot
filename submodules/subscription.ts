@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
-const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command, Context } from '../types';
 import * as Types from '../types';
@@ -37,11 +36,7 @@ const subscribe = {
         `ModBot /r/${sub} Subscription`,
         { reason: `Created by ${ctx.msg.author.tag}` }
       );
-      const subscription = await Types.Subscription.addRedditSubscription(
-        sub,
-        webhook,
-        ctx.msg
-      );
+      await Types.Subscription.addRedditSubscription(sub, webhook, ctx.msg);
       await ctx.msg.dbReply(
         util_functions.embed(
           `Subscribed to /r/${sub}! If you'd like to modify the subscription's name or profile picture, open channel settings and go to Integrations -> Webhooks, and then edit "ModBot /r/${sub} Subscription". To unsubscribe, use \`!unsubscribe reddit\`!`,
