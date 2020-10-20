@@ -5,3 +5,4 @@ perms.db3
 .env
 build
 report.*.json
+credentials.json
