@@ -35,7 +35,7 @@
   "main": "main.js",
   "scripts": {
     "test": "npm run clear && npm run eslint && npm run nearley && npm run tsc && npm run clear",
-    "tsc": "copyfiles package.json build && tsc",
+    "tsc": "copyfiles package.json build && copyfiles credentials.json build && tsc",
     "nearley": "nearleyc ./commands.ne -o ./commands.js",
     "eslint": "npx eslint . --ext .js,.ts",
     "build": "npm run clear && npm run nearley && npm run tsc",
