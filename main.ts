@@ -59,9 +59,6 @@ const automod = (() => {
 import nanoid from 'nanoid';
 const db = require('better-sqlite3')('perms.db3', {});
 const check_if_can_pin = db.prepare('SELECT * FROM pinners');
-const check_for_ar = db.prepare(
-  'SELECT * FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
-);
 const check_for_reactionrole = db.prepare(
   'SELECT * FROM reactionroles WHERE emoji=? AND message=? AND server=?'
 );
@@ -2455,7 +2452,7 @@ async function arTextFill(
 ): Promise<string> {
   if (!msg.guild) return text;
   let currText = text.split('{{author}}').join(msg.author.toString());
-  for (const item of currText.matchAll(/{{.*}}/g)) {
+  for (const item of currText.matchAll(/{{[^}]+}}/g)) {
     if (variables.has(item[0]))
       currText = currText
         .split(item[0])
@@ -2483,10 +2480,10 @@ async function processAutoresponders(msg: Discord.Message) {
       .map((item: string, i: number) => [item, msg.content.split(' ')[i]])) {
       if (
         item[0].toLowerCase() !== item[1].toLowerCase() &&
-        !/{{.*}}/.test(item[0])
+        !/{{[^}]+}}/.test(item[0])
       )
         matched = false;
-      if (/{{.*}}/.test(item[0])) {
+      if (/{{[^}]+}}/.test(item[0])) {
         variables.set(item[0], item[1]);
       }
     }
