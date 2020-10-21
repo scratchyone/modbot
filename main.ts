@@ -910,7 +910,7 @@ const main_commands = {
               (m) => m.author.id == msg.author.id,
               {
                 max: 1,
-                time: 10000,
+                time: 50000,
               }
             );
             if (!prompt.array().length) {
@@ -1008,7 +1008,7 @@ const main_commands = {
             (m) => m.author.id == msg.author.id,
             {
               max: 1,
-              time: 10000,
+              time: 40000,
             }
           );
           if (!prompt.array().length) {
