@@ -2448,7 +2448,7 @@ function addReactOnMention(msg: Discord.Message) {
       ])
     );
 }
-const varMatcher = /{{.*}}/;
+const varMatcher = /{{.*}}/g;
 async function arTextFill(
   text: string,
   msg: Discord.Message,
