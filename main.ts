@@ -899,6 +899,14 @@ const main_commands = {
         if (cmd.action === 'add') {
           try {
             await msg.dbReply(
+              new Discord.MessageEmbed()
+                .setTitle('Tip!')
+                .setColor('#397cd1')
+                .setDescription(
+                  'You can define custom variables like `{{NAME}}` that can be used in the AutoResponder reply'
+                )
+            );
+            await msg.dbReply(
               'What message should this AutoResponder reply to?'
             );
             const prompt = await msg.channel.awaitMessages(
@@ -2440,22 +2448,62 @@ function addReactOnMention(msg: Discord.Message) {
       ])
     );
 }
-async function arTextFill(text: string, msg: Discord.Message): Promise<string> {
-  return text.split('{{author}}').join(msg.author.toString());
+const varMatcher = /{{.*}}/;
+async function arTextFill(
+  text: string,
+  msg: Discord.Message,
+  variables: Map<string, string>
+): Promise<string> {
+  if (!msg.guild) return text;
+  let currText = text.split('{{author}}').join(msg.author.toString());
+  for (const item of currText.matchAll(varMatcher)) {
+    if (variables.has(item[0]))
+      currText = currText
+        .split(item[0])
+        .join(
+          await util_functions.cleanPings(
+            variables.get(item[0]) || item[0],
+            msg.guild
+          )
+        );
+  }
+  return currText;
 }
 async function processAutoresponders(msg: Discord.Message) {
   const message = msg as util_functions.EMessage;
   if (!msg.guild) return;
-  const ar = check_for_ar.get(msg.content, msg.guild.id);
-  if (ar) {
-    if (ar.type == 'text')
-      message.dbReply(await arTextFill(ar.text_response, msg));
-    else if (ar.type == 'embed')
-      message.dbReply(
-        new Discord.MessageEmbed()
-          .setTitle(ar.embed_title)
-          .setDescription(await arTextFill(ar.embed_description, msg))
-      );
+  const guildArs = db
+    .prepare('SELECT * FROM autoresponders WHERE server = ?')
+    .all(msg.guild.id);
+  for (const ar of guildArs) {
+    let matched = true;
+    if (ar.prompt.split(' ').length !== msg.content.split(' ').length) continue;
+    const variables: Map<string, string> = new Map();
+    for (const item of ar.prompt
+      .split(' ')
+      .map((item: string, i: number) => [item, msg.content.split(' ')[i]])) {
+      if (
+        item[0].toLowerCase() !== item[1].toLowerCase() &&
+        !varMatcher.test(item[0])
+      )
+        matched = false;
+      if (varMatcher.test(item[0])) {
+        variables.set(item[0], item[1]);
+      }
+    }
+    if (matched === true) {
+      if (ar.type == 'text')
+        message.dbReply(await arTextFill(ar.text_response, msg, variables));
+      else if (ar.type == 'embed')
+        message.dbReply(
+          new Discord.MessageEmbed()
+            .setTitle(ar.embed_title)
+            .setDescription(
+              await arTextFill(ar.embed_description, msg, variables)
+            )
+        );
+      return;
+    }
   }
 }
 async function getPrefix(msg: Discord.Message): Promise<string | null> {
