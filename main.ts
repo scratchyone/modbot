@@ -930,7 +930,6 @@ const main_commands = {
                 'user',
                 "There's something badly wrong with your variables, I can't seem to parse them"
               );
-            console.log(variables);
             if ([...variables.values()].some((n) => n === null))
               msg.dbReply(
                 util_functions.embed(
