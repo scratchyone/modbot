@@ -124,6 +124,8 @@ let automod = {
         msg
       );
       let punishments;
+      if (punishment === null)
+        throw new util_functions.BotError('user', 'Timed out!');
       if (punishment === 0) {
         punishments = [{ action: 'reply', message: triggerMessage }];
       } else if (punishment === 1) {
