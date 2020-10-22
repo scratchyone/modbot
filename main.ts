@@ -7,6 +7,7 @@ import SentryTypes from '@sentry/types';
 import { Model } from 'objection';
 import Knex from 'knex';
 import KeyValueStore from './kvs';
+import * as AutoResponders from './autoresponders';
 const store = new KeyValueStore();
 // Initialize knex.
 const knex = Knex({
@@ -917,6 +918,26 @@ const main_commands = {
               await msg.dbReply(util_functions.desc_embed('Timed out'));
               return;
             }
+            const parsedPrompt = AutoResponders.parsePrompt(
+              prompt.array()[0].content
+            );
+            const [matched, variables] = AutoResponders.parseText(
+              prompt.array()[0].content,
+              parsedPrompt
+            );
+            if (!matched)
+              throw new util_functions.BotError(
+                'user',
+                "There's something badly wrong with your variables, I can't seem to parse them"
+              );
+            console.log(variables);
+            if ([...variables.values()].some((n) => n === null))
+              msg.dbReply(
+                util_functions.embed(
+                  'Your variables are **ambiguous**, you might get unexpected results',
+                  'warning'
+                )
+              );
             const message_type = await util_functions.embed_options(
               'Message type?',
               ['Text', 'Embed'],
@@ -2448,17 +2469,18 @@ function addReactOnMention(msg: Discord.Message) {
 async function arTextFill(
   text: string,
   msg: Discord.Message,
-  variables: Map<string, string>
+  variables: Map<string, string | null>
 ): Promise<string> {
   if (!msg.guild) return text;
   let currText = text.split('{{author}}').join(msg.author.toString());
   for (const item of currText.matchAll(/{{[^}]+}}/g)) {
-    if (variables.has(item[0]))
+    if (variables.has(item[0].replace('{{', '').replace('}}', '')))
       currText = currText
         .split(item[0])
         .join(
           await util_functions.cleanPings(
-            variables.get(item[0]) || item[0],
+            variables.get(item[0].replace('{{', '').replace('}}', '')) ||
+              item[0],
             msg.guild
           )
         );
@@ -2472,21 +2494,11 @@ async function processAutoresponders(msg: Discord.Message) {
     .prepare('SELECT * FROM autoresponders WHERE server = ?')
     .all(msg.guild.id);
   for (const ar of guildArs) {
-    let matched = true;
-    if (ar.prompt.split(' ').length !== msg.content.split(' ').length) continue;
-    const variables: Map<string, string> = new Map();
-    for (const item of ar.prompt
-      .split(' ')
-      .map((item: string, i: number) => [item, msg.content.split(' ')[i]])) {
-      if (
-        item[0].toLowerCase() !== item[1].toLowerCase() &&
-        !/{{[^}]+}}/.test(item[0])
-      )
-        matched = false;
-      if (/{{[^}]+}}/.test(item[0])) {
-        variables.set(item[0], item[1]);
-      }
-    }
+    const parsedPrompt = AutoResponders.parsePrompt(ar.prompt);
+    const [matched, variables] = AutoResponders.parseText(
+      msg.content,
+      parsedPrompt
+    );
     if (matched === true) {
       if (ar.type == 'text')
         message.dbReply(await arTextFill(ar.text_response, msg, variables));
