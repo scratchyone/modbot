@@ -521,7 +521,7 @@ const main_commands = {
             await clone(type);
             await Types.LogChannel.tryToLog(
               msg,
-              `Clonepurged ${msg.channel as Discord.TextChannel}}`
+              `Clonepurged ${msg.channel as Discord.TextChannel}`
             );
           }
         } else if (type !== null) {
@@ -1967,7 +1967,7 @@ client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
   //
   //
-  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
+  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
   //
   //
   //
