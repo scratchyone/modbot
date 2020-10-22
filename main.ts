@@ -2509,7 +2509,6 @@ async function processAutoresponders(msg: Discord.Message) {
               await arTextFill(ar.embed_description, msg, variables)
             )
         );
-      return;
     }
   }
 }
