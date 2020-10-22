@@ -147,6 +147,104 @@ const spoil = {
     } catch (e) {}
   },
 };
+import puppeteer, { ElementHandle } from 'puppeteer';
+const screenshot = {
+  name: 'screenshot',
+  syntax: 'm: screenshot <URL>',
+  explanation:
+    'Screenshot a URL, helpful for getting images of tweets and posts',
+  matcher: (cmd: Command) => cmd.command == 'screenshot',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'screenshot',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'screenshot') return;
+    const parsedUrl = url.parse(cmd.url);
+    const supportedHosts = ['twitter.com', 'reddit.com'];
+    if (!parsedUrl.hostname || !parsedUrl.pathname)
+      throw new util_functions.BotError('user', 'Invalid URL');
+    if (!supportedHosts.includes(parsedUrl.hostname.replace('www.', '')))
+      throw new util_functions.BotError(
+        'user',
+        `Website not supported! Supported websites are ${oxford(
+          supportedHosts
+        )}`
+      );
+    if (parsedUrl.hostname.replace('www.', '') === 'twitter.com') {
+      if (!/\/[A-Za-z0-9_]{1,15}\/status\/\d+/.test(parsedUrl.pathname))
+        throw new util_functions.BotError('user', 'Not a link to a tweet!');
+      ctx.msg.channel.startTyping();
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      await page.setViewport({ width: 12000, height: 12000 });
+      await page.goto(cmd.url, { waitUntil: 'networkidle0' });
+      const elements = (
+        await Promise.all(
+          (await page.$$('a')).map(async (e) => [
+            await (await e.asElement()?.getProperty('href'))?.jsonValue(),
+            e,
+          ])
+        )
+      ).filter((x: unknown) => (x as Array<string>)[0] === parsedUrl.href);
+      if (!elements.length)
+        throw new util_functions.BotError('user', 'Failed to screenshot');
+      const element = ((await (elements[0][1] as ElementHandle).$x(
+        '../../../../../../..'
+      )) as Array<ElementHandle>)[0];
+      const b64string: string = (await element.screenshot({
+        encoding: 'base64',
+      })) as string;
+      const buffer: Buffer = Buffer.from(b64string, 'base64');
+      await browser.close();
+      await ctx.msg.dbReply(
+        new Discord.MessageEmbed()
+          .setTitle('Twitter Screenshot')
+          .attachFiles([new Discord.MessageAttachment(buffer, 'image.png')])
+          .setImage('attachment://image.png')
+      );
+    } else if (parsedUrl.hostname.replace('www.', '') === 'reddit.com') {
+      if (!/\/r\/.+\/comments\/.+\/.+/.test(parsedUrl.pathname))
+        throw new util_functions.BotError(
+          'user',
+          'Not a link to a reddit post!'
+        );
+      ctx.msg.channel.startTyping();
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      await page.setViewport({ width: 500, height: 2000 });
+      await page.goto(
+        cmd.url
+          .replace('www.', '')
+          .replace(
+            parsedUrl.hostname.replace('www.', ''),
+            `old.${parsedUrl.hostname.replace('www.', '')}`
+          ),
+        { waitUntil: 'networkidle0' }
+      );
+      await page.evaluate(() => {
+        const node = document.querySelector('.side');
+        if (node) node.parentNode?.removeChild(node);
+      });
+      const element = await page.$('#siteTable > .thing');
+      if (!element) {
+        ctx.msg.channel.stopTyping();
+        throw new util_functions.BotError('user', 'Failed to screenshot');
+      }
+      const b64string: string = (await element.screenshot({
+        encoding: 'base64',
+      })) as string;
+      const buffer: Buffer = Buffer.from(b64string, 'base64');
+      await browser.close();
+      await ctx.msg.dbReply(
+        new Discord.MessageEmbed()
+          .setTitle('Reddit Screenshot')
+          .attachFiles([new Discord.MessageAttachment(buffer, 'image.png')])
+          .setImage('attachment://image.png')
+      );
+    }
+    ctx.msg.channel.stopTyping();
+  },
+};
 const pfp = {
   name: 'pfp',
   syntax: 'm: pfp <USER>',
@@ -579,8 +677,9 @@ const about = {
     );
   },
 };
-const path = require('path');
-const url = require('url');
+import path from 'path';
+import url from 'url';
+import { oxford } from 'humanize-plus';
 const addemoji = {
   name: 'addemoji',
   syntax: 'm: addemoji <NAME> <EMOJI/URL/ATTACH A FILE>',
@@ -612,8 +711,9 @@ const addemoji = {
       // If an attachment is supplied, use that
       emojiUrl =
         process.env.MEDIAGEN_URL &&
-        path.extname(url.parse(msg.attachments.array()[0].url).pathname) !==
-          '.gif'
+        path.extname(
+          url.parse(msg.attachments.array()[0].url).pathname || ''
+        ) !== '.gif'
           ? process.env.MEDIAGEN_URL +
             'emojiResize.png?url=' +
             encodeURIComponent(msg.attachments.array()[0].url)
@@ -622,7 +722,7 @@ const addemoji = {
     else if (cmd.emojiData)
       emojiUrl =
         process.env.MEDIAGEN_URL &&
-        path.extname(url.parse(cmd.emojiData).pathname) !== '.gif'
+        path.extname(url.parse(cmd.emojiData).pathname || '') !== '.gif'
           ? process.env.MEDIAGEN_URL +
             'emojiResize.png?url=' +
             encodeURIComponent(cmd.emojiData)
@@ -881,6 +981,7 @@ exports.commandModule = {
     spoil,
     pick,
     pfp,
+    screenshot,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
