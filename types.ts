@@ -261,10 +261,6 @@ export type Command =
   | {
       command: 'subscribe' | 'unsubscribe';
       action: 'reddit';
-    }
-  | {
-      command: 'screenshot';
-      url: string;
     };
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
