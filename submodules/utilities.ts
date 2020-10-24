@@ -36,17 +36,16 @@ async function reRenderPoll(message: Discord.Message) {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
-        process.env.MEDIAGEN_URL +
-          'poll?up=' +
-          ((message.reactions.cache
-            .array()
-            .filter((r) => r.emoji.name == '👍')[0].count || 1) -
-            1) +
-          '&down=' +
-          ((message.reactions.cache
-            .array()
-            .filter((r) => r.emoji.name == '👎')[0].count || 1) -
-            1)
+        new Types.MediaGen().generatePoll({
+          up:
+            (message.reactions.cache
+              .array()
+              .filter((r) => r.emoji.name == '👍')[0].count || 1) - 1,
+          down:
+            (message.reactions.cache
+              .array()
+              .filter((r) => r.emoji.name == '👎')[0].count || 1) - 1,
+        })
       ),
     });
   } catch (e) {
@@ -59,10 +58,11 @@ const poll = {
   explanation: 'Run a yes/no poll',
   matcher: (cmd: Command) => cmd.command == 'poll',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
-  permissions: () => process.env.MEDIAGEN_URL,
+  permissions: () => Types.MediaGen.enabled,
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'poll') return;
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
+    await new Types.MediaGen().assert();
     try {
       await msg.delete();
     } catch (e) {}
@@ -93,7 +93,7 @@ const poll = {
             msg.author.displayAvatarURL()
           )
           .setTitle(cmd.text)
-          .setImage(process.env.MEDIAGEN_URL + 'poll?up=' + 0 + '&down=' + 0)
+          .setImage(new Types.MediaGen().generatePoll({ up: 0, down: 0 }))
       );
       // Add reactions for voting
       await pollMsg.react('👍');
@@ -469,10 +469,11 @@ const owo = {
   explanation: 'Get a gif',
   matcher: (cmd: Command) => cmd.command == 'owo',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
-  permissions: () => true && process.env.MEDIAGEN_URL,
+  permissions: () => Types.MediaGen.enabled,
   version: 2,
   responder: async (ctx: Types.Context, cmd: Types.Command) => {
     if (cmd.command !== 'owo') return;
+    await new Types.MediaGen().assert();
     // Get the tagged user, or none
     const authee = cmd.authee
       ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
@@ -507,24 +508,18 @@ const owo = {
   },
 };
 // If mediagen is setup, update syntax for OwO command to include all available actions in mediagen
-if (process.env.MEDIAGEN_URL)
+if (Types.MediaGen.enabled)
   (async () => {
     try {
       owo.syntax =
         '!owo <' +
-        (
-          await (await fetch(process.env.MEDIAGEN_URL + 'owoActions')).json()
-        ).join('/') +
+        (await new Types.MediaGen().owoActions()).join('/') +
         '> [USER]';
       setInterval(
         async () =>
           (owo.syntax =
             '!owo <' +
-            (
-              await (
-                await fetch(process.env.MEDIAGEN_URL + 'owoActions')
-              ).json()
-            ).join('/') +
+            (await new Types.MediaGen().owoActions()).join('/') +
             '> [USER]'),
         1000 * 60 * 60 // One Hour
       );
@@ -593,6 +588,7 @@ const addemoji = {
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
+    await new Types.MediaGen().assert();
     if (cmd.command !== 'addemoji' || !msg.guild) return;
 
     let emojiUrl = undefined;

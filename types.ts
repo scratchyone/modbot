@@ -444,3 +444,35 @@ export class Subscription extends Model {
     });
   }
 }
+import fetch from 'node-fetch';
+export class MediaGen {
+  url: string;
+  constructor() {
+    if (process.env.MEDIAGEN_URl) this.url = process.env.MEDIAGEN_URl;
+    else
+      throw new Types.BotError(
+        'user',
+        "MediaGen doesn't appear to be configured for this bot instance, there is no way to proceed"
+      );
+  }
+  public static get enabled(): boolean {
+    return !!process.env.MEDIAGEN_URL;
+  }
+  public generatePoll(votes: { up: number; down: number }): string {
+    return this.url + 'poll?up=' + votes.up + '&down=' + votes.down;
+  }
+  public async owoActions(): Promise<Array<string>> {
+    return await (await fetch(this.url + 'owoActions')).json();
+  }
+  public async assert(): Promise<void> {
+    try {
+      const working = await fetch(this.url + 'online');
+      if (working.status !== 200) throw Error('');
+    } catch (e) {
+      throw new Types.BotError(
+        'user',
+        'This requires a backend service called `MediaGen` which is currently having stability issues. Please try again later.'
+      );
+    }
+  }
+}
