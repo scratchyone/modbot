@@ -431,18 +431,46 @@ const main_commands = {
               );
             }
           } else if (otherOp === 0) {
-            await ctx.msg.dbReply(
-              new Discord.MessageEmbed()
-                .setURL(
-                  `${
-                    process.env.UI_URL
-                  }reminders/${await Web.mintCapabilityToken(
-                    ctx.msg.author.id,
-                    'reminders'
-                  )}`
-                )
-                .setTitle('Click here to manage your reminders')
+            const res = await util_functions.embed_options(
+              'This will allow anybody with the link to view all your reminders from all servers, as well as manage and delete them, are you sure you want to continue?',
+              ['Cancel', 'Continue', 'DM It Instead'],
+              ['❌', '✅', '💬'],
+              ctx.msg
             );
+            if (res == 0) return;
+            if (res === 1)
+              await ctx.msg.dbReply(
+                new Discord.MessageEmbed()
+                  .setURL(
+                    `${
+                      process.env.UI_URL
+                    }reminders/${await Web.mintCapabilityToken(
+                      ctx.msg.author.id,
+                      'reminders'
+                    )}`
+                  )
+                  .setTitle('Click here to manage your reminders')
+              );
+            else if (res === 2) {
+              try {
+                await (await ctx.msg.author.createDM()).send(
+                  new Discord.MessageEmbed()
+                    .setURL(
+                      `${
+                        process.env.UI_URL
+                      }reminders/${await Web.mintCapabilityToken(
+                        ctx.msg.author.id,
+                        'reminders'
+                      )}`
+                    )
+                    .setTitle('Click here to manage your reminders')
+                );
+              } catch (e) {
+                ctx.msg.dbReply(
+                  'Failed to send DM, do you have DMs enabled for this server?'
+                );
+              }
+            }
           }
         }
         return undoStack;
