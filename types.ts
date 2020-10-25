@@ -448,7 +448,7 @@ import fetch from 'node-fetch';
 export class MediaGen {
   url: string;
   constructor() {
-    if (process.env.MEDIAGEN_URl) this.url = process.env.MEDIAGEN_URl;
+    if (process.env.MEDIAGEN_URL) this.url = process.env.MEDIAGEN_URL;
     else
       throw new Types.BotError(
         'user',
