@@ -476,3 +476,12 @@ export class MediaGen {
     }
   }
 }
+export class Capability extends Model {
+  token!: string;
+  user!: string;
+  type!: 'reminders';
+  expire!: number;
+  static get tableName(): string {
+    return 'capabilities';
+  }
+}

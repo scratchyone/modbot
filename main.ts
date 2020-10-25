@@ -20,6 +20,7 @@ const knex = Knex({
 // Give the knex instance to objection.
 Model.knex(knex);
 require('dotenv').config();
+import * as Web from './web';
 Sentry.init({
   dsn: process.env.SENTRY_TOKEN,
   beforeSend: (event: SentryTypes.Event) => {
@@ -121,6 +122,7 @@ const main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (msg: Discord.Message, cmd: Command) => {
+        const web = Web;
         if (cmd.command !== 'eval') return;
         try {
           const cloneUser = async (user: string, text: string) => {
@@ -363,59 +365,83 @@ const main_commands = {
             'author',
             ctx.msg.author.id
           );
-          const res = await util_functions.embed_options(
-            'This will show all reminders from all servers, are you sure you want to continue?',
-            ['Cancel', 'Continue', 'DM Them Instead'],
-            ['❌', '✅', '💬'],
-            ctx.msg
-          );
-          if (res == 0) return;
-          const fields = util_functions.chunk(
-            reminders
-              .filter((n) => n.text)
-              .flatMap((reminder) => {
-                return [
-                  { name: 'Text', value: reminder.text, inline: true },
-                  {
-                    name: 'Time',
-                    value: reminder.time
-                      ? moment.unix(reminder.time).fromNow()
-                      : '[CREATED BEFORE REMINDERS UPDATE]',
-                    inline: true,
-                  },
-                  { name: 'ID', value: reminder.id, inline: true },
-                ];
-              }),
-            21
-          );
-          const replies = [
-            new Discord.MessageEmbed().setTitle(
-              `${ctx.msg.member?.displayName}'s Reminders`
-            ),
-          ];
-          if (fields.length === 0)
-            // Show Explanation for why reminders might be missing, but only for 1 month after update release
-            replies[0].setDescription(
-              'No reminders set.' +
-                (moment().isBefore(moment('11/8/2020', 'MM-DD-YY'))
-                  ? ' (Only showing reminders created after October 8th, 2020)'
-                  : '')
+          let otherOp: number | null = 1;
+          if (process.env.UI_URL) {
+            otherOp = await util_functions.embed_options(
+              'Would you like to view your reminders on discord or be given a link to a website that will allow you to manage them more easily?',
+              ['Website', 'Discord'],
+              ['🕸️', '✍️'],
+              ctx.msg
             );
-          if (fields.length === 1) replies[0].addFields(fields[0]);
-          else if (fields.length > 1) {
-            replies[0].addFields(fields[0]);
-            for (let i = 1; i < fields.length; i++) {
-              replies.push(new Discord.MessageEmbed().addFields(fields[i]));
-            }
           }
-          if (res === 1) for (const reply of replies) ctx.msg.dbReply(reply);
-          try {
-            if (res === 2)
-              for (const reply of replies)
-                await (await ctx.msg.author.createDM()).send(reply);
-          } catch (e) {
-            ctx.msg.dbReply(
-              'Failed to send DM, do you have DMs enabled for this server?'
+          if (otherOp == 1) {
+            const res = await util_functions.embed_options(
+              'This will show all reminders from all servers, are you sure you want to continue?',
+              ['Cancel', 'Continue', 'DM Them Instead'],
+              ['❌', '✅', '💬'],
+              ctx.msg
+            );
+            if (res == 0) return;
+            const fields = util_functions.chunk(
+              reminders
+                .filter((n) => n.text)
+                .flatMap((reminder) => {
+                  return [
+                    { name: 'Text', value: reminder.text, inline: true },
+                    {
+                      name: 'Time',
+                      value: reminder.time
+                        ? moment.unix(reminder.time).fromNow()
+                        : '[CREATED BEFORE REMINDERS UPDATE]',
+                      inline: true,
+                    },
+                    { name: 'ID', value: reminder.id, inline: true },
+                  ];
+                }),
+              21
+            );
+            const replies = [
+              new Discord.MessageEmbed().setTitle(
+                `${ctx.msg.member?.displayName}'s Reminders`
+              ),
+            ];
+            if (fields.length === 0)
+              // Show Explanation for why reminders might be missing, but only for 1 month after update release
+              replies[0].setDescription(
+                'No reminders set.' +
+                  (moment().isBefore(moment('11/8/2020', 'MM-DD-YY'))
+                    ? ' (Only showing reminders created after October 8th, 2020)'
+                    : '')
+              );
+            if (fields.length === 1) replies[0].addFields(fields[0]);
+            else if (fields.length > 1) {
+              replies[0].addFields(fields[0]);
+              for (let i = 1; i < fields.length; i++) {
+                replies.push(new Discord.MessageEmbed().addFields(fields[i]));
+              }
+            }
+            if (res === 1) for (const reply of replies) ctx.msg.dbReply(reply);
+            try {
+              if (res === 2)
+                for (const reply of replies)
+                  await (await ctx.msg.author.createDM()).send(reply);
+            } catch (e) {
+              ctx.msg.dbReply(
+                'Failed to send DM, do you have DMs enabled for this server?'
+              );
+            }
+          } else if (otherOp === 0) {
+            await ctx.msg.dbReply(
+              new Discord.MessageEmbed()
+                .setURL(
+                  `${
+                    process.env.UI_URL
+                  }reminders/${await Web.mintCapabilityToken(
+                    ctx.msg.author.id,
+                    'reminders'
+                  )}`
+                )
+                .setTitle('Click here to manage your reminders')
             );
           }
         }
