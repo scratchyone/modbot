@@ -3052,4 +3052,5 @@ client.on('message', async (msg: Discord.Message) => {
     Sentry.captureException(e);
   }
 });
+Web.serve(client);
 client.login(process.env.DISCORD_TOKEN);
