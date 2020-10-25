@@ -466,7 +466,7 @@ export class MediaGen {
   }
   public async assert(): Promise<void> {
     try {
-      const working = await fetch(this.url + 'online');
+      const working = await fetch(this.url + 'online', { timeout: 1000 });
       if (working.status !== 200) throw Error('');
     } catch (e) {
       throw new Types.BotError(
