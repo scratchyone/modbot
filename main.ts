@@ -375,13 +375,6 @@ const main_commands = {
             );
           }
           if (otherOp == 1) {
-            const res = await util_functions.embed_options(
-              'This will show all reminders from all servers, are you sure you want to continue?',
-              ['Cancel', 'Continue', 'DM Them Instead'],
-              ['❌', '✅', '💬'],
-              ctx.msg
-            );
-            if (res == 0) return;
             const fields = util_functions.chunk(
               reminders
                 .filter((n) => n.text)
@@ -420,26 +413,19 @@ const main_commands = {
                 replies.push(new Discord.MessageEmbed().addFields(fields[i]));
               }
             }
-            if (res === 1) for (const reply of replies) ctx.msg.dbReply(reply);
+            await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
             try {
-              if (res === 2)
-                for (const reply of replies)
-                  await (await ctx.msg.author.createDM()).send(reply);
+              for (const reply of replies)
+                await (await ctx.msg.author.createDM()).send(reply);
             } catch (e) {
               ctx.msg.dbReply(
                 'Failed to send DM, do you have DMs enabled for this server?'
               );
             }
           } else if (otherOp === 0) {
-            const res = await util_functions.embed_options(
-              'This will allow anybody with the link to view all your reminders from all servers, as well as manage and delete them, are you sure you want to continue?',
-              ['Cancel', 'Continue', 'DM It Instead'],
-              ['❌', '✅', '💬'],
-              ctx.msg
-            );
-            if (res == 0) return;
-            if (res === 1)
-              await ctx.msg.dbReply(
+            await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
+            try {
+              await (await ctx.msg.author.createDM()).send(
                 new Discord.MessageEmbed()
                   .setURL(
                     `${
@@ -451,25 +437,10 @@ const main_commands = {
                   )
                   .setTitle('Click here to manage your reminders')
               );
-            else if (res === 2) {
-              try {
-                await (await ctx.msg.author.createDM()).send(
-                  new Discord.MessageEmbed()
-                    .setURL(
-                      `${
-                        process.env.UI_URL
-                      }reminders/${await Web.mintCapabilityToken(
-                        ctx.msg.author.id,
-                        'reminders'
-                      )}`
-                    )
-                    .setTitle('Click here to manage your reminders')
-                );
-              } catch (e) {
-                ctx.msg.dbReply(
-                  'Failed to send DM, do you have DMs enabled for this server?'
-                );
-              }
+            } catch (e) {
+              ctx.msg.dbReply(
+                'Failed to send DM, do you have DMs enabled for this server?'
+              );
             }
           }
         }
