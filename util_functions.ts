@@ -24,13 +24,15 @@ export function desc_embed(text: string): Discord.MessageEmbed {
 }
 export function embed(
   text: string,
-  type: 'success' | 'warning',
+  type: 'success' | 'warning' | 'tip',
   title?: string
 ): Discord.MessageEmbed {
   return new Discord.MessageEmbed()
-    .setTitle(title || { success: 'Success!', warning: 'Warning!' }[type])
+    .setTitle(
+      title || { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
+    )
     .setDescription(text)
-    .setColor({ success: '#1dbb4f', warning: '#d8ae2b' }[type]);
+    .setColor({ success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[type]);
 }
 export function randArrayItem<T>(items: Array<T>): T {
   return items[~~(items.length * Math.random())];

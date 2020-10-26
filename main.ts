@@ -340,6 +340,12 @@ const main_commands = {
               'Set Reminder!'
             )
           );
+          await ctx.msg.dbReply(
+            util_functions.embed(
+              'You can also add and remove reminders with the ModBot web UI. You can get a link to it with `m: reminders list`',
+              'tip'
+            )
+          );
         } else if (cmd.action === 'copy') {
           const orig = await Types.Reminder.query().where('id', cmd.id);
           if (!orig.length)
@@ -360,6 +366,12 @@ const main_commands = {
             .where('author', ctx.msg.author.id)
             .where('id', cmd.id);
           await ctx.msg.dbReply('Cancelled!');
+          await ctx.msg.dbReply(
+            util_functions.embed(
+              'You can also add and remove reminders with the ModBot web UI. You can get a link to it with `m: reminders list`',
+              'tip'
+            )
+          );
         } else if (cmd.action === 'list') {
           const reminders = await Types.Reminder.query().where(
             'author',
