@@ -2,11 +2,15 @@ import * as Types from './types';
 import { v4 as uuidv4 } from 'uuid';
 import express from 'express';
 import { Client } from 'discord.js';
+import moment from 'moment';
+import parse from 'parse-duration';
+import nanoid from 'nanoid';
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
     const cors = require('cors');
     const app = express();
     app.use(cors());
+    app.use(express.json());
     const port = process.env.PORT;
     app.get('/capabilities/:token', async (req, res) => {
       const capabilities = await Types.Capability.query().where(
@@ -43,6 +47,19 @@ export async function serve(client: Client): Promise<void> {
           .filter((r) => r.time)
       );
     });
+    app.post('/users/:user/reminders', async (req, res) => {
+      const capability = await checkCapabilityToken(req, res, req.params.user);
+      if (!capability) return;
+      const id = nanoid.nanoid(5);
+      res.send(
+        await Types.Reminder.query().insertAndFetch({
+          text: req.body.text.replace('@', '@ '),
+          time: moment().add(parse(req.body.time, 'ms'), 'ms').unix(),
+          author: req.params.user,
+          id,
+        })
+      );
+    });
     app.get('/users/:user/', async (req, res) => {
       const capability = await checkCapabilityToken(req, res, req.params.user);
       if (!capability) return;
@@ -53,6 +70,9 @@ export async function serve(client: Client): Promise<void> {
         avatar: uo.displayAvatarURL(),
         username: uo.username,
       });
+    });
+    app.get('/features', async (req, res) => {
+      res.send([]);
     });
     app.delete('/users/:user/reminders/:id', async (req, res) => {
       const capability = await checkCapabilityToken(req, res, req.params.user);
