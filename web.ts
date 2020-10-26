@@ -5,6 +5,7 @@ import { Client } from 'discord.js';
 import moment from 'moment';
 import parse from 'parse-duration';
 import nanoid from 'nanoid';
+import { schedule_event } from './util_functions';
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
     const cors = require('cors');
@@ -59,6 +60,16 @@ export async function serve(client: Client): Promise<void> {
           id,
         })
       );
+      schedule_event(
+        {
+          type: 'reminder',
+          text: req.body.text.replace('@', '@ '),
+          time: moment().add(parse(req.body.time, 'ms'), 'ms').unix(),
+          user: req.params.user,
+          id,
+        },
+        req.body.time
+      );
     });
     app.get('/users/:user/', async (req, res) => {
       const capability = await checkCapabilityToken(req, res, req.params.user);
@@ -72,7 +83,7 @@ export async function serve(client: Client): Promise<void> {
       });
     });
     app.get('/features', async (req, res) => {
-      res.send([]);
+      res.send(['addReminders']);
     });
     app.delete('/users/:user/reminders/:id', async (req, res) => {
       const capability = await checkCapabilityToken(req, res, req.params.user);
