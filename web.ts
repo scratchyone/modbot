@@ -6,8 +6,9 @@ import moment from 'moment';
 import parse from 'parse-duration';
 import nanoid from 'nanoid';
 import { schedule_event } from './util_functions';
-let git = require('git-rev-sync');
+const git = require('git-rev-sync');
 const version = require('./package.json').version;
+const git_msg = git.message();
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
     const cors = require('cors');
@@ -108,7 +109,7 @@ export async function serve(client: Client): Promise<void> {
         guilds: client.guilds.cache.array().length,
         users: client.users.cache.array().length,
         commit_short: git.short(),
-        commit_msg: git.message(),
+        commit_msg: git_msg,
       });
     });
     app.post('/admin/stop', async (req, res) => {
