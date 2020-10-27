@@ -261,7 +261,8 @@ export type Command =
   | {
       command: 'subscribe' | 'unsubscribe';
       action: 'reddit';
-    };
+    }
+  | { command: 'admin' };
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
 }
@@ -479,7 +480,7 @@ export class MediaGen {
 export class Capability extends Model {
   token!: string;
   user!: string;
-  type!: 'reminders';
+  type!: 'reminders' | 'admin';
   expire!: number;
   static get tableName(): string {
     return 'capabilities';

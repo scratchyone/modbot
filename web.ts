@@ -6,6 +6,8 @@ import moment from 'moment';
 import parse from 'parse-duration';
 import nanoid from 'nanoid';
 import { schedule_event } from './util_functions';
+let git = require('git-rev-sync');
+const version = require('./package.json').version;
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
     const cors = require('cors');
@@ -33,7 +35,12 @@ export async function serve(client: Client): Promise<void> {
       });
     });
     app.get('/users/:user/reminders', async (req, res) => {
-      const capability = await checkCapabilityToken(req, res, req.params.user);
+      const capability = await checkCapabilityToken(
+        req,
+        res,
+        req.params.user,
+        'reminders'
+      );
       if (!capability) return;
       res.send(
         (await Types.Reminder.query().where('author', req.params.user))
@@ -49,7 +56,12 @@ export async function serve(client: Client): Promise<void> {
       );
     });
     app.post('/users/:user/reminders', async (req, res) => {
-      const capability = await checkCapabilityToken(req, res, req.params.user);
+      const capability = await checkCapabilityToken(
+        req,
+        res,
+        req.params.user,
+        'reminders'
+      );
       if (!capability) return;
       const id = nanoid.nanoid(5);
       res.send(
@@ -72,7 +84,12 @@ export async function serve(client: Client): Promise<void> {
       );
     });
     app.get('/users/:user/', async (req, res) => {
-      const capability = await checkCapabilityToken(req, res, req.params.user);
+      const capability = await checkCapabilityToken(
+        req,
+        res,
+        req.params.user,
+        'reminders'
+      );
       if (!capability) return;
       const uo = await client.users.fetch(req.params.user);
       res.send({
@@ -82,11 +99,34 @@ export async function serve(client: Client): Promise<void> {
         username: uo.username,
       });
     });
+    app.get('/admin/', async (req, res) => {
+      const capability = await checkCapabilityTokenNU(req, res, 'admin');
+      if (!capability) return;
+      res.send({
+        version,
+        uptime: Date.now() / 1000 - process.uptime(),
+        guilds: client.guilds.cache.array().length,
+        users: client.users.cache.array().length,
+        commit_short: git.short(),
+        commit_msg: git.message(),
+      });
+    });
+    app.post('/admin/stop', async (req, res) => {
+      const capability = await checkCapabilityTokenNU(req, res, 'admin');
+      if (!capability) return;
+      res.send({});
+      process.exit(0);
+    });
     app.get('/features', async (req, res) => {
       res.send(['addReminders']);
     });
-    app.delete('/users/:user/reminders/:id', async (req, res) => {
-      const capability = await checkCapabilityToken(req, res, req.params.user);
+    app.delete('/admin', async (req, res) => {
+      const capability = await checkCapabilityToken(
+        req,
+        res,
+        req.params.user,
+        'reminders'
+      );
       if (!capability) return;
       const changes = await Types.Reminder.query()
         .where('author', req.params.user)
@@ -103,7 +143,8 @@ export async function serve(client: Client): Promise<void> {
 async function checkCapabilityToken(
   req: express.Request,
   res: express.Response,
-  user: string
+  user: string,
+  type: 'reminders'
 ): Promise<false | Types.Capability> {
   const capabilities = await Types.Capability.query().where(
     'token',
@@ -115,7 +156,30 @@ async function checkCapabilityToken(
     });
     return false;
   }
-  if (capabilities[0].user !== user) {
+  if (capabilities[0].user !== user || capabilities[0].type !== type) {
+    res.status(403).send({
+      error: 'Capability token does not have permission to request that data',
+    });
+    return false;
+  }
+  return capabilities[0];
+}
+async function checkCapabilityTokenNU(
+  req: express.Request,
+  res: express.Response,
+  type: 'reminders' | 'admin'
+): Promise<false | Types.Capability> {
+  const capabilities = await Types.Capability.query().where(
+    'token',
+    req.headers.authorization?.replace('Bearer ', '') || ''
+  );
+  if (!capabilities.length || capabilities[0].expire < Date.now()) {
+    res.status(401).send({
+      error: 'Capability token not valid',
+    });
+    return false;
+  }
+  if (capabilities[0].type !== type) {
     res.status(403).send({
       error: 'Capability token does not have permission to request that data',
     });
@@ -125,7 +189,7 @@ async function checkCapabilityToken(
 }
 export async function mintCapabilityToken(
   user: string,
-  type: 'reminders'
+  type: 'reminders' | 'admin'
 ): Promise<string> {
   const token = uuidv4().replace(/-/g, '');
   await Types.Capability.query().insert({
