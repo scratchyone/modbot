@@ -122,7 +122,7 @@ const main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (msg: Discord.Message, cmd: Command) => {
-        const web = Web;
+        const discord = Discord;
         if (cmd.command !== 'eval') return;
         try {
           const cloneUser = async (user: string, text: string) => {
