@@ -258,10 +258,6 @@ export type Command =
       command: 'logging';
       action: 'enable' | 'disable';
     }
-  | {
-      command: 'subscribe' | 'unsubscribe';
-      action: 'reddit';
-    }
   | { command: 'admin' };
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
@@ -416,33 +412,6 @@ export class LogChannel extends Model {
   }
   static get tableName(): string {
     return 'logChannels';
-  }
-}
-export class Subscription extends Model {
-  type!: 'reddit';
-  subreddit?: string;
-  webhookid!: string;
-  webhooktoken!: string;
-  guild!: string;
-  channel!: string;
-  static get tableName(): string {
-    return 'subscriptions';
-  }
-  static async addRedditSubscription(
-    subreddit: string,
-    webhook: Discord.Webhook,
-    msg: Discord.Message
-  ): Promise<Subscription> {
-    if (!msg.guild) throw new Types.BotError('user', 'Invalid Guild');
-    if (!webhook.token) throw new Types.BotError('user', 'Invalid Webhook');
-    return await this.query().insert({
-      type: 'reddit',
-      subreddit,
-      webhookid: webhook.id,
-      webhooktoken: webhook.token,
-      guild: msg.guild.id,
-      channel: msg.channel.id,
-    });
   }
 }
 import fetch from 'node-fetch';

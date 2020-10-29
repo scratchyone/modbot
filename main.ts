@@ -2976,7 +2976,6 @@ client.on('message', async (msg: Discord.Message) => {
                     )
                   );
                 } else {
-                  console.error(e);
                   await message.dbReply(
                     'An error has occurred. Would you please explain what you were trying to do?'
                   );
