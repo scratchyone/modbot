@@ -167,7 +167,12 @@ const main_commands = {
       version: 3,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'say') return;
-        const chan = cmd.channel || ctx.msg.channel;
+        if ((cmd.channel || ctx.msg.channel).type !== 'text')
+          throw new util_functions.BotError(
+            'user',
+            "Channel isn't a text channel!"
+          );
+        const chan = (cmd.channel || ctx.msg.channel) as Discord.TextChannel;
         if (!ctx.msg.guild)
           throw new util_functions.BotError('user', 'No guild found');
         if (!cmd.keep)
@@ -186,13 +191,14 @@ const main_commands = {
             'user',
             `${ctx.msg.author}, you're banned from sending messages there!`
           );
+        }
+        if (!chan.permissionsFor(ctx.msg.author)?.has('SEND_MESSAGES')) {
+          throw new util_functions.BotError(
+            'user',
+            `${ctx.msg.author}, you can't send messages there!`
+          );
         } else {
           if (!cmd.keep) await ctx.msg.delete();
-          if (chan.type !== 'text')
-            throw new util_functions.BotError(
-              'user',
-              "Channel isn't a text channel!"
-            );
           await ((cmd.channel || ctx.msg.channel) as Discord.TextChannel).send(
             cmd.text
           );
