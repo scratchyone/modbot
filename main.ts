@@ -199,6 +199,7 @@ const main_commands = {
           );
         } else {
           if (!cmd.keep) await ctx.msg.delete();
+          else await ctx.msg.react('✅');
           await ((cmd.channel || ctx.msg.channel) as Discord.TextChannel).send(
             cmd.text
           );
@@ -2460,7 +2461,7 @@ client.on(
     if (
       bm.length &&
       !(await message.getPluralKitSender()) &&
-      !(await message.isAnonMessage())
+      !db.prepare('SELECT * FROM anonchannels WHERE id=?').get(msg.channel.id)
     ) {
       try {
         for (const m of bm) {

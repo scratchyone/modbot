@@ -21,7 +21,10 @@ async function handle_anon_message(msg) {
   }*/
   if (msg.content.startsWith('\\')) return;
   let nd = true;
-  if (!msg.attachments || msg.attachments.array().length == 0) {
+  if (
+    (!msg.attachments || msg.attachments.array().length == 0) &&
+    !msg.system
+  ) {
     try {
       await msg.delete();
     } catch (e) {}
