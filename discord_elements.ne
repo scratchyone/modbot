@@ -4,7 +4,9 @@
 @builtin "number.ne"     # `int`, `decimal`, and `percentage` number primitives
 anything -> [\S\s]:+ {% n=> n[0].join('') %}
 word -> [\S]:+ {% n=> n[0].join('') %}
-channel -> "<#":? number ">":? {% (x)=>x[1] %}
+idchannel -> "<#":? number ">":? {% (x)=>{return {type: "channel_id", id: x[1]}} %}
+namechannel -> word {% (x)=>{return {type: "channel_name", name: x[0]}} %}
+channel -> (idchannel | namechannel) {% (x)=>x[0][0] %}
 emote -> "<:" word ":" number ">":? {% (x)=>x[3] %}
 role -> "<@&":? number ">":? {% (x)=>x[1] %}
 user -> "<@":? "<@!":? number ">":? {% (x)=>x[2] %}

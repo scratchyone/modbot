@@ -4,7 +4,7 @@ import Discord from 'discord.js';
 import moment from 'moment';
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
-import { Model } from 'objection';
+import { Model, val } from 'objection';
 import Knex from 'knex';
 import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
@@ -164,38 +164,42 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         (msg.member && msg.member.hasPermission('MANAGE_MESSAGES')) ||
         msg.author.id === '234020040830091265',
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      version: 3,
+      responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'say') return;
-        if (!msg.guild)
+        const chan = cmd.channel || ctx.msg.channel;
+        if (!ctx.msg.guild)
           throw new util_functions.BotError('user', 'No guild found');
         if (!cmd.keep)
-          util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
+          util_functions.assertHasPerms(ctx.msg.guild, ['MANAGE_MESSAGES']);
         if (
           anonchannels.check_anon_channel.get(
-            cmd.channel ? cmd.channel : msg.channel.id,
-            msg.guild.id
+            cmd.channel ? cmd.channel.id : ctx.msg.channel.id,
+            ctx.msg.guild.id
           ) &&
           anonchannels.check_anon_ban.get({
-            user: msg.author.id,
-            server: msg.guild.id,
+            user: ctx.msg.author.id,
+            server: ctx.msg.guild.id,
           })
         ) {
           throw new util_functions.BotError(
             'user',
-            `${msg.author}, you're banned from sending messages there!`
+            `${ctx.msg.author}, you're banned from sending messages there!`
           );
         } else {
-          if (!cmd.keep) await msg.delete();
-          const chan = msg.guild.channels.cache.find(
-            (n) => n.id == (cmd.channel ? cmd.channel : msg.channel.id)
+          if (!cmd.keep) await ctx.msg.delete();
+          if (chan.type !== 'text')
+            throw new util_functions.BotError(
+              'user',
+              "Channel isn't a text channel!"
+            );
+          await ((cmd.channel || ctx.msg.channel) as Discord.TextChannel).send(
+            cmd.text
           );
-          if (!chan || chan.type !== 'text')
-            throw new util_functions.BotError('user', 'Channel is not found!');
-          await (chan as Discord.TextChannel).send(cmd.text);
           await Types.LogChannel.tryToLog(
-            msg,
+            ctx.msg,
             `Made ModBot say\n> ${cmd.text}\nin <#${
-              cmd.channel ? cmd.channel : msg.channel.id
+              cmd.channel ? cmd.channel.id : ctx.msg.channel.id
             }>`
           );
         }
@@ -2797,6 +2801,39 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
       'Sorry, that command has been disabled by a server moderator'
     );
 }
+interface ParseObject {
+  [key: string]: any;
+}
+function processObjects(
+  parseRes: ParseObject,
+  version: number,
+  msg: Discord.Message
+): ParseObject {
+  console.log(parseRes);
+  if (!msg.guild) return {};
+  const outputObj: ParseObject = {};
+  for (const key in parseRes) {
+    const value = parseRes[key];
+    if (value?.type === 'channel_id')
+      if (version <= 2) outputObj[key] = value.id;
+      else {
+        const m = msg.guild.channels.cache.get(value.id);
+        if (!m) throw new util_functions.BotError('user', 'Channel not found');
+        outputObj[key] = m;
+      }
+    else if (value?.type === 'channel_name') {
+      const m = msg.guild.channels.cache.find(
+        (c) => c.name === value.name && c.type === 'text'
+      );
+      if (!m) throw new util_functions.BotError('user', 'Channel not found');
+      if (version <= 2) outputObj[key] = m.id;
+      else {
+        outputObj[key] = m;
+      }
+    } else outputObj[key] = value;
+  }
+  return outputObj;
+}
 const adminServerPermissionOverwrites: Array<{
   guild: string;
   timestamp: number;
@@ -2872,7 +2909,10 @@ client.on('message', async (msg: Discord.Message) => {
               ) {
                 logStats(msg);
                 await checkDisabledCommand(msg, results[0][0].command);
-                if (registered_command.version === 2) {
+                if (
+                  registered_command.version === 2 ||
+                  registered_command.version === 3
+                ) {
                   const result = await registered_command.responder(
                     new Types.Context(
                       msg,
@@ -2886,7 +2926,11 @@ client.on('message', async (msg: Discord.Message) => {
                         mod.commands.map((c: { name: string }) => c.name)
                       )
                     ),
-                    results[0][0],
+                    processObjects(
+                      results[0][0],
+                      registered_command.version || 1,
+                      msg
+                    ),
                     client,
                     db
                   );
@@ -2916,7 +2960,11 @@ client.on('message', async (msg: Discord.Message) => {
                 } else
                   await registered_command.responder(
                     msg,
-                    results[0][0],
+                    processObjects(
+                      results[0][0],
+                      registered_command.version || 1,
+                      msg
+                    ),
                     client,
                     db
                   );
@@ -2976,6 +3024,7 @@ client.on('message', async (msg: Discord.Message) => {
                     )
                   );
                 } else {
+                  console.error(e);
                   await message.dbReply(
                     'An error has occurred. Would you please explain what you were trying to do?'
                   );

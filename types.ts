@@ -10,7 +10,7 @@ export type Command =
   | {
       command: 'say';
       text: string;
-      channel?: string;
+      channel?: Discord.Channel;
       keep: boolean;
     }
   | {
