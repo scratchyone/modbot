@@ -160,8 +160,13 @@ let mute = {
   matcher: (cmd) => cmd.command == 'mute',
   simplematcher: (cmd) => cmd[0] === 'mute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
-  responder: async (msg, cmd) => {
+  responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
+    if (cmd.user === client.user.id) {
+      await msg.dbReply('fuck you');
+      await msg.dbReply('<a:dance:759943179175854100>');
+      return;
+    }
     if (
       db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
     ) {
