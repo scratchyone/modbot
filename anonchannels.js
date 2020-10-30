@@ -30,6 +30,7 @@ async function handle_anon_message(msg) {
     } catch (e) {}
     nd = false;
   }
+  if (msg.system) return;
   //let hooks = await msg.channel.fetchWebhooks();
   //let anonhook = hooks.find((n) => n.name == 'Anon ' + msg.author.id);
   //if (!anonhook) {
