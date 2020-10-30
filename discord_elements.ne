@@ -8,7 +8,9 @@ idchannel -> "<#":? number ">":? {% (x)=>{return {type: "channel_id", id: x[1]}}
 namechannel -> word {% (x)=>{return {type: "channel_name", name: x[0]}} %}
 channel -> (idchannel | namechannel) {% (x)=>x[0][0] %}
 emote -> "<:" word ":" number ">":? {% (x)=>x[3] %}
-role -> "<@&":? number ">":? {% (x)=>x[1] %}
+role -> (idrole | namerole) {% (x)=>x[0][0] %}
+idrole -> "<@&":? number ">":? {% (x)=>{return {type: "role_id", id: x[1]}} %}
+namerole -> word {% (x)=>{return {type: "role_name", name: x[0]}} %}
 user -> "<@":? "<@!":? number ">":? {% (x)=>x[2] %}
 number -> [0-9]:+ {% n=> n[0].join('') %}
 prefix -> "m:" 

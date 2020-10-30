@@ -2809,7 +2809,6 @@ function processObjects(
   version: number,
   msg: Discord.Message
 ): ParseObject {
-  console.log(parseRes);
   if (!msg.guild) return {};
   const outputObj: ParseObject = {};
   for (const key in parseRes) {
@@ -2830,7 +2829,21 @@ function processObjects(
       else {
         outputObj[key] = m;
       }
-    } else outputObj[key] = value;
+    } else if (value?.type === 'role_name') {
+      const m = msg.guild.roles.cache.find((c) => c.name === value.name);
+      if (!m) throw new util_functions.BotError('user', 'Role not found');
+      if (version <= 2) outputObj[key] = m.id;
+      else {
+        outputObj[key] = m;
+      }
+    } else if (value?.type === 'role_id')
+      if (version <= 2) outputObj[key] = value.id;
+      else {
+        const m = msg.guild.roles.cache.get(value.id);
+        if (!m) throw new util_functions.BotError('user', 'Role not found');
+        outputObj[key] = m;
+      }
+    else outputObj[key] = value;
   }
   return outputObj;
 }
