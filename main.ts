@@ -569,14 +569,14 @@ const main_commands = {
             await clone(type);
             await Types.LogChannel.tryToLog(
               msg,
-              `Clonepurged ${msg.channel as Discord.TextChannel}`
+              `Clonepurged #${(msg.channel as Discord.TextChannel).name}`
             );
           }
         } else if (type !== null) {
           await clone(type as 0 | 1 | 2 | null);
           await Types.LogChannel.tryToLog(
             msg,
-            `Clonepurged #${(msg.channel as Discord.TextChannel).name}`
+            `Clonepurged ${msg.channel as Discord.TextChannel}`
           );
         }
       },
