@@ -2279,8 +2279,11 @@ client.on('messageReactionAdd', async (reaction, user) => {
           );
         const pm = (
           await reaction.message.channel.awaitMessages(
-            () => true, //n.content.includes('pinned a message to this channel'),
-            { max: 1, time: 1000 }
+            (n: Discord.Message) => n.system,
+            {
+              max: 1,
+              time: 1000,
+            }
           )
         ).first();
         if (pm) {

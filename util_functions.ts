@@ -294,6 +294,12 @@ export class EMessage extends Discord.Message {
   async isPoll(): Promise<boolean> {
     return !!(await Types.Poll.query().where('message', this.id));
   }
+  ask(question: string, time: number): Promise<string> {
+    return ask(question, time, this);
+  }
+  askOrNone(question: string, time: number): Promise<string | undefined> {
+    return askOrNone(question, time, this);
+  }
   async dbReply(
     content: Discord.StringResolvable | Discord.APIMessage,
     options?: Discord.MessageOptions | Discord.MessageAdditions
