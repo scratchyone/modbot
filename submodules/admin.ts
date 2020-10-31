@@ -57,7 +57,9 @@ const admin = {
           )}`
         )
     );
-    await msg.delete();
+    try {
+      await msg.delete();
+    } catch (e) {}
   },
 };
 exports.commandModule = {
