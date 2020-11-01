@@ -4,7 +4,7 @@ import Discord from 'discord.js';
 import moment from 'moment';
 const Sentry = require('@sentry/node');
 import SentryTypes from '@sentry/types';
-import { Model, val } from 'objection';
+import { Model } from 'objection';
 import Knex from 'knex';
 import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
@@ -122,6 +122,7 @@ const main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (msg: Discord.Message, cmd: Command) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         const discord = Discord;
         if (cmd.command !== 'eval') return;
         try {
@@ -2812,6 +2813,7 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
     );
 }
 interface ParseObject {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 function processObjects(
