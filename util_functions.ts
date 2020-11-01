@@ -144,11 +144,12 @@ export async function cleanPings(
     const pinged_role = guild.roles.cache.get(
       ping.toString().replace('<@&', '').replace('>', '')
     );
-    cleaned = cleaned.replace(
-      ping.toString(),
-      // eslint-disable-next-line no-irregular-whitespace
-      `@​${pinged_role ? pinged_role.name : 'deleted-role'}`
-    );
+    if (!pinged_role?.mentionable)
+      cleaned = cleaned.replace(
+        ping.toString(),
+        // eslint-disable-next-line no-irregular-whitespace
+        `@​${pinged_role ? pinged_role.name : 'deleted-role'}`
+      );
   }
 
   return cleaned;
