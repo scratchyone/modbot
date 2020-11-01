@@ -9,6 +9,7 @@ import { schedule_event } from './util_functions';
 const git = require('git-rev-sync');
 const version = require('./package.json').version;
 const git_msg = git.message();
+const startTime = Date.now() / 1000;
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
     const cors = require('cors');
@@ -105,7 +106,7 @@ export async function serve(client: Client): Promise<void> {
       if (!capability) return;
       res.send({
         version,
-        uptime: Date.now() / 1000 - process.uptime(),
+        uptime: startTime,
         guilds: client.guilds.cache.array().length,
         users: client.users.cache.array().length,
         commit_short: git.short(),
