@@ -2020,7 +2020,18 @@ client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
   //
   //
-  client.user.setActivity('ẏ̴͍̻o̷͍̗͒̽u̵͔͌͊', { type: 'WATCHING' });
+  const sp = () => {
+    if (!client.user) return;
+    client.user.setPresence({
+      activity: {
+        name: `m: help | in ${client.guilds.cache.size} servers with ${client.users.cache.size} users`,
+        type: 'PLAYING',
+        url: 'https://github.com/scratchyone/modbot',
+      },
+    });
+  };
+  sp();
+  setInterval(sp, 1000 * 60 * 60);
   //
   //
   //
