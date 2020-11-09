@@ -1207,7 +1207,7 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'joinroles' || !msg.guild) return;
+        if (cmd.command !== 'joinroles' || !msg.guild || !msg.member) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
           if (
@@ -1243,9 +1243,14 @@ const main_commands = {
             await msg.dbReply("Role doesn't exist!");
             return;
           }
+          if (disc_role.position >= msg.member.roles.highest.position)
+            throw new util_functions.BotError(
+              'user',
+              'That role is above or equal to your current highest role'
+            );
           db.prepare('INSERT INTO join_roles VALUES (?, ?)').run(
             msg.guild.id,
-            role
+            rrole
           );
           await msg.dbReply(util_functions.desc_embed('Setup!'));
           await Types.LogChannel.tryToLog(msg, 'Added JoinRole');
