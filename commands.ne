@@ -19,11 +19,11 @@ anonunban -> "anonunban" __ user {% (n)=>{return {command: "anonunban", user: n[
 setpinperms -> "setpinperms" __ ("allowed" | "disallowed") __ role {% (n)=>{return {command: "setpinperms", allowed:n[2][0]=="allowed", role: n[4]}}%}
 listpinperms -> "listpinperms" {% (n)=>{return {command: "listpinperms"}}%}
 tmpchannel -> "tmpchannel" __ word __ word __ ("private" | "public") {% (n)=>{return {command: "tmpchannel", name: n[2], duration: n[4], public: n[6][0] == "public"}}%}
-autoresponder -> "autoresponder" __ ("add" | "remove" | "list") {% (n)=>{return {command: "autoresponder", action: n[2][0]}}%}
+autoresponder -> ("autoresponder" | "autoresponders" | "ar" | "trigger" | "triggers") __ ("add" | "remove" | "list") {% (n)=>{return {command: "autoresponder", action: n[2][0]}}%}
 starboard -> "starboard" __ ("enable" | "disable" | "configure" | "fixperms") {% (n)=>{return {command: "starboard", action: n[2][0]}}%}
 star -> "star" __ ("random") {% (n)=>{return {command: "star", action: n[2][0]}}%}
 alpha -> "alpha" __ anything {% n => {return {command: "alpha", text: n[2]}} %}
-reactionroles -> "reactionroles" __ ("add" | "edit") {% (n)=>{return {command: "reactionroles", action: n[2][0]}}%}
+reactionroles -> ("reactionroles" | "rr") __ ("add" | "edit") {% (n)=>{return {command: "reactionroles", action: n[2][0]}}%}
 kick -> "kick" __ user {% (n)=>{return {command: "kick", user: n[2]}}%}
 tmprole -> "tmprole" __ ("add" | "remove") __ user __ role __ word {% (n)=>{return {command: "tmprole", user: n[4], role: n[6], duration: n[8], action:n[2][0]}}%}
 purge -> "purge" __ number {% (n)=>{return {command: "purge", count: n[2]}}%}
@@ -32,7 +32,7 @@ mute -> "mute" __ user (__ word (__ anything):?):? {% (n)=>{return {command: "mu
 unmute -> "unmute" __ user {% (n)=>{return {command: "unmute", user: n[2]}}%}
 usercard -> "usercard" __ user {% (n)=>{return {command: "usercard", user: n[2]}}%}
 note -> ("warn" | "note") __ user __ anything {% (n)=>{return {command: n[0][0], user: n[2], text: n[4]}}%}
-forgive -> "forgive" __ word {% (n)=>{return {command: "forgive", id: n[2]}}%}
+forgive -> ("forgive" | "forgivewarn" | "removewarn" | "unwarn" | "pardon") __ word {% (n)=>{return {command: "forgive", id: n[2]}}%}
 invite -> "invite" {% (n)=>{return {command: "invite"}}%}
 userpic -> "userpic" {% (n)=>{return {command: "userpic"}}%}
 ping -> "ping" {% (n)=>{return {command: "ping"}}%}
