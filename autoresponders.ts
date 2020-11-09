@@ -88,7 +88,8 @@ export function parseText(
     const next1 = parserSyntax.peek(1);
     if (typeof next === 'string') {
       const consumed = parserInput.consumen(next.length);
-      if (consumed.join('') !== next) matched = false;
+      if (consumed.join('').toLowerCase() !== next.toLowerCase())
+        matched = false;
     } else if (next?.type === 'variable') {
       let buffer = '';
       // eslint-disable-next-line no-constant-condition
@@ -96,7 +97,8 @@ export function parseText(
         buffer += parserInput.consume() || '';
         if (
           typeof next1 === 'string' &&
-          parserInput.nextn(next1.length).join('') === next1
+          parserInput.nextn(next1.length).join('').toLowerCase() ===
+            next1.toLowerCase()
         ) {
           break;
         } else {
