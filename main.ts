@@ -371,7 +371,7 @@ const main_commands = {
             .delete()
             .where('author', ctx.msg.author.id)
             .where('id', cmd.id);
-          await ctx.msg.dbReply('Cancelled!');
+          await ctx.msg.dbReply(util_functions.embed('Cancelled!', 'success'));
         } else if (cmd.action === 'list') {
           const reminders = await Types.Reminder.query().where(
             'author',
