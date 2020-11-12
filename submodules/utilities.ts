@@ -465,7 +465,7 @@ const ping = {
 };
 const owo = {
   name: 'OwO',
-  syntax: '!owo <ACTION> [USER]',
+  syntax: 'm: owo <ACTION> [USER]',
   explanation: 'Get a gif',
   matcher: (cmd: Command) => cmd.command == 'owo',
   simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
