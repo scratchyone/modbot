@@ -268,6 +268,12 @@ export class Prefix extends Model {
   static get tableName(): string {
     return 'prefixes';
   }
+  static newPrefix(server: string, prefix: string) {
+    const p = new Prefix();
+    p.server = server;
+    p.prefix = prefix;
+    return p;
+  }
 }
 export class Reminder extends Model {
   author!: string;

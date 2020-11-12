@@ -2571,10 +2571,14 @@ async function processAutoresponders(msg: Discord.Message) {
 async function getPrefix(msg: Discord.Message): Promise<string | null> {
   if (!msg.guild) return null;
   const prefixes = await Prefix.query().where('server', msg.guild.id);
-  return (
-    prefixes.find((p: Prefix) => msg.content.startsWith(p.prefix))?.prefix ||
-    (msg.content.startsWith('m: ') ? 'm: ' : null)
+  prefixes.push(Prefix.newPrefix(msg.guild.id, 'm: '));
+  const matchingPrefixes = prefixes.filter((p: Prefix) =>
+    msg.content.startsWith(p.prefix)
   );
+  if (!matchingPrefixes.length) return null;
+  return matchingPrefixes.reduce(function (a, b) {
+    return a.prefix.length > b.prefix.length ? a : b;
+  })?.prefix;
 }
 async function requestPermsCommand(
   msg: Discord.Message,
