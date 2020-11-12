@@ -491,7 +491,7 @@ const owo = {
       // 404 is returned on invalid actions
       throw new util_functions.BotError(
         'user',
-        'Action not found. Run `!help owo` to see all actions'
+        `Action not found. Run \`${ctx.prefix}help owo\` to see all actions`
       );
     await ctx.msg.dbReply(
       new Discord.MessageEmbed()
@@ -512,13 +512,13 @@ if (Types.MediaGen.enabled)
   (async () => {
     try {
       owo.syntax =
-        '!owo <' +
+        'm: owo <' +
         (await new Types.MediaGen().owoActions()).join('/') +
         '> [USER]';
       setInterval(
         async () =>
           (owo.syntax =
-            '!owo <' +
+            'm: owo <' +
             (await new Types.MediaGen().owoActions()).join('/') +
             '> [USER]'),
         1000 * 60 * 60 // One Hour
