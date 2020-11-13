@@ -1808,7 +1808,7 @@ const main_commands = {
                 value: usernotes.length
                   ? Humanize.truncate(
                       usernotes.map((n: string) => `\`${n}\``).join('\n'),
-                      1900,
+                      1000,
                       '... (Some notes not displayed)'
                     )
                   : 'None',
@@ -1819,7 +1819,7 @@ const main_commands = {
                 value: userwarns.length
                   ? Humanize.truncate(
                       userwarns.map((n: string) => `\`${n}\``).join('\n'),
-                      1900,
+                      1000,
                       '... (Some warns not displayed)'
                     )
                   : 'None',
