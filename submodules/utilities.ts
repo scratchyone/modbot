@@ -362,11 +362,7 @@ const userpic = {
       `I wish I was as cool as you, ${name}`,
       `I think we could get along well, ${name}`,
     ];
-    let message = get_random(messages);
-    // Rare chance of insulting the user instead
-    if (randomIntFromInterval(0, 100) == 50) {
-      message = `Fuck you, ${name}`;
-    }
+    const message = get_random(messages);
     const size = 1100 / message.length;
     ctx.font = size + 'px Consolas';
     ctx.fillText(message, canvas.width / 2, canvas.height / 1.8);
