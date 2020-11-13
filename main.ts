@@ -830,6 +830,13 @@ const main_commands = {
           util_functions.desc_embed(tm_text)
         );
         await time_message.pin();
+        const deferred = await Defer.add({
+          type: 'UpdateTmpDeletionMessage',
+          channel: time_message.channel.id,
+          message: time_message.id,
+          deletionTime: cmd.duration,
+        });
+        setTimeout(() => deferred.cancel(), parse(cmd.duration, 'ms') || 0);
         const ei = setInterval(async () => {
           if (tm_text != `Deleting channel ${deletion_time.fromNow()}`) {
             tm_text = `Deleting channel ${deletion_time.fromNow()}`;
@@ -2820,7 +2827,7 @@ const adminServerPermissionOverwrites: Array<{
   timestamp: number;
 }> = [];
 import Humanize, { toFixed } from 'humanize-plus';
-import { processDeferredOnStart } from './defer';
+import { Defer, processDeferredOnStart } from './defer';
 client.on('message', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;

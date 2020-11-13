@@ -1,4 +1,4 @@
-import { Client } from 'discord.js';
+import { Client, MessageEmbed } from 'discord.js';
 import { Model } from 'objection';
 import { v4 as uuidv4 } from 'uuid';
 import Discord from 'discord.js';
@@ -9,7 +9,14 @@ interface SendCancelledMessage {
   channel: string;
 }
 
-export type DeferrableAction = SendCancelledMessage;
+interface UpdateTmpDeletionMessage {
+  type: 'UpdateTmpDeletionMessage';
+  channel: string;
+  message: string;
+  deletionTime: string;
+}
+
+export type DeferrableAction = SendCancelledMessage | UpdateTmpDeletionMessage;
 
 export class Defer extends Model {
   id!: string;
@@ -47,10 +54,22 @@ export async function processDeferredOnStart(client: Client): Promise<void> {
             'Cancelled'
           )
         );
+      } else if (json.type === 'UpdateTmpDeletionMessage') {
+        (
+          await (client.channels.cache.get(
+            json.channel
+          ) as Discord.TextChannel).messages.fetch(json.message)
+        ).edit(
+          new MessageEmbed().setDescription(
+            `This channel will be deleted ${json.deletionTime} after this message was sent`
+          )
+        );
       } else {
         console.warn(`Unknown defer found: ${JSON.stringify(json, null, 4)}`);
       }
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
     try {
       await Defer.query().delete().where('id', def.id);
     } catch {}
