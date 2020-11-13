@@ -1590,7 +1590,7 @@ const main_commands = {
         if (kickee_hp >= hp) {
           throw new util_functions.BotError(
             'user',
-            'Your highest role is below or equal to the user you are tying to kick'
+            'Your highest role is below or equal to the user you are trying to kick'
           );
         } else {
           const conf = await util_functions.confirm(msg);
