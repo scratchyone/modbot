@@ -1806,14 +1806,22 @@ const main_commands = {
               {
                 name: 'Notes',
                 value: usernotes.length
-                  ? usernotes.map((n: string) => `\`${n}\``).join('\n')
+                  ? Humanize.truncate(
+                      usernotes.map((n: string) => `\`${n}\``).join('\n'),
+                      1900,
+                      '... (Some notes not displayed)'
+                    )
                   : 'None',
                 inline: true,
               },
               {
                 name: 'Warns',
                 value: userwarns.length
-                  ? userwarns.map((n: string) => `\`${n}\``).join('\n')
+                  ? Humanize.truncate(
+                      userwarns.map((n: string) => `\`${n}\``).join('\n'),
+                      1900,
+                      '... (Some warns not displayed)'
+                    )
                   : 'None',
                 inline: true,
               },
