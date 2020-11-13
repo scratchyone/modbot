@@ -268,7 +268,7 @@ export class Prefix extends Model {
   static get tableName(): string {
     return 'prefixes';
   }
-  static newPrefix(server: string, prefix: string) {
+  static newPrefix(server: string, prefix: string): Prefix {
     const p = new Prefix();
     p.server = server;
     p.prefix = prefix;
