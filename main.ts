@@ -941,25 +941,13 @@ const main_commands = {
                   'You can define custom variables like `{{NAME}}` that can be used in the AutoResponder reply'
                 )
             );
-            await msg.dbReply(
-              'What message should this AutoResponder reply to?'
+            const prompt = await msg.ask(
+              'What message should this AutoResponder reply to?',
+              50000
             );
-            const prompt = await msg.channel.awaitMessages(
-              (m) => m.author.id == msg.author.id,
-              {
-                max: 1,
-                time: 50000,
-              }
-            );
-            if (!prompt.array().length) {
-              await msg.dbReply(util_functions.desc_embed('Timed out'));
-              return;
-            }
-            const parsedPrompt = AutoResponders.parsePrompt(
-              prompt.array()[0].content
-            );
+            const parsedPrompt = AutoResponders.parsePrompt(prompt);
             const [matched, variables] = AutoResponders.parseText(
-              prompt.array()[0].content,
+              prompt,
               parsedPrompt
             );
             if (!matched)
@@ -989,59 +977,26 @@ const main_commands = {
                 )
             );
             if (message_type === 0) {
-              await msg.dbReply('What should I reply with?');
-              const response = await msg.channel.awaitMessages(
-                (m) => m.author.id == msg.author.id,
-                {
-                  max: 1,
-                  time: 40000,
-                }
+              const response = await msg.ask(
+                'What should I reply with?',
+                50000
               );
-              if (!response.array().length) {
-                await msg.dbReply(util_functions.desc_embed('Timed out'));
-                return;
-              }
-              if (response.array()[0].attachments.array().length) {
-                await msg.dbReply(
-                  util_functions.desc_embed('Attachments are not supported')
-                );
-                return;
-              }
               db.prepare(
                 'REPLACE INTO autoresponders(prompt, type, text_response, server) VALUES (?, ?, ?, ?)'
-              ).run(
-                prompt.array()[0].content,
-                'text',
-                response.array()[0].content,
-                msg.guild.id
-              );
+              ).run(prompt, 'text', response, msg.guild.id);
             } else if (message_type === 1) {
               const embed_title = await util_functions.askOrNone(
                 'What should the embed title be?',
                 40000,
                 msg
               );
-              await msg.dbReply('What should the embed description be?');
-              const embed_desc = await msg.channel.awaitMessages(
-                (m) => m.author.id == msg.author.id,
-                {
-                  max: 1,
-                  time: 40000,
-                }
+              const embed_desc = await msg.ask(
+                'What should the embed description be?',
+                50000
               );
-              if (!embed_desc.array().length) {
-                await msg.dbReply(util_functions.desc_embed('Timed out'));
-                return;
-              }
               db.prepare(
                 'REPLACE INTO autoresponders(prompt, type, embed_title, embed_description, server) VALUES (?, ?, ?, ?, ?)'
-              ).run(
-                prompt.array()[0].content,
-                'embed',
-                embed_title,
-                embed_desc.array()[0].content,
-                msg.guild.id
-              );
+              ).run(prompt, 'embed', embed_title, embed_desc, msg.guild.id);
             } else {
               return;
             }
@@ -1050,7 +1005,7 @@ const main_commands = {
             );
             await Types.LogChannel.tryToLog(
               msg,
-              `Added AutoResponder to \`${prompt.array()[0].content}\``
+              `Added AutoResponder to \`${prompt}\``
             );
           } catch (e) {
             if (e instanceof util_functions.BotError) throw e;
@@ -1060,30 +1015,22 @@ const main_commands = {
             );
           }
         } else if (cmd.action === 'remove') {
-          await msg.dbReply('What AutoResponder would you like to remove?');
-          const prompt = await msg.channel.awaitMessages(
-            (m) => m.author.id == msg.author.id,
-            {
-              max: 1,
-              time: 40000,
-            }
+          const prompt = await msg.ask(
+            'What AutoResponder would you like to remove?',
+            50000
           );
-          if (!prompt.array().length) {
-            await msg.dbReply(util_functions.desc_embed('Timed out'));
-            return;
-          }
           const rc = db
             .prepare(
               'DELETE FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
             )
-            .run(prompt.array()[0].content, msg.guild.id);
+            .run(prompt, msg.guild.id);
           if (rc.changes) {
             await msg.dbReply(
               util_functions.desc_embed('Removed AutoResponder')
             );
             await Types.LogChannel.tryToLog(
               msg,
-              `Removed AutoResponder for \`${prompt.array()[0].content}\``
+              `Removed AutoResponder for \`${prompt}\``
             );
           } else
             await msg.dbReply(
@@ -2006,6 +1953,7 @@ client.on('ready', async () => {
     return;
   }
   console.log(`Logged in as ${client.user.tag}!`);
+  processDeferredOnStart(client);
   //
   //
   const sp = () => {
@@ -2872,6 +2820,7 @@ const adminServerPermissionOverwrites: Array<{
   timestamp: number;
 }> = [];
 import Humanize, { toFixed } from 'humanize-plus';
+import { processDeferredOnStart } from './defer';
 client.on('message', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;

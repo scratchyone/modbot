@@ -3,6 +3,7 @@ import parse_duration from 'parse-duration';
 const db = require('better-sqlite3')('perms.db3', {});
 import node_fetch from 'node-fetch';
 import * as Types from './types';
+import { Defer } from './defer';
 const captcha_emojis = [
   '⏺️',
   '🟠',
@@ -52,6 +53,11 @@ export function shuffle<T>(a: Array<T>): Array<T> {
   return a;
 }
 export async function confirm(message: Discord.Message): Promise<boolean> {
+  const deferred = await Defer.add({
+    type: 'SendCancelledMessage',
+    channel: message.channel.id,
+  });
+  deferred.cancelIn(20000);
   const c_emojis = shuffle(captcha_emojis).slice(0, 6);
   const item = randomIntFromInterval(0, 5);
   const msg = await message.channel.send(
@@ -73,9 +79,11 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
     c_emojis.indexOf(reactions.array()[0].emoji.name) === item
   ) {
     msg.edit(new Discord.MessageEmbed().setTitle('Confirmed'));
+    await deferred.cancel();
     return true;
   } else {
     msg.edit(new Discord.MessageEmbed().setTitle('Confirmation Failed'));
+    await deferred.cancel();
     return false;
   }
 }
@@ -86,6 +94,11 @@ export async function embed_options(
   message: EMessage,
   time?: number
 ): Promise<number | null> {
+  const deferred = await Defer.add({
+    type: 'SendCancelledMessage',
+    channel: message.channel.id,
+  });
+  deferred.cancelIn(time || 15000);
   const n_options = [];
   for (let i = 0; i < options.length; i++) {
     if (isNaN(parseInt(set[i]))) n_options.push(set[i] + ' ' + options[i]);
@@ -124,9 +137,11 @@ export async function embed_options(
         .setTitle(title)
         .setDescription(n_options[set.indexOf(reactions.array()[0].emoji.name)])
     );
+    await deferred.cancel();
     return set.indexOf(reactions.array()[0].emoji.name);
   } else {
     msg.edit(new Discord.MessageEmbed().setTitle('Cancelled'));
+    await deferred.cancel();
     return null;
   }
 }
@@ -203,6 +218,11 @@ export async function ask(
   time: number,
   msg: EMessage
 ): Promise<string> {
+  const deferred = await Defer.add({
+    type: 'SendCancelledMessage',
+    channel: msg.channel.id,
+  });
+  deferred.cancelIn(time);
   await msg.dbReply(question);
   const sb_name = await msg.channel.awaitMessages(
     (m) => m.author.id == msg.author.id,
@@ -211,6 +231,7 @@ export async function ask(
       time: time,
     }
   );
+  await deferred.cancel();
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
   return sb_name.array()[0].content;
 }
@@ -219,6 +240,11 @@ export async function askOrNone(
   time: number,
   msg: EMessage
 ): Promise<string | undefined> {
+  const deferred = await Defer.add({
+    type: 'SendCancelledMessage',
+    channel: msg.channel.id,
+  });
+  deferred.cancelIn(time);
   return new Promise((resolve, reject) => {
     (async () => {
       let addedEmoji = false;
@@ -235,6 +261,7 @@ export async function askOrNone(
         .then((reactions) => {
           if (reactions.array().length) {
             addedEmoji = true;
+            deferred.cancel();
             resolve('');
           }
         });
@@ -245,6 +272,7 @@ export async function askOrNone(
           time: time,
         }
       );
+      await deferred.cancel();
       if (!sb_name.array().length && !addedEmoji) {
         reject(new exports.BotError('user', 'Timed out'));
         return;
