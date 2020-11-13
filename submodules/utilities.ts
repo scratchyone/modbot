@@ -18,7 +18,7 @@ const invite = {
     await ctx.msg.dbReply(
       new Discord.MessageEmbed()
         .setURL(
-          'https://discord.com/api/oauth2/authorize?client_id=738517864016773241&permissions=8&scope=bot'
+          `https://discord.com/api/oauth2/authorize?client_id=${ctx.client.user?.id}&permissions=2146958847&scope=bot`
         )
         .setTitle('Click here to invite ModBot to your server')
         .setDescription('Thank you for using ModBot! <:pOg:759186176094765057>')
