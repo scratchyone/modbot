@@ -1589,9 +1589,9 @@ const main_commands = {
           const conf = await util_functions.confirm(msg);
           if (conf) {
             await kickee.kick();
+            await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
             await msg.dbReply(util_functions.desc_embed('Kicked'));
           }
-          await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
         }
       },
     },
