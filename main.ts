@@ -1889,7 +1889,9 @@ const main_commands = {
           );
         }
         await msg.dbReply(
-          util_functions.desc_embed(`Warned <@${cmd.user}>, warning ID ${id}`)
+          util_functions.desc_embed(
+            `Warned <@${cmd.user}>, warning ID \`${id}\``
+          )
         );
         await Types.LogChannel.tryToLog(
           msg,
