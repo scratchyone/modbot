@@ -122,7 +122,7 @@ export async function serve(client: Client): Promise<void> {
     app.get('/features', async (req, res) => {
       res.send(['addReminders']);
     });
-    app.delete('/admin', async (req, res) => {
+    app.delete('/users/:user/reminders/:id', async (req, res) => {
       const capability = await checkCapabilityToken(
         req,
         res,
