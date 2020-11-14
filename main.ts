@@ -2743,7 +2743,7 @@ async function showSyntaxError(
       try {
         if (
           registered_command.simplematcher(
-            input.replace(matchingPrefix, '').split(' ')
+            input.replace(matchingPrefix, '').toLowerCase().split(' ')
           )
         ) {
           await message.dbReply(
@@ -3059,7 +3059,7 @@ client.on('message', async (msg: Discord.Message) => {
             }
           } else if (
             registered_command.simplematcher(
-              msg.content.replace(matchingPrefix, '').split(' ')
+              msg.content.replace(matchingPrefix, '').toLowerCase().split(' ')
             )
           ) {
             await showSyntaxError(msg, msg.content, matchingPrefix);
