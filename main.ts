@@ -2434,7 +2434,10 @@ client.on(
     if (
       bm.length &&
       !(await message.getPluralKitSender()) &&
-      !db.prepare('SELECT * FROM anonchannels WHERE id=?').get(msg.channel.id)
+      !db
+        .prepare('SELECT * FROM anonchannels WHERE id=?')
+        .get(msg.channel.id) &&
+      msg.author?.id !== '757021641040724070' // Not overseeer
     ) {
       try {
         for (const m of bm) {
