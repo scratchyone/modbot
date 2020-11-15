@@ -2849,7 +2849,7 @@ client.on('message', async (msg: Discord.Message) => {
     if (msg.author.id === client.user.id) return;
     // Message author is not ModBot
     if (automod) automod.checkForTriggers(msg);
-    if (msg.author.bot) return;
+    if (msg.author.bot && msg.author.id !== '757021641040724070') return; // Overseer exemption
     // Message author is not a bot
     anonchannels.onNewMessage(msg);
     processAutoresponders(msg);
