@@ -167,6 +167,9 @@ let mute = {
       await msg.dbReply('<a:dance:759943179175854100>');
       return;
     }
+    try {
+      await msg.delete();
+    } catch {}
     if (
       db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
     ) {
