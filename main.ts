@@ -2524,7 +2524,12 @@ async function processAutoresponders(msg: Discord.Message) {
     );
     if (matched === true) {
       if (ar.type == 'text')
-        message.dbReply(await arTextFill(ar.text_response, msg, variables));
+        message.dbReply(
+          await util_functions.cleanPings(
+            await arTextFill(ar.text_response, msg, variables),
+            msg.guild
+          )
+        );
       else if (ar.type == 'embed')
         message.dbReply(
           new Discord.MessageEmbed()
