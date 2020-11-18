@@ -1988,33 +1988,6 @@ client.on('ready', async () => {
   //
   //
   //
-  const pj = require('./package.json');
-  if (!db.prepare('SELECT * FROM updates WHERE version=?').get(pj.version)) {
-    const changes = pj.changelogs.filter(
-      (change: { version: string }) =>
-        !db.prepare('SELECT * FROM updates WHERE version=?').get(change.version)
-    );
-    console.log(changes);
-
-    for (const alertchannel of db
-      .prepare('SELECT * FROM alert_channels')
-      .all()) {
-      const ralertchannel = client.channels.cache.get(alertchannel.channel);
-      if (!ralertchannel || ralertchannel.type !== 'text') continue;
-      await (ralertchannel as Discord.TextChannel).send(
-        new Discord.MessageEmbed()
-          .setTitle(`ModBot has been updated to v${pj.version}`)
-          .setDescription(
-            `**Changes:**\n${changes
-              .map((change: { changelog: string }) => change.changelog)
-              .join('\n')}`
-          )
-      );
-    }
-    for (const change of changes) {
-      db.prepare('INSERT INTO updates VALUES (?)').run(change.version);
-    }
-  }
   setInterval(async () => {
     const ts = Math.round(Date.now() / 1000);
     const events = db
