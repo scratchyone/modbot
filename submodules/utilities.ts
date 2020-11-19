@@ -197,7 +197,8 @@ const suggestion = {
   syntax: 'm: suggestion',
   explanation: 'Submit a suggestion to ModBot',
   matcher: (cmd: Command) => cmd.command == 'suggestion',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'suggestion',
+  simplematcher: (cmd: Array<string>) =>
+    cmd[0] === 'suggestion' || cmd[0] === 'suggest',
   permissions: () =>
     process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
   responder: async (msg: util_functions.EMessage) => {
@@ -211,39 +212,39 @@ const suggestion = {
         msg
       );
       const sn = msg.member ? msg.member.displayName : msg.author.username;
-      // Make a GraphQL mutation on the SuggestionManager API
-      console.log(
-        await (
-          await fetch(
-            process.env.SUGGESTIONMANAGER_URL.split('/')[
-              process.env.SUGGESTIONMANAGER_URL.split('/').length - 1
-            ] === ''
-              ? process.env.SUGGESTIONMANAGER_URL.split('/').join('/') +
-                  'graphql'
-              : process.env.SUGGESTIONMANAGER_URL.split('/').join('/') +
-                  '/graphql',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                operationName: 'addSuggestion',
-                variables: {
-                  displayName: sn,
-                  suggestionText: st,
-                  key: process.env.SUGGESTIONMANAGER_TOKEN,
-                },
-                query:
-                  'mutation addSuggestion($displayName: String!, $suggestionText: String!, $key: String!) {\n  addSuggestion(displayName: $displayName, suggestionText: $suggestionText, key: $key) {\n    project {\n      projectName\n      __typename\n    }\n    __typename\n  }\n}\n',
-              }),
-            }
-          )
-        ).json()
+      // Make a REST POST to the SuggestionManager API
+      const realAPIURL = process.env.SUGGESTIONMANAGER_URL.endsWith('/')
+        ? process.env.SUGGESTIONMANAGER_URL
+        : `${process.env.SUGGESTIONMANAGER_URL}/`;
+      const token: { projectId: string } = await (
+        await fetch(
+          `${realAPIURL}tokens/${process.env.SUGGESTIONMANAGER_TOKEN}`
+        )
+      ).json();
+      const res = await fetch(
+        `${realAPIURL}projects/${token.projectId}/suggestions`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.SUGGESTIONMANAGER_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            displayName: sn,
+            suggestionText: st,
+          }),
+        }
       );
-      await msg.dbReply(
-        'Submitted, thank you! You can also submit suggestions at https://suggestionmanager.com/suggest/a621c969-5028-44f5-8482-74467e509639/'
-      );
+      if (res.status !== 200) {
+        console.log(await res.json());
+        throw new util_functions.BotError(
+          'user',
+          'Failed to submit suggestion. This is probably not your fault!'
+        );
+      } else
+        await msg.dbReply(
+          'Submitted, thank you! You can also submit suggestions at https://suggestionmanager.com/suggest/a621c969-5028-44f5-8482-74467e509639/'
+        );
     }
   },
 };
