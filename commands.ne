@@ -9,7 +9,7 @@ say ->  "say"i __ (channel __):? ("remove" | "keep") __ anything {% n => {return
 setanonchannel -> "setanonchannel"i __ ("enabled" | "disabled") (__ channel):? {% n => {return {command: "setanonchannel", enabled: n[2][0] == "enabled", channel: n[3] ? n[3][1] : null}} %}
 listanonchannels -> "listanonchannels"i {% ()=>{return {command: "listanonchannels"}}%}
 whosaid -> "whosaid"i __ anything {% (n)=>{return {command: "whosaid", id: n[2]}}%}
-reminder -> ("reminder"i | "rm"i | "reminders"i) __ (("add"i __ word __ anything) | ("list") | ("cancel" __ word) | ("copy" __ word) ) {% (n)=>{return {command: "reminder", time: n[2][0][0] == "add".toLowerCase() ? n[2][0][2] : undefined, text: n[2][0][0] == "add".toLowerCase() ? n[2][0][4] : undefined, action: n[2][0][0].toLowerCase(), id: n[2][0][0] == "cancel" || n[2][0][0] == "copy" ? n[2][0][2] : undefined}}%}
+reminder -> ("reminder"i | "rm"i | "reminders"i) __ (("add" __ word __ anything) | ("list") | ("cancel" __ word) | ("copy" __ word) ) {% (n)=>{return {command: "reminder", time: n[2][0][0] == "add" ? n[2][0][2] : undefined, text: n[2][0][0] == "add" ? n[2][0][4] : undefined, action: n[2][0][0], id: n[2][0][0] == "cancel" || n[2][0][0] == "copy" ? n[2][0][2] : undefined}}%}
 clonepurge -> "clonepurge"i {% ()=>{return {command: "clonepurge"}}%}
 deletechannel -> "deletechannel"i {% ()=>{return {command: "deletechannel"}}%}
 channeluser -> "channeluser"i __ ("add" | "remove") __ user (__ channel):? {% (n)=>{return {command: "channeluser", allowed: n[2][0]=="add", user: n[4], channel:n[5] ? n[5][1] : null}}%}
