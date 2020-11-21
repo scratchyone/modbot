@@ -2569,6 +2569,7 @@ async function requestPermsCommand(
     return;
   }
 }
+const alertChannelNotifsSent: Set<string> = new Set();
 async function noAlertChannelWarning(msg: Discord.Message) {
   if (!msg.guild) return;
   const message = msg as util_functions.EMessage;
@@ -2577,7 +2578,8 @@ async function noAlertChannelWarning(msg: Discord.Message) {
     msg.member?.hasPermission('MANAGE_CHANNELS') &&
     !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
     !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
-    !msg.content.includes('alertchannel')
+    !msg.content.includes('alertchannel') &&
+    !alertChannelNotifsSent.has(msg.guild.id + msg.author.id)
   ) {
     // This server does not have an alert channel, has not disabled this warning, and the user has permission to make one
     await message.dbReply(
@@ -2586,6 +2588,7 @@ async function noAlertChannelWarning(msg: Discord.Message) {
         'warning'
       )
     );
+    alertChannelNotifsSent.add(msg.guild.id + msg.author.id);
   }
 }
 async function runHelpCommands(
