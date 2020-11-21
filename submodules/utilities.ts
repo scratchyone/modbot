@@ -853,7 +853,7 @@ const cat = {
     } catch (e) {
       throw new util_functions.BotError(
         'user',
-        `Failed to get cat image: ${3}`
+        `Failed to get cat image: ${e}`
       );
     }
   },
