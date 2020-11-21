@@ -836,7 +836,7 @@ const cat = {
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     // Add cat fact
-    const message = (await (await fetch('https://catfact.ninja/fact')).json())
+    const message = (await (await fetch('http://catfact.ninja/fact')).json())
       .fact;
     ctx.font = '20pt Consolas';
     ctx.fillText(
