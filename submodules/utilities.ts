@@ -826,29 +826,36 @@ const cat = {
   simplematcher: (cmd: Array<string>) => cmd[0] === 'cat',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
-    const canvas = Canvas.createCanvas(600, 600);
-    const ctx = canvas.getContext('2d');
-    const background = await Canvas.loadImage('https://cataas.com/cat');
-    // This uses the canvas dimensions to stretch the image onto the entire canvas
-    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, canvas.height / 1.4, 800, 500);
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    // Add cat fact
-    const message = (await (await fetch('http://catfact.ninja/fact')).json())
-      .fact;
-    ctx.font = '20pt Consolas';
-    ctx.fillText(
-      getLines(ctx, message, 600).join('\n'),
-      canvas.width / 2,
-      canvas.height / 1.3
-    );
-    const attachment = new Discord.MessageAttachment(
-      canvas.toBuffer(),
-      'image.png'
-    );
-    await msg.dbReply(attachment);
+    try {
+      const canvas = Canvas.createCanvas(600, 600);
+      const ctx = canvas.getContext('2d');
+      const background = await Canvas.loadImage('https://cataas.com/cat');
+      // This uses the canvas dimensions to stretch the image onto the entire canvas
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(0, canvas.height / 1.4, 800, 500);
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      // Add cat fact
+      const message = (await (await fetch('https://catfact.ninja/fact')).json())
+        .fact;
+      ctx.font = '20pt Consolas';
+      ctx.fillText(
+        getLines(ctx, message, 600).join('\n'),
+        canvas.width / 2,
+        canvas.height / 1.3
+      );
+      const attachment = new Discord.MessageAttachment(
+        canvas.toBuffer(),
+        'image.png'
+      );
+      await msg.dbReply(attachment);
+    } catch (e) {
+      throw new util_functions.BotError(
+        'user',
+        `Failed to get cat image: ${3}`
+      );
+    }
   },
 };
 exports.commandModule = {
