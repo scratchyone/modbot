@@ -10,7 +10,7 @@ export type Command =
   | {
       command: 'say';
       text: string;
-      channel?: Discord.Channel;
+      channel?: Discord.TextChannel;
       keep: boolean;
     }
   | {
@@ -248,6 +248,10 @@ export type Command =
   | {
       command: 'pfp';
       user: string;
+    }
+  | {
+      command: 'setchannelname';
+      name: string;
     }
   | {
       command: 'addemoji';

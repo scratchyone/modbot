@@ -772,6 +772,25 @@ async function designEmbed(
         );
   }
 }
+const setchannelname = {
+  name: 'setchannelname',
+  syntax: 'm: setchannelname <NAME>',
+  explanation: "Set a channel's name",
+  matcher: (cmd: Command) => cmd.command == 'setchannelname',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'setchannelname',
+  permissions: (msg: util_functions.EMessage) =>
+    msg.member?.hasPermission('MANAGE_CHANNELS'),
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'setchannelname') return;
+    await (ctx.msg.channel as Discord.TextChannel).setName(cmd.name);
+    await ctx.msg.dbReply(util_functions.embed('Set channel name!', 'success'));
+    await Types.LogChannel.tryToLog(
+      ctx.msg,
+      `Set channel name in ${ctx.msg.channel}`
+    );
+  },
+};
 const embed = {
   name: 'embed',
   syntax: 'm: embed <create/edit>',
@@ -877,6 +896,7 @@ exports.commandModule = {
     spoil,
     pick,
     pfp,
+    setchannelname,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
