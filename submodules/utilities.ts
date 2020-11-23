@@ -791,6 +791,22 @@ const setchannelname = {
     );
   },
 };
+const setservername = {
+  name: 'setservername',
+  syntax: 'm: setservername <NAME>',
+  explanation: "Set the server's name",
+  matcher: (cmd: Command) => cmd.command == 'setservername',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'setservername',
+  permissions: (msg: util_functions.EMessage) =>
+    msg.member?.hasPermission('MANAGE_GUILD'),
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: Command) => {
+    if (cmd.command !== 'setservername') return;
+    await ctx.msg.guild?.setName(cmd.name);
+    await ctx.msg.dbReply(util_functions.embed('Set server name!', 'success'));
+    await Types.LogChannel.tryToLog(ctx.msg, `Set server name to ${cmd.name}`);
+  },
+};
 const embed = {
   name: 'embed',
   syntax: 'm: embed <create/edit>',
@@ -897,6 +913,7 @@ exports.commandModule = {
     pick,
     pfp,
     setchannelname,
+    setservername,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {

@@ -254,6 +254,10 @@ export type Command =
       name: string;
     }
   | {
+      command: 'setservername';
+      name: string;
+    }
+  | {
       command: 'addemoji';
       name: string;
       emojiData?: string;
