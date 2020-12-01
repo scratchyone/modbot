@@ -1063,7 +1063,8 @@ const main_commands = {
       explanation: 'Query Wolfram Alpha',
       matcher: (cmd: MatcherCommand) => cmd.command == 'alpha',
       version: 2,
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'alpha',
+      simplematcher: (cmd: Array<string>) =>
+        cmd[0] === 'alpha' || cmd[0] === 'a',
       permissions: () => process.env.WOLFRAMALPHA_KEY,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
