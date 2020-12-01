@@ -1592,9 +1592,15 @@ const main_commands = {
         } else {
           const conf = await util_functions.confirm(msg);
           if (conf) {
-            await kickee.kick();
-            await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
-            await msg.dbReply(util_functions.desc_embed('Kicked'));
+            if (kickee.id !== client.user?.id) {
+              await kickee.kick();
+              await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
+              await msg.dbReply(util_functions.desc_embed('Kicked'));
+            } else {
+              await Types.LogChannel.tryToLog(msg, `Kicked ${kickee}`);
+              await msg.dbReply(util_functions.desc_embed('Kicked'));
+              await msg.guild.leave();
+            }
           }
         }
       },
