@@ -2863,16 +2863,6 @@ client.on('message', async (msg: Discord.Message) => {
         msg.content,
         matchingPrefix
       );
-      if (!foundSyntax && matchingPrefix === 'm: ') {
-        message.dbReply(
-          new Discord.MessageEmbed()
-            .setTitle('Command not found')
-            .setDescription(
-              `Use \`${matchingPrefix}help\` to view all commands`
-            )
-            .setColor('#e74d4d')
-        );
-      }
     }
     const results = parser.results;
     for (const module of all_command_modules) {
