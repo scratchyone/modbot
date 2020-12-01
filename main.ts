@@ -2984,10 +2984,8 @@ client.on('message', async (msg: Discord.Message) => {
                   });
                 });
                 await message.dbReply(
-                  util_functions.desc_embed(
-                    "There's been an error! Luckily, it's not your fault. Please give the bot owner this ID: " +
-                      Sentry.captureException(e)
-                  )
+                  "There's been an error! Luckily, it's not your fault. Please give the bot owner this ID: " +
+                    Sentry.captureException(e)
                 );
                 await message.dbReply(
                   `Use \`${matchingPrefix}support\` to get an invite to the support server`
@@ -3023,10 +3021,8 @@ client.on('message', async (msg: Discord.Message) => {
                     });
                   });
                   await message.dbReply(
-                    util_functions.desc_embed(
-                      'This error is likely not your fault. Please give the bot owner this ID: ' +
-                        Sentry.captureException(e)
-                    )
+                    'This error is likely not your fault. Please give the bot owner this ID: ' +
+                      Sentry.captureException(e)
                   );
                   await message.dbReply(
                     `Use \`${matchingPrefix}support\` to get an invite to the support server`
