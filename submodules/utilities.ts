@@ -1,9 +1,11 @@
 /* eslint-disable no-empty */
 import * as util_functions from '../util_functions';
+import * as Utils from '../util_functions';
 import moment from 'moment';
 import Discord from 'discord.js';
 import { Command, EGuild, Prefix, Context } from '../types';
 import * as Types from '../types';
+import { Defer } from '../defer';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
 // Get bot invite link
@@ -893,6 +895,33 @@ const cat = {
     }
   },
 };
+const git = require('git-rev-sync');
+const waitforupdate = {
+  name: 'waitforupdate',
+  syntax: 'm: waitforupdate',
+  explanation: 'Get pinged when the bot restarts',
+  matcher: (cmd: Command) => cmd.command == 'waitforupdate',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'waitforupdate',
+  permissions: () => true,
+  responder: async (msg: util_functions.EMessage) => {
+    await msg.dbReply(
+      Utils.embed('You will be pinged when the bot restarts!', 'success')
+    );
+    await Defer.add({
+      type: 'SendMessage',
+      channel: msg.channel.id,
+      content: {
+        content: msg.author.toString(),
+        embed: new Discord.MessageEmbed()
+          .setTitle('Bot Restarted')
+          .setDescription(
+            `ModBot is now on release \`${git.short()}\`\n> ${git.message()}`
+          )
+          .setColor('#24a7ff'),
+      },
+    });
+  },
+};
 exports.commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
@@ -914,6 +943,7 @@ exports.commandModule = {
     pfp,
     setchannelname,
     setservername,
+    waitforupdate,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {

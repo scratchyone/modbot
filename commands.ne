@@ -2,7 +2,7 @@
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
 unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce | spoil | pick | owo | disablecommand |
-enablecommand | pfp | logging | admin | setchannelname | setservername
+enablecommand | pfp | logging | admin | setchannelname | setservername | waitforupdate
 ) {% n => n[0] %}
 pin -> "pin"i __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say"i __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -64,3 +64,4 @@ logging -> "logging"i __ ("enable" | "disable") {% (n)=>{return {command: "loggi
 admin -> "admin"i {% (n)=>{return {command: "admin"}}%}
 setchannelname -> "setchannelname"i __ anything {% (n)=>{return {command: "setchannelname", name: n[2]}}%}
 setservername -> "setservername"i __ anything {% (n)=>{return {command: "setservername", name: n[2]}}%}
+waitforupdate -> "waitforupdate"i {% (n)=>{return {command: "waitforupdate", name: n[2]}}%}

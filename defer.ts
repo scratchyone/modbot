@@ -8,6 +8,11 @@ interface SendCancelledMessage {
   type: 'SendCancelledMessage';
   channel: string;
 }
+interface SendMessage {
+  type: 'SendMessage';
+  channel: string;
+  content: Discord.MessageOptions;
+}
 
 interface UpdateTmpDeletionMessage {
   type: 'UpdateTmpDeletionMessage';
@@ -16,7 +21,10 @@ interface UpdateTmpDeletionMessage {
   deletionTime: string;
 }
 
-export type DeferrableAction = SendCancelledMessage | UpdateTmpDeletionMessage;
+export type DeferrableAction =
+  | SendCancelledMessage
+  | UpdateTmpDeletionMessage
+  | SendMessage;
 
 export class Defer extends Model {
   id!: string;
@@ -53,6 +61,10 @@ export async function processDeferredOnStart(client: Client): Promise<void> {
             'warning',
             'Cancelled'
           )
+        );
+      } else if (json.type === 'SendMessage') {
+        (client.channels.cache.get(json.channel) as Discord.TextChannel).send(
+          json.content
         );
       } else if (json.type === 'UpdateTmpDeletionMessage') {
         (

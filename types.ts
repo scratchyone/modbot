@@ -266,7 +266,8 @@ export type Command =
       command: 'logging';
       action: 'enable' | 'disable';
     }
-  | { command: 'admin' };
+  | { command: 'admin' }
+  | { command: 'waitforupdate' };
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
 }
