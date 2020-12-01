@@ -624,10 +624,6 @@ const main_commands = {
         if (channel.type != 'text')
           throw new util_functions.BotError('user', 'Not a text channel');
         const realchannel: Discord.TextChannel = channel as Discord.TextChannel;
-        if (cmd.user == client.user.id && !cmd.allowed) {
-          await msg.dbReply('Fuck you');
-          return;
-        }
         if (!realchannel.permissionsFor(msg.member))
           throw new util_functions.BotError(
             'user',
