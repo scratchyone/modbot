@@ -2858,11 +2858,7 @@ client.on('message', async (msg: Discord.Message) => {
     try {
       parser.feed(msg.content.replace(matchingPrefix, ''));
     } catch (e) {
-      const foundSyntax = await showSyntaxError(
-        msg,
-        msg.content,
-        matchingPrefix
-      );
+      await showSyntaxError(msg, msg.content, matchingPrefix);
     }
     const results = parser.results;
     for (const module of all_command_modules) {
