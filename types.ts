@@ -470,3 +470,10 @@ export class Capability extends Model {
     return 'capabilities';
   }
 }
+export class AlertChannel extends Model {
+  server!: string;
+  channel!: string;
+  static get tableName(): string {
+    return 'alert_channels';
+  }
+}

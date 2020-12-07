@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
-const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
 import { Command } from '../types';
 import { mintCapabilityToken } from '../web';
+import * as Types from '../types';
+
 const announce = {
   name: 'announce',
   syntax: 'm: announce',
@@ -25,9 +26,7 @@ const announce = {
       70000,
       msg
     );
-    for (const alertchannel of db
-      .prepare('SELECT * FROM alert_channels')
-      .all()) {
+    for (const alertchannel of await Types.AlertChannel.query()) {
       const ralertchannel = client.channels.cache.get(alertchannel.channel);
       if (!ralertchannel || ralertchannel.type !== 'text') continue;
       await (ralertchannel as Discord.TextChannel).send(
