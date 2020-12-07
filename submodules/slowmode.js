@@ -79,10 +79,9 @@ exports.commandModule = {
   commands: [slowmodeCommand],
   cog: async (client) => {
     client.on('message', async (msg) => {
-      let slowmodeRes = await Types.Slowmode.query().where(
-        'channel',
-        msg.channel.id
-      );
+      let slowmodeRes = await Types.Slowmode.query()
+        .where('channel', msg.channel.id)
+        .first();
       if (slowmodeRes && msg.member)
         if (
           (msg.member.hasPermission('MANAGE_MESSAGES') &&
