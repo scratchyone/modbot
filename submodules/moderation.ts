@@ -45,6 +45,7 @@ const lockdown = {
       msg.channel.id,
       JSON.stringify(msg.channel.permissionOverwrites)
     );
+    msg.channel.startTyping();
     try {
       for (const perm of msg.channel.permissionOverwrites) {
         await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
@@ -57,9 +58,11 @@ const lockdown = {
       await msg.dbReply(
         'Warning: An error has occured. Channel permissions might be messed up!'
       );
+      msg.channel.stopTyping();
       throw e;
     }
     await msg.dbReply('Locked!');
+    msg.channel.stopTyping();
     if (cmd.time)
       await Types.LogChannel.tryToLog(
         msg,
