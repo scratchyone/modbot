@@ -10,13 +10,8 @@ import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
 const store = new KeyValueStore();
 // Initialize knex.
-const knex = Knex({
-  client: 'sqlite3',
-  useNullAsDefault: true,
-  connection: {
-    filename: 'perms.db3',
-  },
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const knex = Knex(Object.values(require('./knexfile'))[0] as Knex.Config<any>);
 // Give the knex instance to objection.
 Model.knex(knex);
 require('dotenv').config();
