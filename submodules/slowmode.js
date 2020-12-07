@@ -1,5 +1,4 @@
 let util_functions = require('../util_functions');
-const db = require('better-sqlite3')('perms.db3', {});
 var parse_duration = require('parse-duration');
 import * as Types from '../types';
 let slowmodeCommand = {
@@ -14,9 +13,7 @@ let slowmodeCommand = {
     if (!channel)
       throw new util_functions.BotError('user', "Channel doesn't exist");
     if (cmd.action === 'enable') {
-      if (
-        db.prepare('SELECT * FROM slowmodes WHERE channel=?').get(cmd.channel)
-      )
+      if ((await Types.Slowmode.query().where('channel', cmd.channel)).length)
         throw new util_functions.BotError(
           'user',
           'Slowmode is already enabled'
@@ -42,11 +39,11 @@ let slowmodeCommand = {
       } catch (e) {
         throw new util_functions.BotError('user', e);
       }
-      db.prepare('INSERT INTO slowmodes VALUES (?, ?, ?)').run(
-        cmd.channel,
-        parse_duration(time, 's'),
-        delete_mm ? 1 : 0
-      );
+      await Types.Slowmode.query().insert({
+        channel: cmd.channel,
+        time: parse_duration(time, 's'),
+        delete_mm: delete_mm ? 1 : 0,
+      });
       await msg.channel.send(util_functions.desc_embed('Enabled!'));
       await Types.LogChannel.tryToLog(
         msg,
@@ -56,20 +53,18 @@ let slowmodeCommand = {
       let channel = msg.guild.channels.cache.get(cmd.channel);
       if (!channel)
         throw new util_functions.BotError('user', "Channel doesn't exist");
-      if (
-        !db.prepare('SELECT * FROM slowmodes WHERE channel=?').get(cmd.channel)
-      )
+      if (!(await Types.Slowmode.query().where('channel', cmd.channel)).length)
         throw new util_functions.BotError('user', "Slowmode isn't enabled");
-      for (let sm_user of db
-        .prepare('SELECT * FROM slowmoded_users WHERE channel=?')
-        .all(cmd.channel))
+      for (let sm_user of await Types.SlowmodedUsers.query().where(
+        'channel',
+        cmd.channel
+      ))
         channel.updateOverwrite(sm_user.user, {
           SEND_MESSAGES: true,
         });
-      db.prepare('DELETE FROM slowmodes WHERE channel=?').run(cmd.channel);
-      db.prepare('DELETE FROM slowmoded_users WHERE channel=?').run(
-        cmd.channel
-      );
+
+      await Types.Slowmode.query().where('channel', cmd.channel).delete();
+      await Types.SlowmodedUsers.query().where('channel', cmd.channel).delete();
       await msg.channel.send(util_functions.desc_embed('Disabled!'));
       await Types.LogChannel.tryToLog(
         msg,
@@ -78,14 +73,16 @@ let slowmodeCommand = {
     }
   },
 };
-let getChannelSlowmode = db.prepare('SELECT * FROM slowmodes WHERE channel=?');
 exports.commandModule = {
   title: 'Slowmode',
   description: "Commands for managing ModBot's slowmode system",
   commands: [slowmodeCommand],
   cog: async (client) => {
     client.on('message', async (msg) => {
-      let slowmodeRes = getChannelSlowmode.get(msg.channel.id);
+      let slowmodeRes = await Types.Slowmode.query().where(
+        'channel',
+        msg.channel.id
+      );
       if (slowmodeRes && msg.member)
         if (
           (msg.member.hasPermission('MANAGE_MESSAGES') &&
@@ -93,25 +90,27 @@ exports.commandModule = {
           !msg.member.hasPermission('MANAGE_MESSAGES')
         ) {
           if (msg.channel.permissionsFor(msg.member).has('SEND_MESSAGES')) {
-            msg.channel.updateOverwrite(msg.member, {
-              SEND_MESSAGES: false,
-            });
             try {
-              db.prepare('INSERT INTO slowmoded_users VALUES (?, ?)').run(
-                msg.channel.id,
-                msg.author.id
+              msg.channel.updateOverwrite(msg.member, {
+                SEND_MESSAGES: false,
+              });
+              try {
+                await Types.SlowmodedUsers.query().insert({
+                  channel: msg.channel.id,
+                  user: msg.author.id,
+                });
+              } catch (e) {
+                console.log(e);
+              }
+              util_functions.schedule_event(
+                {
+                  type: 'removeSlowmodePerm',
+                  channel: msg.channel.id,
+                  user: msg.author.id,
+                },
+                slowmodeRes.time + 's'
               );
-            } catch (e) {
-              console.log(e);
-            }
-            util_functions.schedule_event(
-              {
-                type: 'removeSlowmodePerm',
-                channel: msg.channel.id,
-                user: msg.author.id,
-              },
-              slowmodeRes.time + 's'
-            );
+            } catch {}
           }
         }
     });

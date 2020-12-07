@@ -477,3 +477,19 @@ export class AlertChannel extends Model {
     return 'alert_channels';
   }
 }
+
+export class Slowmode extends Model {
+  channel!: string;
+  time!: number;
+  delete_mm!: number;
+  static get tableName(): string {
+    return 'slowmodes';
+  }
+}
+export class SlowmodedUsers extends Model {
+  channel!: string;
+  user!: string;
+  static get tableName(): string {
+    return 'slowmoded_users';
+  }
+}
