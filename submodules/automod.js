@@ -263,7 +263,7 @@ exports.checkForTriggers = async (msg) => {
               !(await msg.isAnonMessage())
             )
               if (punishment.action === 'reply') {
-                await msg.reply(punishment.message);
+                await msg.channel.send(`${msg.author}, ${punishment.message}`);
               }
             if (
               !(await msg.isPluralKitMessage()) &&
