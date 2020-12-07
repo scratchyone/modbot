@@ -39,9 +39,10 @@ export function randArrayItem<T>(items: Array<T>): T {
   return items[~~(items.length * Math.random())];
 }
 export function schedule_event(event: unknown, time: string): void {
+  let ptime = parse_duration(time, 's') || 10;
+  if (ptime < 10) ptime = 10;
   db.prepare('INSERT INTO timerevents VALUES (@timestamp, @event)').run({
-    timestamp:
-      Math.round(Date.now() / 1000) + (parse_duration(time, 's') || 10),
+    timestamp: Math.round(Date.now() / 1000) + ptime,
     event: JSON.stringify(event),
   });
 }
