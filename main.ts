@@ -91,7 +91,9 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'pin',
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'pin') return;
-        msg.delete();
+        try {
+          msg.delete();
+        } catch (e) {}
         try {
           await (await msg.channel.send(cmd.text)).pin();
           await Types.LogChannel.tryToLog(
