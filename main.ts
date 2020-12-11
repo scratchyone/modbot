@@ -1601,6 +1601,46 @@ const main_commands = {
       },
     },
     {
+      name: 'ban',
+      syntax: 'm: ban <USER>',
+      explanation: 'Ban a user',
+      matcher: (cmd: MatcherCommand) => cmd.command == 'ban',
+      simplematcher: (cmd: Array<string>) => cmd[0] === 'ban',
+      permissions: (msg: Discord.Message) =>
+        msg.member && msg.member.hasPermission('BAN_MEMBERS'),
+      responder: async (msg: util_functions.EMessage, cmd: Command) => {
+        if (cmd.command !== 'ban' || !msg.member || !msg.guild) return;
+        util_functions.assertHasPerms(msg.guild, ['BAN_MEMBERS']);
+        const hp = msg.member.roles.highest.position;
+        const kickee = msg.guild.members.cache.get(cmd.user);
+        if (!kickee)
+          throw new util_functions.BotError(
+            'user',
+            'User not found\nHelp: Have they left the server?'
+          );
+        const kickee_hp = kickee.roles.highest.position;
+        if (kickee_hp >= hp) {
+          throw new util_functions.BotError(
+            'user',
+            'Your highest role is below or equal to the user you are trying to ban'
+          );
+        } else {
+          const conf = await util_functions.confirm(msg);
+          if (conf) {
+            if (kickee.id !== client.user?.id) {
+              await kickee.ban({ reason: `Banned by @${msg.author.tag}` });
+              await Types.LogChannel.tryToLog(msg, `Banned ${kickee}`);
+              await msg.dbReply(util_functions.desc_embed('Banned'));
+            } else {
+              await Types.LogChannel.tryToLog(msg, `Banned ${kickee}`);
+              await msg.dbReply(util_functions.desc_embed('Banned'));
+              await msg.guild.leave();
+            }
+          }
+        }
+      },
+    },
+    {
       name: 'tmprole',
       syntax: 'm: tmprole <add/remove> <USER> <ROLE> <DURATION>',
       explanation: "Temporarily change a user's role",

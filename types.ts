@@ -121,6 +121,10 @@ export type Command =
       user: string;
     }
   | {
+      command: 'ban';
+      user: string;
+    }
+  | {
       command: 'tmprole';
       action: 'add' | 'remove';
       duration: string;

@@ -2,7 +2,7 @@
 all_commands ->  (say | setanonchannel | pin | listanonchannels | whosaid | reminder | clonepurge | deletechannel | channeluser | archivechannel | anonban | alpha | anonunban | tmpchannel | setpinperms | listpinperms | autoresponder | starboard | star | reactionroles | kick | tmprole
 | purge | setupmute | mute | unmute | usercard | note | forgive | invite | userpic | ping | alertchannel | cat | joinroles | eval | about | lockdown | 
 unlockdown | poll | color | automod | slowmode | suggestion | prefix | embed | addemoji | support | ticket | announce | spoil | pick | owo | disablecommand |
-enablecommand | pfp | logging | admin | setchannelname | setservername | waitforupdate
+enablecommand | pfp | logging | admin | setchannelname | setservername | waitforupdate | ban
 ) {% n => n[0] %}
 pin -> "pin"i __ anything {% n => {return {command: "pin", text: n[2]}} %}
 say ->  "say"i __ (channel __):? ("remove" | "keep") __ anything {% n => {return {command: "say", text: n[5], channel: n[2] ? n[2][0] : null, keep: n[3][0]  == "keep"}} %}
@@ -25,6 +25,7 @@ star -> "star"i __ ("random") {% (n)=>{return {command: "star", action: n[2][0]}
 alpha -> ("alpha"i | "a"i) __ anything {% n => {return {command: "alpha", text: n[2]}} %}
 reactionroles -> ("reactionroles"i | "rr"i) __ ("add" | "edit") {% (n)=>{return {command: "reactionroles", action: n[2][0]}}%}
 kick -> "kick"i __ user {% (n)=>{return {command: "kick", user: n[2]}}%}
+ban -> "ban"i __ user {% (n)=>{return {command: "ban", user: n[2]}}%}
 tmprole -> "tmprole"i __ ("add" | "remove") __ user __ role __ word {% (n)=>{return {command: "tmprole", user: n[4], role: n[6], duration: n[8], action:n[2][0]}}%}
 purge -> "purge"i __ number {% (n)=>{return {command: "purge", count: n[2]}}%}
 setupmute -> "setupmute"i {% (n)=>{return {command: "setupmute"}}%}
