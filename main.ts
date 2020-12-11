@@ -319,6 +319,8 @@ const main_commands = {
         if (cmd.command !== 'reminder' || !ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
         if (cmd.action === 'add') {
+          if (parse(cmd.time, 'ms') === null)
+            throw new util_functions.BotError('user', 'Invalid timeframe');
           const id = nanoid.nanoid(5);
           await Types.Reminder.query().insert({
             author: ctx.msg.author.id,
