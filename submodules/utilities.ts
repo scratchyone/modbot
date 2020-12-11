@@ -380,7 +380,8 @@ const color = {
   syntax: 'm: color <COLOR>',
   explanation: 'Get info about a color',
   matcher: (cmd: Command) => cmd.command == 'color',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'color',
+  simplematcher: (cmd: Array<string>) =>
+    cmd[0] === 'color' || cmd[0] === 'colour',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage, cmd: Command) => {
     if (cmd.command !== 'color') return;
@@ -419,27 +420,30 @@ const color = {
           .attachFiles([attachment])
           .setThumbnail('attachment://image.png')
       );
-      // Run for each discord background color
-      for (const color of ['#36393F', '#FFFFFF']) {
-        canvas = Canvas.createCanvas(120, 40);
-        ctx = canvas.getContext('2d');
+      const colors = ['#FFFFFF', '#36393F', '#000000'];
+      let i = 0;
+      canvas = Canvas.createCanvas(120, colors.length * 40);
+      ctx = canvas.getContext('2d');
+      for (const color of colors) {
         // Fill discord background color
         ctx.fillStyle = color;
-        ctx.fillRect(0, 0, 200, 100);
+        ctx.fillRect(0, i * 40, 200, 100);
         // Write username in color
         ctx.fillStyle = Color(cmd.color).string();
         ctx.font = 'Semibold 15px Whitney';
-        ctx.fillText('Example User', 10, 27);
-        attachment = new Discord.MessageAttachment(
-          canvas.toBuffer(),
-          'image.png'
-        );
-        await msg.dbReply(
-          new Discord.MessageEmbed()
-            .attachFiles([attachment])
-            .setImage('attachment://image.png')
-        );
+        ctx.fillText('Example User', 10, 25 + i * 40);
+        i++;
       }
+      attachment = new Discord.MessageAttachment(
+        canvas.toBuffer(),
+        'image.png'
+      );
+      await msg.dbReply(
+        new Discord.MessageEmbed()
+          .attachFiles([attachment])
+          .setImage('attachment://image.png')
+          .setTitle('Role Color Test')
+      );
     } catch (e) {
       msg.dbReply(e.toString());
     }
