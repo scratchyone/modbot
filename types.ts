@@ -267,6 +267,10 @@ export type Command =
       emojiData?: string;
     }
   | {
+      command: 'removeemoji';
+      name: string;
+    }
+  | {
       command: 'logging';
       action: 'enable' | 'disable';
     }

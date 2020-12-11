@@ -82,7 +82,7 @@ exports.commandModule = {
       let slowmodeRes = await Types.Slowmode.query()
         .where('channel', msg.channel.id)
         .first();
-      if (slowmodeRes && msg.member)
+      if (slowmodeRes && msg.member && !msg.system)
         if (
           (msg.member.hasPermission('MANAGE_MESSAGES') &&
             !slowmodeRes.delete_mm) ||

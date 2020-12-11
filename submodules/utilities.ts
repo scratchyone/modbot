@@ -2,7 +2,7 @@
 import * as util_functions from '../util_functions';
 import * as Utils from '../util_functions';
 import moment from 'moment';
-import Discord from 'discord.js';
+import Discord, { GuildEmoji, MessageReaction, User } from 'discord.js';
 import { Command, EGuild, Prefix, Context } from '../types';
 import * as Types from '../types';
 import { Defer } from '../defer';
@@ -643,6 +643,84 @@ const addemoji = {
     }
   },
 };
+const removeemoji = {
+  name: 'removeemoji',
+  syntax: 'm: removeemoji <NAME>',
+  explanation: 'Remove an emoji from a server',
+  matcher: (cmd: Command) => cmd.command === 'removeemoji',
+  simplematcher: (cmd: Array<string>) => cmd[0] === 'removeemoji',
+  permissions: (msg: util_functions.EMessage) =>
+    msg.member?.hasPermission('MANAGE_EMOJIS'),
+  responder: async (msg: util_functions.EMessage, cmd: Command) => {
+    if (!msg.guild) return;
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
+    if (cmd.command !== 'removeemoji' || !msg.guild) return;
+
+    // Find all emojis with the name specified by the user
+    const matchingEmojis = msg.guild.emojis.cache
+      .array()
+      .filter((e) => e.name === cmd.name);
+
+    // Create a variable for storing the final emoji that will be deleted
+    let finalEmoji: GuildEmoji | undefined;
+
+    // If there are no emojis with the specified name, throw an error
+    if (matchingEmojis.length === 0)
+      throw new util_functions.BotError(
+        'user',
+        'No emoji found with that name'
+      );
+    // If there's only a single emoji with that name, set it as the chosen emoji
+    else if (matchingEmojis.length === 1) finalEmoji = matchingEmojis[0];
+    else {
+      // If there's multiple emoji with that name, send an embed that prompts the user to choose one
+      const selectionMessage = await msg.dbReply(
+        new Discord.MessageEmbed()
+          .setTitle('Choose Emoji')
+          .setDescription(
+            'Multiple emoji were found with that name. Please react with the chosen emoji'
+          )
+      );
+
+      // Add all emojis with the specified name as reactions to the prompt message, so the user can easily pick one
+      for (const e of matchingEmojis) selectionMessage.react(e);
+
+      // Wait for the user to select an emoji on the prompt message
+      const chosenReactions = (
+        await selectionMessage.awaitReactions(
+          (r: MessageReaction, u: User) =>
+            u.id === msg.author.id &&
+            !!matchingEmojis.find((e) => e.id === r.emoji.id),
+          { time: 30000, max: 1 }
+        )
+      ).array();
+
+      // If they didn't pick one, throw a timed out error
+      if (chosenReactions.length === 0)
+        throw new util_functions.BotError('user', 'Timed out');
+      // If they picked one, set it as the final emoji
+      else finalEmoji = chosenReactions[0].emoji as GuildEmoji;
+    }
+
+    // If somehow no emoji was chosen, return.
+    // This shouldn't be possible
+    if (!finalEmoji) return;
+
+    // Delete the final chosen emoji
+    await finalEmoji.delete();
+
+    // Show a success message
+    await msg.dbReply(
+      util_functions.embed(`Removed \`:${finalEmoji.name}:\``, 'success')
+    );
+
+    // Log what was done
+    await Types.LogChannel.tryToLog(
+      msg,
+      `Removed emoji \`:${finalEmoji.name}:\``
+    );
+  },
+};
 // UI flow to create embed
 async function designEmbed(
   msg: util_functions.EMessage,
@@ -942,6 +1020,7 @@ exports.commandModule = {
     prefix,
     embed,
     addemoji,
+    removeemoji,
     spoil,
     pick,
     pfp,
