@@ -234,6 +234,11 @@ export async function ask(
   );
   await deferred.cancel();
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
+  if (sb_name.array()[0].attachments.array().length)
+    throw new exports.BotError(
+      'user',
+      'Attachments are not supported. If you want to add an image, use a link to it'
+    );
   return sb_name.array()[0].content;
 }
 export async function askOrNone(
