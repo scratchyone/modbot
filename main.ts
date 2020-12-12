@@ -196,7 +196,10 @@ const main_commands = {
             `${ctx.msg.author}, you can't send messages there!`
           );
         } else {
-          if (!cmd.keep) await ctx.msg.delete();
+          if (!cmd.keep)
+            try {
+              await ctx.msg.delete();
+            } catch (e) {}
           else await ctx.msg.react('✅');
           await ((cmd.channel || ctx.msg.channel) as Discord.TextChannel).send(
             cmd.text
