@@ -4,6 +4,8 @@ const db = require('better-sqlite3')('perms.db3', {});
 import node_fetch from 'node-fetch';
 import * as Types from './types';
 import { Defer } from './defer';
+
+// Emojis used by confirm function
 const captcha_emojis = [
   '⏺️',
   '🟠',
@@ -17,12 +19,23 @@ const captcha_emojis = [
   '📅',
   '💯',
 ];
+/**
+ * Get a random int in a range
+ */
 export function randomIntFromInterval(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
+/**
+ * Convert string to simple embed
+ */
 export function desc_embed(text: string): Discord.MessageEmbed {
   return new Discord.MessageEmbed().setDescription(text);
 }
+/**
+ * Create an embed showing various message types
+ * @param {string} text - The embed's description
+ * @param {string?} title - (Optional) The embed's title
+ */
 export function embed(
   text: string,
   type: 'success' | 'warning' | 'tip',
@@ -35,6 +48,9 @@ export function embed(
     .setDescription(text)
     .setColor({ success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[type]);
 }
+/**
+ * Get a random item from an array
+ */
 export function randArrayItem<T>(items: Array<T>): T {
   return items[~~(items.length * Math.random())];
 }

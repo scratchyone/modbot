@@ -91,11 +91,18 @@ const main_commands = {
       simplematcher: (cmd: Array<string>) => cmd[0] === 'pin',
       responder: async (msg: Discord.Message, cmd: Command) => {
         if (cmd.command !== 'pin') return;
+
+        // Try to delete the message.
+        // This can throw an error if the message was already deleted by another bot, so catch that if it does
         try {
           msg.delete();
         } catch (e) {}
+
         try {
+          // Resend the original message through the bot's account, then pin it
           await (await msg.channel.send(cmd.text)).pin();
+
+          // Log what was done
           await Types.LogChannel.tryToLog(
             msg,
             `Pinned \n> ${cmd.text}\n to ${msg.channel}`
@@ -119,10 +126,12 @@ const main_commands = {
         msg.member.hasPermission('MANAGE_MESSAGES'),
       simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (msg: Discord.Message, cmd: Command) => {
+        // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         const discord = Discord;
         if (cmd.command !== 'eval') return;
         try {
+          // Define a function for cloning users that can be called from inside eval-ed code
           const cloneUser = async (user: string, text: string) => {
             if (msg.guild !== null && msg.channel.type == 'text') {
               const uuser = msg.guild.members.cache.get(user);
@@ -139,6 +148,7 @@ const main_commands = {
             }
           };
           if (!cloneUser) return;
+          // Convert the async code into promise style sync code and then eval it
           eval(
             `(async () => {${cmd.code
               .replace('```js', '')
@@ -165,16 +175,26 @@ const main_commands = {
       version: 3,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'say') return;
+
+        // If channel isn't a text channel, we can't send messages there, so throw an error
         if ((cmd.channel || ctx.msg.channel).type !== 'text')
           throw new util_functions.BotError(
             'user',
             "Channel isn't a text channel!"
           );
+
+        // If cmd.channel is not populated then the selected channel should be the current one
         const chan = (cmd.channel || ctx.msg.channel) as Discord.TextChannel;
+
+        // This shouldn't be able to happen
         if (!ctx.msg.guild)
           throw new util_functions.BotError('user', 'No guild found');
+
+        // If the user wants their command message to be deleted, make sure the bot has permission to do that
         if (!cmd.keep)
           util_functions.assertHasPerms(ctx.msg.guild, ['MANAGE_MESSAGES']);
+
+        // If the channel they're trying to send messages in is an anonchannel, and they're banned from going anon, throw an error
         if (
           anonchannels.check_anon_channel.get(
             cmd.channel ? cmd.channel.id : ctx.msg.channel.id,
@@ -190,20 +210,28 @@ const main_commands = {
             `${ctx.msg.author}, you're banned from sending messages there!`
           );
         }
+
+        // If the user doesn't have send message perms in the channel they're trying to send a message in, throw an error
         if (!chan.permissionsFor(ctx.msg.author)?.has('SEND_MESSAGES')) {
           throw new util_functions.BotError(
             'user',
             `${ctx.msg.author}, you can't send messages there!`
           );
         } else {
+          // Delete the command message if the user has chosen to remove it
           if (!cmd.keep)
             try {
               await ctx.msg.delete();
             } catch (e) {}
+          // If not, add a reaction to show the command has succeeded
           else await ctx.msg.react('✅');
+
+          // Send the message
           await ((cmd.channel || ctx.msg.channel) as Discord.TextChannel).send(
             cmd.text
           );
+
+          // Log what was done
           await Types.LogChannel.tryToLog(
             ctx.msg,
             `Made ModBot say\n> ${cmd.text}\nin <#${
