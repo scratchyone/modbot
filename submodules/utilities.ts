@@ -133,10 +133,12 @@ const spoil = {
         return { ...attachment, name: 'SPOILER_' + attachment.name };
       });
       // Send with a webhook for custom username and profile picture
-      const m = await loghook.send({
-        content: await util_functions.cleanPings(cmd.text, msg.guild),
-        files: files,
-      });
+      const m = await loghook.send(
+        await util_functions.cleanPings(cmd.text, msg.guild),
+        {
+          files,
+        }
+      );
       // Delete webhook
       await loghook.delete();
       await Types.LogChannel.tryToLog(
@@ -370,7 +372,7 @@ const userpic = {
       canvas.toBuffer(),
       'image.png'
     );
-    msg.dbReply('', attachment);
+    msg.dbReply(attachment);
     msg.channel.stopTyping();
   },
 };

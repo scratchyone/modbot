@@ -352,12 +352,11 @@ export class EMessage extends Discord.Message {
     return askOrNone(question, time, this);
   }
   async dbReply(
-    content: Discord.StringResolvable | Discord.APIMessage,
-    options?: Discord.MessageOptions | Discord.MessageAdditions
+    content: Discord.StringResolvable | Discord.APIMessage
   ): Promise<Discord.Message> {
     if (!this.guild)
       throw new BotError('bot', 'dbReply was called outside of a guild');
-    const bmsg = await this.channel.send(content, options);
+    const bmsg = await this.channel.send(content);
     await Types.BotMessage.query().insert({
       guild: this.guild.id,
       channel: this.channel.id,
