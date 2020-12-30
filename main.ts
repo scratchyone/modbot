@@ -1094,15 +1094,6 @@ const main_commands = {
       permissions: () => process.env.WOLFRAMALPHA_KEY,
       responder: async (ctx: Types.Context, cmd: Command) => {
         if (cmd.command !== 'alpha') return;
-        if (
-          ctx.store.get(`alpha.${cmd.text}`) &&
-          !['random', 'dice', 'die', 'roll', 'pick'].some((s) =>
-            cmd.text.includes(s)
-          )
-        ) {
-          sendAlphaResult(ctx, cmd);
-          return;
-        }
         ctx.store.addOrCreate(
           `rateLimits.alpha.${ctx.msg.author.id}`,
           1,
@@ -1133,7 +1124,17 @@ const main_commands = {
             `alpha.${cmd.text}`,
             res.queryresult.pods[1].subpods[0].plaintext
           );
-          sendAlphaResult(ctx, cmd);
+          ctx.msg.dbReply(
+            new Discord.MessageEmbed()
+              .setTitle('Result')
+              .setDescription(ctx.store.get(`alpha.${cmd.text}`) as string)
+              .setAuthor(
+                'Wolfram Alpha',
+                'https://media.discordapp.net/attachments/745460367173484624/765623618297790464/wolfram-alpha-2-569293.png',
+                'https://www.wolframalpha.com/'
+              )
+              .setColor('#4269cc')
+          );
           ctx.msg.channel.stopTyping();
         } catch (e) {
           ctx.msg.dbReply(
@@ -2496,22 +2497,6 @@ client.on(
     }
   }
 );
-function sendAlphaResult(
-  ctx: Types.Context,
-  cmd: { command: 'alpha'; text: string }
-) {
-  ctx.msg.dbReply(
-    new Discord.MessageEmbed()
-      .setTitle('Result')
-      .setDescription(ctx.store.get(`alpha.${cmd.text}`) as string)
-      .setAuthor(
-        'Wolfram Alpha',
-        'https://media.discordapp.net/attachments/745460367173484624/765623618297790464/wolfram-alpha-2-569293.png',
-        'https://www.wolframalpha.com/'
-      )
-      .setColor('#4269cc')
-  );
-}
 
 function getArrayRandomElement<T>(arr: Array<T>): T {
   return arr[Math.floor(Math.random() * arr.length)];
