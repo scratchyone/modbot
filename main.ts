@@ -1660,7 +1660,11 @@ const main_commands = {
           }
           kickee = kickeem.user;
         } else {
-          kickee = await client.users.fetch(cmd.user);
+          try {
+            kickee = await client.users.fetch(cmd.user);
+          } catch {
+            throw new util_functions.BotError('user', 'User not found');
+          }
         }
         const conf = await util_functions.confirm(msg);
         if (conf) {
