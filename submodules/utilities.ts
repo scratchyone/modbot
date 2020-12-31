@@ -234,7 +234,7 @@ const suggestion = {
           },
           method: 'POST',
           body: JSON.stringify({
-            displayName: sn.padEnd(3),
+            displayName: sn.padEnd(3), // To ensure username meets the minimum length limit for SuggestionManager
             suggestionText: st,
           }),
         }
