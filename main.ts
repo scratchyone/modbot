@@ -2659,6 +2659,7 @@ async function runHelpCommands(
       .map((mod) => {
         const cmds = mod.commands
           .filter(
+            // eslint-disable-next-line no-unused-vars
             (command: { permissions: (arg0: Discord.Message) => boolean }) =>
               command.permissions(msg) ||
               adminServerPermissionOverwrites.find(
@@ -2750,6 +2751,7 @@ async function runHelpCommands(
         .addFields(
           chosen_module.commands
             .filter(
+              // eslint-disable-next-line no-unused-vars
               (command: { permissions: (arg0: Discord.Message) => boolean }) =>
                 command.permissions(msg) ||
                 adminServerPermissionOverwrites.find(
