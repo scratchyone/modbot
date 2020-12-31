@@ -234,7 +234,7 @@ const suggestion = {
           },
           method: 'POST',
           body: JSON.stringify({
-            displayName: sn,
+            displayName: sn.padEnd(3),
             suggestionText: st,
           }),
         }
