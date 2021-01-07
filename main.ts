@@ -2892,7 +2892,11 @@ client.on('message', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;
   try {
-    if (!msg.guild) return;
+    if (!msg.guild) {
+      if (msg.content.startsWith('m: '))
+        msg.channel.send('Sorry, commands cannot be used in DMs');
+      return;
+    }
     if (!client.user) return;
     // In a guild and logged in
     addReactOnMention(msg);
