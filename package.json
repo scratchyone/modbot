@@ -38,7 +38,7 @@
     "nanoid": "^3.1.20",
     "nearley": "^2.19.7",
     "node-fetch": ">=2.6.1",
-    "objection": "^2.2.3",
+    "objection": "^2.2.5",
     "parse-duration": "^0.4.4",
     "prettier": "^2.1.2",
     "sqlite3": "^5.0.0",
