@@ -61,6 +61,7 @@ export type Command =
     }
   | {
       command: 'archivechannel';
+      role?: string;
     }
   | {
       command: 'anonban';

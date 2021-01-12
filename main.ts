@@ -693,9 +693,9 @@ const main_commands = {
     },
     {
       name: 'archivechannel',
-      syntax: 'm: archivechannel',
+      syntax: 'm: archivechannel [ROLE]',
       explanation:
-        'Archive a channel. Users with specified role will still be able to see it',
+        "Archive a channel. Users with specified role will still be able to see it. If you don't supply a role, it will use your highest role.",
       matcher: (cmd: MatcherCommand) => cmd.command == 'archivechannel',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'archivechannel',
       permissions: (msg: Discord.Message) =>
@@ -720,19 +720,23 @@ const main_commands = {
             deny: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
           {
-            id: msg.member.roles.highest.id,
+            id: cmd.role || msg.member.roles.highest.id,
             allow: ['VIEW_CHANNEL'],
           },
         ]);
         await msg.dbReply(
           util_functions.embed(
-            `Archived channel for role ${msg.member.roles.highest}!`,
+            `Archived channel for role <@&${
+              cmd.role || msg.member.roles.highest.id
+            }>!`,
             'success'
           )
         );
         await Types.LogChannel.tryToLog(
           msg,
-          `Archived ${msg.channel} for ${msg.member.roles.highest}`
+          `Archived ${msg.channel} for <@&${
+            cmd.role || msg.member.roles.highest.id
+          }>`
         );
       },
     },

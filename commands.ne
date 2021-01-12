@@ -13,7 +13,7 @@ reminder -> ("reminder"i | "rm"i | "reminders"i) __ (("add" __ word __ anything)
 clonepurge -> "clonepurge"i {% ()=>{return {command: "clonepurge"}}%}
 deletechannel -> "deletechannel"i {% ()=>{return {command: "deletechannel"}}%}
 channeluser -> "channeluser"i __ ("add" | "remove") __ user (__ channel):? {% (n)=>{return {command: "channeluser", allowed: n[2][0]=="add", user: n[4], channel:n[5] ? n[5][1] : null}}%}
-archivechannel -> "archivechannel"i {% (n)=>{return {command: "archivechannel"}}%}
+archivechannel -> "archivechannel"i (__ role):? {% (n)=>{return {command: "archivechannel", role: n[1] ? n[1][1] : undefined}}%}
 anonban -> "anonban"i __ user (__ word):? {% (n)=>{return {command: "anonban", user: n[2], time: n[3] ? n[3][1] : null}}%}
 anonunban -> "anonunban"i __ user {% (n)=>{return {command: "anonunban", user: n[2]}}%}
 setpinperms -> "setpinperms"i __ ("allowed" | "disallowed") __ role {% (n)=>{return {command: "setpinperms", allowed:n[2][0]=="allowed", role: n[4]}}%}
