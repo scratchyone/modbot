@@ -46,6 +46,7 @@ export async function serve(client: Client): Promise<void> {
       if (!capability) return;
       res.send(
         (await Types.Reminder.query().where('author', req.params.user))
+          .filter((r) => (r.time || 0) > Date.now() / 1000)
           .map((r) => {
             return {
               author: r.author,

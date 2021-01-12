@@ -420,6 +420,7 @@ const main_commands = {
             const fields = util_functions.chunk(
               reminders
                 .filter((n) => n.text)
+                .filter((r) => (r.time || 0) > Date.now() / 1000)
                 .flatMap((reminder) => {
                   return [
                     { name: 'Text', value: reminder.text, inline: true },
