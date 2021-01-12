@@ -693,7 +693,7 @@ const main_commands = {
     },
     {
       name: 'archivechannel',
-      syntax: 'm: archivechannel <ROLE>',
+      syntax: 'm: archivechannel',
       explanation:
         'Archive a channel. Users with specified role will still be able to see it',
       matcher: (cmd: MatcherCommand) => cmd.command == 'archivechannel',
@@ -701,7 +701,8 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'archivechannel' || !msg.guild) return;
+        if (cmd.command !== 'archivechannel' || !msg.guild || !msg.member)
+          return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         const deleted_category = (msg.guild.channels.cache.find(
           (n) => n.type == 'category' && n.name == 'archived'
@@ -719,12 +720,20 @@ const main_commands = {
             deny: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
           {
-            id: cmd.role,
+            id: msg.member.roles.highest.id,
             allow: ['VIEW_CHANNEL'],
           },
         ]);
-        await msg.dbReply(util_functions.embed('Archived channel!', 'success'));
-        await Types.LogChannel.tryToLog(msg, `Archived ${msg.channel}`);
+        await msg.dbReply(
+          util_functions.embed(
+            `Archived channel for role ${msg.member.roles.highest}!`,
+            'success'
+          )
+        );
+        await Types.LogChannel.tryToLog(
+          msg,
+          `Archived ${msg.channel} for ${msg.member.roles.highest}`
+        );
       },
     },
     {
