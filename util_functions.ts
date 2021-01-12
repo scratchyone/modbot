@@ -5,20 +5,6 @@ import node_fetch from 'node-fetch';
 import * as Types from './types';
 import { Defer } from './defer';
 
-// Emojis used by confirm function
-const captcha_emojis = [
-  '⏺️',
-  '🟠',
-  '🟣',
-  '👽',
-  '🎉',
-  '💎',
-  '📊',
-  '🧬',
-  '🔒',
-  '📅',
-  '💯',
-];
 /**
  * Get a random int in a range
  */
@@ -75,26 +61,26 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
     channel: message.channel.id,
   });
   deferred.cancelIn(20000);
-  const c_emojis = shuffle(captcha_emojis).slice(0, 6);
-  const item = randomIntFromInterval(0, 5);
   const msg = await message.channel.send(
-    new Discord.MessageEmbed().setTitle(`Click ${c_emojis[item]} to confirm`)
+    new Discord.MessageEmbed().setTitle(
+      'Click the ✅ when it appears to confirm'
+    )
   );
-  for (let i = 0; i < c_emojis.length; i++) msg.react(c_emojis[i]);
+  await msg.react('🔄');
+  setTimeout(async () => {
+    await msg.reactions.removeAll();
+    await msg.react('✅');
+  }, 3000);
   const reactions = await msg.awaitReactions(
     (reaction, user) =>
-      c_emojis.indexOf(reaction.emoji.name) != -1 &&
-      user.id == message.author.id,
+      reaction.emoji.name == '✅' && user.id == message.author.id,
     {
       time: 10000,
       max: 1,
     }
   );
   msg.reactions.removeAll();
-  if (
-    reactions.array().length > 0 &&
-    c_emojis.indexOf(reactions.array()[0].emoji.name) === item
-  ) {
+  if (reactions.array().length > 0) {
     msg.edit(new Discord.MessageEmbed().setTitle('Confirmed'));
     await deferred.cancel();
     return true;
