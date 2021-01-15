@@ -121,9 +121,7 @@ const main_commands = {
       explanation: 'Run code',
       matcher: (cmd: MatcherCommand) => cmd.command == 'eval',
       permissions: (msg: Discord.Message) =>
-        msg.author.id === '234020040830091265' &&
-        msg.member &&
-        msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.author.id === '234020040830091265',
       simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
       responder: async (msg: Discord.Message, cmd: Command) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
