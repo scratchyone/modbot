@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sentry/node": "^5.27.4",
+    "@sentry/node": "^6.0.0",
     "@sentry/types": "^5.29.0",
     "@tsconfig/node12": "^1.0.7",
     "@types/color": "^3.0.1",
