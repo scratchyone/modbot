@@ -38,10 +38,10 @@
     "nanoid": "^3.1.20",
     "nearley": "^2.19.7",
     "node-fetch": ">=2.6.1",
-    "objection": "^2.2.3",
+    "objection": "^2.2.10",
     "parse-duration": "^0.4.4",
     "prettier": "^2.1.2",
-    "sqlite3": "^5.0.0",
+    "sqlite3": "^5.0.1",
     "typescript": "^4.0.3",
     "uuid": "^8.3.1"
   },
