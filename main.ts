@@ -671,15 +671,23 @@ const main_commands = {
         const user = msg.guild.member(cmd.user);
         if (!user) throw new util_functions.BotError('user', 'User not found');
         if (!cmd.allowed) {
-          await realchannel.updateOverwrite(user, { VIEW_CHANNEL: false });
+          await realchannel.updateOverwrite(user, {
+            VIEW_CHANNEL: false,
+            SEND_MESSAGES: false,
+          });
         } else {
-          await realchannel.updateOverwrite(user, { VIEW_CHANNEL: true });
+          await realchannel.updateOverwrite(user, {
+            VIEW_CHANNEL: true,
+            SEND_MESSAGES: true,
+          });
         }
         await msg.dbReply(
           util_functions.embed(
             `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
               cmd.allowed ? 'to' : 'from'
-            } ${cmd.allowed ? 'read' : 'reading'} messages in ${channel}`,
+            } ${
+              cmd.allowed ? 'read and send' : 'reading and sending'
+            } messages in ${channel}`,
             'success'
           )
         );
