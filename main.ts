@@ -2087,9 +2087,10 @@ client.on('ready', async () => {
   };
   sp();
   setInterval(sp, 1000 * 60 * 60);
-  //
-  //
-  //
+
+  // This will (very) slowly consume more and more memory without ever releasing it.
+  // TODO: Make this a rolling log.
+  const already_delivered_reminders: string[] = [];
   setInterval(async () => {
     const ts = Math.round(Date.now() / 1000);
     const events = db
@@ -2099,6 +2100,14 @@ client.on('ready', async () => {
       const event = JSON.parse(event_item.event);
       if (event.type == 'reminder') {
         try {
+          // This is a weird hack.
+          // It should not be possible for reminders to be delivered more than once.
+          // But somehow they rarely are. I have no clue why.
+          // My hope is this should stop it.
+          // This keeps a log of all delivered reminders by their ID, and then cancels the delivery if a reminder has already been delivered.
+          if (already_delivered_reminders.includes(event.id)) continue;
+          already_delivered_reminders.push(event.id);
+
           const res = await Types.Reminder.query()
             .where('author', event.user)
             .where('id', event.id);
@@ -2278,7 +2287,7 @@ client.on('ready', async () => {
       }
     }
     db.prepare('DELETE FROM timerevents WHERE timestamp<=?').run(ts);
-  }, 2000);
+  }, 5000);
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
