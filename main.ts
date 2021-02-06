@@ -8,6 +8,7 @@ import { Model } from 'objection';
 import Knex from 'knex';
 import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
+import vm from 'vm';
 const store = new KeyValueStore();
 // Initialize knex.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,16 +149,36 @@ const main_commands = {
             }
           };
           if (!cloneUser) return;
-          // Convert the async code into promise style sync code and then eval it
-          eval(
-            `(async () => {${cmd.code
-              .replace('```js', '')
-              .replace('```javascript', '')
-              .replaceAll(
-                '```',
-                ''
-              )}})().catch(e=>msg.channel.send(\`Error: \${e}\`)).then(r=>r ? msg.channel.send(r) : 'Ran')`
-          );
+          // Remove markdown code formatting from the input
+          let code = cmd.code;
+          if (code.startsWith('```js')) code = code.substring(5);
+          if (code.startsWith('```javascript')) code = code.substring(13);
+          if (code.startsWith('```')) code = code.substring(3);
+          if (code.startsWith('`')) code = code.substring(1);
+          if (code.endsWith('```')) code = code.slice(0, -3);
+          if (code.endsWith('`')) code = code.slice(0, -1);
+
+          let wrappedCode = '';
+
+          // Detect what type of arrow function needs to be used
+          try {
+            // Try to compile function without braces
+            vm.compileFunction(`(async () => ${code})`);
+            // If it succeeds, set the final code to be run without braces to remove the need for return statements
+            wrappedCode = `(async () => ${code})`;
+          } catch (e) {
+            // If it fails, set the final code to be run with braces
+            wrappedCode = `(async () => {${code}})`;
+          }
+          // Define arrow function with eval
+          const func = eval(wrappedCode);
+          // Run created arrow function
+          const funcResult = await func();
+          if (funcResult)
+            await msg.channel.send(
+              util_functions.embed(funcResult, 'success', '')
+            );
+          else await msg.channel.send(util_functions.embed('', 'success'));
         } catch (e) {
           throw new util_functions.BotError('user', e);
         }

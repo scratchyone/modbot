@@ -29,7 +29,9 @@ export function embed(
 ): Discord.MessageEmbed {
   return new Discord.MessageEmbed()
     .setTitle(
-      title || { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
+      title == undefined
+        ? { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
+        : title
     )
     .setDescription(text)
     .setColor({ success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[type]);
