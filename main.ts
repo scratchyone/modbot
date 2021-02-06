@@ -153,7 +153,7 @@ const main_commands = {
             `(async () => {${cmd.code
               .replace('```js', '')
               .replace('```javascript', '')
-              .replace(
+              .replaceAll(
                 '```',
                 ''
               )}})().catch(e=>msg.channel.send(\`Error: \${e}\`)).then(r=>r ? msg.channel.send(r) : 'Ran')`
