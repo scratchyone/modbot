@@ -17,6 +17,25 @@ const add_anonmessage = db.prepare(
 );
 import Discord from 'discord.js';
 const lasts: Map<string, { author: string; count: number }> = new Map();
+function combine_recur(w: string, l: Array<Array<string>>): string[] {
+  const output = [];
+  for (const x of l[0])
+    if (l.length > 1)
+      output.push(...combine_recur(w + x.toString(), l.slice(1)));
+    else output.push(w + x.toString());
+  return output;
+}
+const chars = {
+  A: ['A', '𝖠', '𝙰', 'Α', 'А', 'Ꭺ', 'ᗅ', 'ꓮ', '𐊠'],
+  n: ['n'],
+  o: ['o', 'ο', 'о'],
+};
+const similars = combine_recur('', [
+  chars['A'],
+  chars['n'],
+  chars['o'],
+  chars['n'],
+]);
 async function handle_anon_message(msg: Discord.Message) {
   if (!msg.guild || !msg.channel.id) return;
   /*if (msg.attachments.array()) {
@@ -56,9 +75,6 @@ async function handle_anon_message(msg: Discord.Message) {
       .find((webhook) => webhook.name == 'Anon') ||
     (await (msg.channel as Discord.TextChannel).createWebhook('Anon'));
   //}
-  const similars = [
-    ...new Set(['Anon', '𝖠non', 'Ꭺnon', 'ꓮnon', '𐊠non', 'A𝗇on']),
-  ];
   const am = await anonhook.send(
     await util_functions.cleanPings(msg.content, msg.guild),
     {
