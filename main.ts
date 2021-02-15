@@ -67,7 +67,7 @@ const check_for_reactionrole_msg = db.prepare(
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-const anonchannels = require('./anonchannels.js');
+const anonchannels = require('./anonchannels');
 import * as util_functions from './util_functions';
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
