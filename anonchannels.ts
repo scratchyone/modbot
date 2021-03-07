@@ -1,20 +1,6 @@
-const db = require('better-sqlite3')('perms.db3', {});
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 const util_functions = require('./util_functions');
-const check_anon_channel = db.prepare(
-  'SELECT * FROM anonchannels WHERE id=? AND server=?'
-);
-const check_anon_ban = db.prepare(
-  'SELECT * FROM anonbans WHERE user=@user AND server=@server'
-);
-const insert_anon_ban = db.prepare(
-  'INSERT INTO anonbans VALUES (@user, @server)'
-);
-const remove_anon_ban = db.prepare(
-  'DELETE FROM anonbans WHERE user=@user AND server=@server'
-);
-const add_anonmessage = db.prepare(
-  'INSERT INTO anonmessages VALUES (@id, @user, @server)'
-);
 import Discord from 'discord.js';
 const lasts: Map<string, { author: string; count: number }> = new Map();
 function combine_recur(w: string, l: Array<Array<string>>): string[] {
@@ -83,10 +69,12 @@ async function handle_anon_message(msg: Discord.Message) {
       username: similars[last.count % similars.length],
     }
   );
-  add_anonmessage.run({
-    id: am.id,
-    user: msg.author.id,
-    server: msg.guild.id,
+  await prisma.anonmessages.create({
+    data: {
+      id: am.id,
+      user: msg.author.id,
+      server: msg.guild.id,
+    },
   });
   if (nd)
     try {
@@ -94,20 +82,23 @@ async function handle_anon_message(msg: Discord.Message) {
     } catch (e) {}
 }
 exports.handle_anon_message = handle_anon_message;
-exports.check_anon_channel = check_anon_channel;
-exports.insert_anon_ban = insert_anon_ban;
-exports.remove_anon_ban = remove_anon_ban;
-exports.check_anon_ban = check_anon_ban;
 exports.onNewMessage = async (msg: Discord.Message) => {
   if (
     msg.guild &&
-    exports.check_anon_channel.get(msg.channel.id, msg.guild.id)
+    (await prisma.anonchannels.findFirst({
+      where: {
+        id: msg.channel.id,
+        server: msg.guild.id,
+      },
+    }))
   ) {
     if (
-      !exports.check_anon_ban.get({
-        user: msg.author.id,
-        server: msg.guild.id,
-      })
+      !(await prisma.anonbans.findFirst({
+        where: {
+          user: msg.author.id,
+          server: msg.guild.id,
+        },
+      }))
     )
       await exports.handle_anon_message(msg);
     else {

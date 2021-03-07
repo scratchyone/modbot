@@ -101,7 +101,7 @@ exports.commandModule = {
               } catch (e) {
                 console.log(e);
               }
-              util_functions.schedule_event(
+              await util_functions.schedule_event(
                 {
                   type: 'removeSlowmodePerm',
                   channel: msg.channel.id,

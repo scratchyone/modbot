@@ -1,9 +1,10 @@
 import Discord from 'discord.js';
 import parse_duration from 'parse-duration';
-const db = require('better-sqlite3')('perms.db3', {});
 import node_fetch from 'node-fetch';
 import * as Types from './types';
 import { Defer } from './defer';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 /**
  * Get a random int in a range
@@ -42,12 +43,17 @@ export function embed(
 export function randArrayItem<T>(items: Array<T>): T {
   return items[~~(items.length * Math.random())];
 }
-export function schedule_event(event: unknown, time: string): void {
+export async function schedule_event(
+  event: unknown,
+  time: string
+): Promise<void> {
   let ptime = parse_duration(time, 's') || 10;
   if (ptime < 10) ptime = 10;
-  db.prepare('INSERT INTO timerevents VALUES (@timestamp, @event)').run({
-    timestamp: Math.round(Date.now() / 1000) + ptime,
-    event: JSON.stringify(event),
+  await prisma.timerevents.create({
+    data: {
+      timestamp: Math.round(Date.now() / 1000) + ptime,
+      event: JSON.stringify(event),
+    },
   });
 }
 export function shuffle<T>(a: Array<T>): Array<T> {
@@ -312,8 +318,16 @@ export class EGuild extends Discord.Guild {
   constructor(client: Discord.Client, guild: Discord.Guild) {
     super(client, guild);
   }
-  get starboard(): { channel: string; server: string; stars: number } | null {
-    return db.prepare('SELECT * FROM starboards WHERE server=?').get(this.id);
+  get starboard(): Promise<{
+    channel: string;
+    server: string;
+    stars: number;
+  } | null> {
+    return prisma.starboards.findFirst({
+      where: {
+        server: this.id,
+      },
+    });
   }
   get hasPluralKit(): boolean {
     return !!this.members.cache.get('466378653216014359');
@@ -369,9 +383,11 @@ export class EMessage extends Discord.Message {
   }
   async getAnonSender(): Promise<null | Discord.GuildMember | undefined> {
     await sleep(200);
-    const tmp = db
-      .prepare('SELECT * FROM anonmessages WHERE id=?')
-      .get(this.id);
+    const tmp = await prisma.anonmessages.findFirst({
+      where: {
+        id: this.id,
+      },
+    });
     return tmp ? this.guild?.members.cache.get(tmp.user) : undefined;
   }
   async isPluralKitMessage(): Promise<boolean> {

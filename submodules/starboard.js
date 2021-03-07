@@ -1,22 +1,31 @@
-const db = require('better-sqlite3')('perms.db3', {});
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 let util_functions = require('../util_functions');
 const Discord = require('discord.js');
 const onStarReactRemove = async (reaction, client) => {
   if (
-    db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id) &&
-    !db
-      .prepare('SELECT * FROM starboards WHERE channel=?')
-      .get(reaction.message.channel.id)
+    (await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    })) &&
+    !prisma.starboards.findFirst({
+      where: {
+        channel: reaction.message.channel.id,
+      },
+    })
   ) {
-    let sb = db
-      .prepare('SELECT * FROM starboards WHERE server=?')
-      .get(reaction.message.guild.id);
+    let sb = await prisma.starboards.findFirst({
+      where: {
+        server: reaction.message.guild.id,
+      },
+    });
     if (sb && sb.stars > reaction.count) {
-      let sb_msg_db = db
-        .prepare('SELECT * FROM starboard_messages WHERE message=?')
-        .get(reaction.message.id);
+      let sb_msg_db = await prisma.starboard_messages.findFirst({
+        where: {
+          message: reaction.message.id,
+        },
+      });
       try {
         await (
           await client.channels.cache
@@ -26,24 +35,32 @@ const onStarReactRemove = async (reaction, client) => {
       } catch (e) {
         console.log(e);
       }
-      db.prepare('DELETE FROM starboard_messages WHERE message=?').run(
-        reaction.message.id
-      );
+      await prisma.starboard_messages.deleteMany({
+        where: {
+          message: reaction.message.id,
+        },
+      });
     } else {
       console.log('no sb');
     }
   }
   if (
-    db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id) &&
-    !db
-      .prepare('SELECT * FROM starboards WHERE channel=?')
-      .get(reaction.message.channel.id)
+    (await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    })) &&
+    !prisma.starboards.findFirst({
+      where: {
+        channel: reaction.message.channel.id,
+      },
+    })
   ) {
-    let sb_msg = db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id);
+    let sb_msg = await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    });
     let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
     let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
     await sb_disc_msg.edit(await genSBMessage(reaction.message));
@@ -125,42 +142,59 @@ async function genSBMessage(message) {
 }
 const onStarReactAdd = async (reaction, client) => {
   if (
-    !db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id) &&
-    !db
-      .prepare('SELECT * FROM starboards WHERE channel=?')
-      .get(reaction.message.channel.id)
+    !(await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    })) &&
+    !(await prisma.starboards.findFirst({
+      where: {
+        channel: reaction.message.channel.id,
+      },
+    }))
   ) {
     try {
-      let sb = db
-        .prepare('SELECT * FROM starboards WHERE server=? AND stars<=?')
-        .get(reaction.message.guild.id, reaction.count);
+      let sb = await prisma.starboards.findFirst({
+        where: {
+          server: reaction.message.guild.id,
+          stars: {
+            lte: reaction.count,
+          },
+        },
+      });
       if (sb) {
         let sb_chan = client.channels.cache.get(sb.channel);
         let sb_msg = await sb_chan.send(await genSBMessage(reaction.message));
-        db.prepare('INSERT INTO starboard_messages VALUES (?, ?, ?, ?, ?)').run(
-          reaction.message.id,
-          sb_msg.id,
-          reaction.message.guild.id,
-          sb_msg.channel.id,
-          reaction.message.channel.id
-        );
+        await prisma.starboard_messages.create({
+          data: {
+            message: reaction.message.id,
+            starboard_message: sb_msg.id,
+            message_channel: reaction.message.channel.id,
+            server: reaction.message.guild.id,
+            starboard_message_channel: sb_msg.channel.id,
+          },
+        });
       }
     } catch (e) {
       console.log(e);
     }
   } else if (
-    db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id) &&
-    !db
-      .prepare('SELECT * FROM starboards WHERE channel=?')
-      .get(reaction.message.channel.id)
+    (await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    })) &&
+    !(await prisma.starboards.findFirst({
+      where: {
+        channel: reaction.message.channel.id,
+      },
+    }))
   ) {
-    let sb_msg = db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(reaction.message.id);
+    let sb_msg = await prisma.starboard_messages.findFirst({
+      where: {
+        message: reaction.message.id,
+      },
+    });
     let sb_chan = client.channels.cache.get(sb_msg.starboard_message_channel);
     let sb_disc_msg = await sb_chan.messages.fetch(sb_msg.starboard_message);
     await sb_disc_msg.edit(
@@ -175,25 +209,41 @@ async function starboardMessageToRealSBMsg(s, client) {
 }
 const onMessageEdit = async (old, newm, client) => {
   if (
-    db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(newm.id)
+    await prisma.starboard_messages.findFirst({
+      where: {
+        message: newm.id,
+      },
+    })
   ) {
-    let sb_msg = db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(newm.id);
+    let sb_msg = await prisma.starboard_messages.findFirst({
+      where: {
+        message: newm.id,
+      },
+    });
     let real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
     await real_msg.edit(await genSBMessage(newm));
   }
 };
 const onMessageDelete = async (msg, client) => {
   if (
-    db.prepare('SELECT * FROM starboard_messages WHERE message=?').get(msg.id)
+    await prisma.starboard_messages.findFirst({
+      where: {
+        message: msg.id,
+      },
+    })
   ) {
-    let sb_msg = db
-      .prepare('SELECT * FROM starboard_messages WHERE message=?')
-      .get(msg.id);
+    let sb_msg = await prisma.starboard_messages.findFirst({
+      where: {
+        message: msg.id,
+      },
+    });
     let real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
     await real_msg.delete();
-    db.prepare('DELETE FROM starboard_messages WHERE message=?').run(msg.id);
+    await prisma.starboard_messages.deleteMany({
+      where: {
+        message: msg.id,
+      },
+    });
   }
 };
 import * as Types from '../types';
@@ -210,7 +260,11 @@ let starboardCommand = {
     if (cmd.action === 'enable') {
       util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
       if (
-        db.prepare('SELECT * FROM starboards WHERE server=?').get(msg.guild.id)
+        await prisma.starboards.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        })
       ) {
         await msg.channel.send(
           util_functions.desc_embed('Starboard already exists')
@@ -244,11 +298,13 @@ let starboardCommand = {
             ],
           }
         );
-        db.prepare('INSERT INTO starboards VALUES (?, ?, ?)').run(
-          channel.id,
-          msg.guild.id,
-          3
-        );
+        await prisma.starboards.create({
+          data: {
+            channel: channel.id,
+            server: msg.guild.id,
+            stars: 3,
+          },
+        });
         await msg.channel.send(
           util_functions.desc_embed(
             `Created ${channel}. Default stars required are 3. You can change this with \`m: starboard configure\``
@@ -257,9 +313,11 @@ let starboardCommand = {
         await Types.LogChannel.tryToLog(msg, `Created starboard ${channel}`);
       }
     } else if (cmd.action === 'fixperms') {
-      let sb = db
-        .prepare('SELECT * FROM starboards WHERE server=?')
-        .get(msg.guild.id);
+      let sb = await prisma.starboards.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       if (sb) {
         await (
           await client.channels.cache.get(sb.channel)
@@ -282,9 +340,11 @@ let starboardCommand = {
         await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
     } else if (cmd.action === 'disable') {
-      let sb = db
-        .prepare('SELECT * FROM starboards WHERE server=?')
-        .get(msg.guild.id);
+      let sb = await prisma.starboards.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       if (sb) {
         let choice = await util_functions.embed_options(
           'Would you like to delete the old channel?',
@@ -302,12 +362,16 @@ let starboardCommand = {
                 //
               }
             }
-            db.prepare('DELETE FROM starboards WHERE server=?').run(
-              msg.guild.id
-            );
-            db.prepare('DELETE FROM starboard_messages WHERE server=?').run(
-              msg.guild.id
-            );
+            await prisma.starboards.deleteMany({
+              where: {
+                server: msg.guild.id,
+              },
+            });
+            await prisma.starboard_messages.deleteMany({
+              where: {
+                server: msg.guild.id,
+              },
+            });
             await msg.channel.send(
               util_functions.desc_embed('Deleted starboard')
             );
@@ -318,9 +382,11 @@ let starboardCommand = {
         await msg.channel.send(util_functions.desc_embed('No starboard found'));
       }
     } else if (cmd.action === 'configure') {
-      let sb = db
-        .prepare('SELECT * FROM starboards WHERE server=?')
-        .get(msg.guild.id);
+      let sb = await prisma.starboards.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       if (sb) {
         let choice = await util_functions.embed_options(
           'What do you want to configure?',
@@ -347,10 +413,14 @@ let starboardCommand = {
             );
             return;
           } else {
-            db.prepare('UPDATE starboards SET stars=? WHERE server=?').run(
-              parseInt(stars_req.array()[0].content),
-              msg.guild.id
-            );
+            await prisma.starboards.update({
+              data: {
+                stars: parseInt(stars_req.array()[0].content),
+              },
+              where: {
+                server: msg.guild.id,
+              },
+            });
             await msg.channel.send(util_functions.desc_embed('Updated!'));
             await Types.LogChannel.tryToLog(
               msg,
@@ -375,16 +445,20 @@ let starGetCommand = {
   simplematcher: (cmd) => cmd[0] === 'star',
   permissions: () => true,
   responder: async (msg, cmd, client) => {
-    let sb = db
-      .prepare('SELECT * FROM starboards WHERE server=?')
-      .get(msg.guild.id);
+    let sb = await prisma.starboards.findFirst({
+      where: {
+        server: msg.guild.id,
+      },
+    });
     if (sb) {
       if (cmd.action === 'random') {
-        let star = db
-          .prepare(
-            'SELECT * FROM starboard_messages WHERE server=? ORDER BY RANDOM()'
-          )
-          .get(msg.guild.id);
+        let star = util_functions.randArrayItem(
+          await prisma.starboard_messages.findFirst({
+            where: {
+              server: msg.guild.id,
+            },
+          })
+        );
         if (!star) {
           msg.channel.send('No Stars!');
           return;
@@ -396,9 +470,11 @@ let starGetCommand = {
             .messages.fetch(star.starboard_message);
         } catch (e) {
           console.log(e);
-          db.prepare('DELETE FROM starboard_messages WHERE message=?').run(
-            star.message
-          );
+          await prisma.starboard_messages.deleteMany({
+            where: {
+              message: star.message,
+            },
+          });
           await msg.channel.send(
             util_functions.desc_embed(
               "Message doesn't exist, it may have been removed from the starboard"

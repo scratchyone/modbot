@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../perms.db3"
+}
+
+model alert_channels {
+  server  String @id
+  channel String
+}
+
+model alert_channels_ignore {
+  server String @id
+}
+
+model anonbans {
+  user   String
+  server String
+
+  @@id([user, server])
+}
+
+model anonchannels {
+  id     String
+  server String
+
+  @@id([id, server])
+}
+
+model anonmessages {
+  id     String
+  user   String
+  server String
+
+  @@id([id, user, server])
+}
+
+model automod_triggers {
+  server      String
+  setuprole   String
+  name        String
+  regex       String
+  punishments String
+
+  @@id([server, name])
+}
+
+model automods {
+  server  String @id
+  channel String
+}
+
+model autoresponders {
+  prompt            String
+  type              String
+  text_response     String?
+  embed_title       String?
+  embed_description String?
+  server            String
+
+  @@id([prompt, server])
+}
+
+model botMessages {
+  guild      String
+  channel    String
+  message    String
+  botMessage String @unique
+}
+
+model capabilities {
+  token  String  @id
+  user   String?
+  type   String?
+  expire Int?
+}
+
+model defers {
+  id   String @id
+  data String
+}
+
+model disabledCommands {
+  server  String
+  command String
+
+  @@unique([server, command], name: "disabledcommands_server_command_unique")
+}
+
+model join_roles {
+  server String @id
+  role   String
+}
+
+model knex_migrations {
+  id             Int       @id @default(autoincrement())
+  name           String?
+  batch          Int?
+  migration_time DateTime?
+}
+
+model knex_migrations_lock {
+  index     Int  @id @default(autoincrement())
+  is_locked Int?
+}
+
+model locked_channels {
+  channel     String @id
+  permissions String
+}
+
+model logChannels {
+  guild   String @unique
+  channel String @unique
+}
+
+model mute_roles {
+  role   String
+  server String @id
+}
+
+model notes {
+  type    String
+  message String
+  user    String
+  server  String
+  id      String @id
+}
+
+model pinners {
+  roleid String
+  guild  String
+
+  @@id([roleid, guild])
+}
+
+model polls {
+  message String @id
+}
+
+model prefixes {
+  server String
+  prefix String
+
+  @@unique([server, prefix], name: "prefixes_server_prefix_unique")
+}
+
+model reactionroles {
+  message   String
+  server    String
+  emoji     String
+  role      String
+  removable Int
+
+  @@id([message, emoji, server])
+}
+
+model reminderSubscribers {
+  user String
+  id   String
+
+  @@id([user, id])
+}
+
+model reminders {
+  author String
+  id     String  @unique
+  text   String?
+  time   Int?
+}
+
+model slowmoded_users {
+  channel String
+  user    String
+
+  @@id([channel, user])
+}
+
+model slowmodes {
+  channel   String @id
+  time      Int
+  delete_mm Int
+}
+
+model starboard_messages {
+  message                   String @id
+  starboard_message         String
+  server                    String
+  starboard_message_channel String
+  message_channel           String
+}
+
+model starboards {
+  channel String
+  server  String @id
+  stars   Int
+}
+
+model subscriptions {
+  type         String
+  subreddit    String?
+  webhookid    String  @unique
+  webhooktoken String  @unique
+  guild        String
+  channel      String
+}
+
+model timerevents {
+  timestamp BigInt
+  event     String
+
+  @@id([timestamp, event])
+}

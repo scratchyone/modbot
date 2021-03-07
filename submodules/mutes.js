@@ -1,6 +1,6 @@
-const db = require('better-sqlite3')('perms.db3', {});
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 let util_functions = require('../util_functions');
-const alertchannels = require('./alertchannels.js');
 import * as Types from '../types';
 let setupmute = {
   name: 'setupmute',
@@ -13,7 +13,7 @@ let setupmute = {
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg) => {
     if (
-      !db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
+      !(await prisma.mute_roles.findFirst({ where: { server: msg.guild.id } }))
     ) {
       let res = await util_functions.embed_options(
         'What do you want to setup?',
@@ -70,10 +70,12 @@ let setupmute = {
             );
           }
         }
-        db.prepare('INSERT INTO mute_roles VALUES (?, ?)').run(
-          mute_role.id,
-          msg.guild.id
-        );
+        await prisma.mute_roles.create({
+          data: {
+            role: mute_role.id,
+            server: msg.guild.id,
+          },
+        });
         await msg.channel.send(
           util_functions.desc_embed(`Created ${mute_role}`)
         );
@@ -90,14 +92,20 @@ let setupmute = {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         let conf = await util_functions.confirm(msg);
         if (conf) {
-          let mute_role_db = db
-            .prepare('SELECT * FROM mute_roles WHERE server=?')
-            .get(msg.guild.id);
+          let mute_role_db = await prisma.mute_roles.findFirst({
+            where: {
+              server: msg.guild.id,
+            },
+          });
           let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
           try {
             await mute_role.delete();
           } catch (e) {}
-          db.prepare('DELETE FROM mute_roles WHERE server=?').run(msg.guild.id);
+          await prisma.mute_roles.deleteMany({
+            where: {
+              server: msg.guild.id,
+            },
+          });
           await msg.channel.send(
             util_functions.desc_embed('Deleted mute role and unmuted all')
           );
@@ -108,9 +116,11 @@ let setupmute = {
         }
       } else if (res === 1) {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-        let mute_role_db = db
-          .prepare('SELECT * FROM mute_roles WHERE server=?')
-          .get(msg.guild.id);
+        let mute_role_db = await prisma.mute_roles.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        });
         let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
         let guild_channels = msg.guild.channels.cache.array();
         for (const channel of guild_channels) {
@@ -171,11 +181,17 @@ let mute = {
       await msg.delete();
     } catch {}
     if (
-      db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
+      await prisma.mute_roles.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      })
     ) {
-      let mute_role_db = db
-        .prepare('SELECT * FROM mute_roles WHERE server=?')
-        .get(msg.guild.id);
+      let mute_role_db = await prisma.mute_roles.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
       let mutee = msg.guild.members.cache.get(cmd.user);
       if (mutee.roles.highest.position >= msg.member.roles.highest.position) {
@@ -187,7 +203,7 @@ let mute = {
       } else {
         mutee.roles.add(mute_role);
         if (cmd.duration && parse_duration(cmd.duration, 's')) {
-          util_functions.schedule_event(
+          await util_functions.schedule_event(
             {
               type: 'unmute',
               channel: msg.channel.id,
@@ -212,7 +228,13 @@ let mute = {
         }
         let userCanTalkIn = checkChannelsThingCanTalkIn(msg.guild, mutee);
         if (userCanTalkIn.length > 0) {
-          if (alertchannels.check_for_alert_channel.get(msg.guild.id)) {
+          if (
+            await prisma.alert_channels.findFirst({
+              where: {
+                server: msg.guild.id,
+              },
+            })
+          ) {
             try {
               let reason = '';
               if (checkChannelsThingCanTalkIn(msg.guild, mute_role).length) {
@@ -247,8 +269,11 @@ let mute = {
               }
               await msg.guild.channels.cache
                 .get(
-                  alertchannels.check_for_alert_channel.get(msg.guild.id)
-                    .channel
+                  await prisma.alert_channels.findFirst({
+                    where: {
+                      server: msg.guild.id,
+                    },
+                  }).channel
                 )
                 .send({
                   content: `${msg.author}`,
@@ -284,11 +309,17 @@ let unmute = {
   responder: async (msg, cmd) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
     if (
-      db.prepare('SELECT * FROM mute_roles WHERE server=?').get(msg.guild.id)
+      await prisma.mute_roles.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      })
     ) {
-      let mute_role_db = db
-        .prepare('SELECT * FROM mute_roles WHERE server=?')
-        .get(msg.guild.id);
+      let mute_role_db = await prisma.mute_roles.findFirst({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
       let mutee = msg.guild.members.cache.get(cmd.user);
       if (mutee.roles.highest.position >= msg.member.roles.highest.position) {
@@ -311,9 +342,11 @@ let unmute = {
     }
   },
 };
-exports.getMuteRole = db.prepare('SELECT * FROM mute_roles WHERE server=?');
 exports.onChannelCreate = async (channel) => {
-  let mr = exports.getMuteRole.get(channel.guild.id);
+  let mr = await prisma.mute_roles.findFirst({
+    where: { server: channel.guild.id },
+  });
+
   if (mr) {
     let mute_role = channel.guild.roles.cache.get(mr.role);
     channel.updateOverwrite(mute_role, {

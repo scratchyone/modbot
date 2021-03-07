@@ -75,7 +75,7 @@ export async function serve(client: Client): Promise<void> {
           id,
         })
       );
-      schedule_event(
+      await schedule_event(
         {
           type: 'reminder',
           text: req.body.text.replace('@', '@ '),

@@ -1,13 +1,8 @@
-const db = require('better-sqlite3')('perms.db3', {});
-let util_functions = require('../util_functions');
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+const util_functions = require('../util_functions');
 import * as Types from '../types';
-exports.check_for_alert_channel = db.prepare(
-  'SELECT * FROM alert_channels WHERE server=?'
-);
-exports.check_for_alert_channel_ignore = db.prepare(
-  'SELECT * FROM alert_channels_ignore WHERE server=?'
-);
-let alertchannel = {
+const alertchannel = {
   name: 'alertchannel',
   syntax: 'm: alertchannel <enable/ignore/disable>',
   explanation: 'Configure the alert channel',
@@ -16,9 +11,11 @@ let alertchannel = {
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     if (cmd.action === 'ignore') {
-      db.prepare('REPLACE INTO alert_channels_ignore VALUES (?)').run(
-        msg.guild.id
-      );
+      await prisma.alert_channels_ignore.create({
+        data: {
+          server: msg.guild.id,
+        },
+      });
       msg.channel.send(
         'Disabled alert channel warning message. I strongly encourage you to setup an alert channel, it is very important'
       );
@@ -28,7 +25,11 @@ let alertchannel = {
       );
     } else if (cmd.action === 'enable') {
       util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-      if (exports.check_for_alert_channel.get(msg.guild.id)) {
+      if (
+        exports.db
+          .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
+          .get(msg.guild.id)
+      ) {
         msg.channel.send(
           'An alert channel already exists! You can remove it with `m: alertchannel disable`'
         );
@@ -88,12 +89,18 @@ let alertchannel = {
             ],
           }
         );
-        db.prepare('INSERT INTO alert_channels VALUES (?, ?)').run(
-          msg.guild.id,
-          channel.id
-        );
+        await prisma.alert_channels.create({
+          data: {
+            channel: channel.id,
+            server: msg.guild.id,
+          },
+        });
         await client.channels.cache
-          .get(exports.check_for_alert_channel.get(msg.guild.id).channel)
+          .get(
+            exports.db
+              .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
+              .get(msg.guild.id).channel
+          )
           .send(util_functions.desc_embed('Alert channel enabled!'));
         await msg.channel.send(
           util_functions.desc_embed(`Created alert channel ${channel}`)
@@ -104,17 +111,27 @@ let alertchannel = {
         );
       }
     } else if (cmd.action === 'disable') {
-      if (!exports.check_for_alert_channel.get(msg.guild.id)) {
+      if (
+        !exports.db
+          .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
+          .get(msg.guild.id)
+      ) {
         msg.channel.send("An alert channel doesn't exist in this server!");
       } else {
         try {
           await client.channels.cache
-            .get(exports.check_for_alert_channel.get(msg.guild.id).channel)
+            .get(
+              exports.db
+                .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
+                .get(msg.guild.id).channel
+            )
             .send(util_functions.desc_embed('Alert channel disabled!'));
         } catch (e) {}
-        db.prepare('DELETE FROM alert_channels WHERE server=?').run(
-          msg.guild.id
-        );
+        await prisma.alert_channels.create({
+          data: {
+            server: msg.guild.id,
+          },
+        });
         await msg.channel.send(util_functions.desc_embed('Disabled!'));
         await Types.LogChannel.tryToLog(msg, 'Disabled alert channel');
       }

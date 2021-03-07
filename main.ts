@@ -3,6 +3,8 @@
 import Discord from 'discord.js';
 import moment from 'moment';
 const Sentry = require('@sentry/node');
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import SentryTypes from '@sentry/types';
 import { Model } from 'objection';
 import Knex from 'knex';
@@ -55,14 +57,6 @@ const automod = (() => {
   }
 })();
 import nanoid from 'nanoid';
-const db = require('better-sqlite3')('perms.db3', {});
-const check_if_can_pin = db.prepare('SELECT * FROM pinners');
-const check_for_reactionrole = db.prepare(
-  'SELECT * FROM reactionroles WHERE emoji=? AND message=? AND server=?'
-);
-const check_for_reactionrole_msg = db.prepare(
-  'SELECT * FROM reactionroles WHERE message=? AND server=?'
-);
 //const numbers = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -217,14 +211,18 @@ const main_commands = {
 
         // If the channel they're trying to send messages in is an anonchannel, and they're banned from going anon, throw an error
         if (
-          anonchannels.check_anon_channel.get(
-            cmd.channel ? cmd.channel.id : ctx.msg.channel.id,
-            ctx.msg.guild.id
-          ) &&
-          anonchannels.check_anon_ban.get({
-            user: ctx.msg.author.id,
-            server: ctx.msg.guild.id,
-          })
+          (await prisma.anonchannels.findFirst({
+            where: {
+              id: cmd.channel ? cmd.channel.id : ctx.msg.channel.id,
+              server: ctx.msg.guild.id,
+            },
+          })) &&
+          (await prisma.anonbans.findFirst({
+            where: {
+              user: ctx.msg.author.id,
+              server: ctx.msg.guild.id,
+            },
+          }))
         ) {
           throw new util_functions.BotError(
             'user',
@@ -277,17 +275,19 @@ const main_commands = {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const channel = cmd.channel ? cmd.channel : msg.channel.id;
         if (cmd.enabled) {
-          db.prepare('INSERT INTO anonchannels VALUES (@channel, @server)').run(
-            {
-              channel: channel,
+          await prisma.anonchannels.create({
+            data: {
+              id: channel,
               server: (msg.guild as Discord.Guild).id,
-            }
-          );
+            },
+          });
         } else {
-          db.prepare('DELETE FROM anonchannels WHERE id=? AND server=?').run(
-            channel,
-            (msg.guild as Discord.Guild).id
-          );
+          await prisma.anonchannels.deleteMany({
+            where: {
+              id: channel,
+              server: (msg.guild as Discord.Guild).id,
+            },
+          });
         }
         msg.dbReply(
           util_functions.embed(
@@ -315,9 +315,9 @@ const main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild || !msg.guild.id) return;
-        const channels = db
-          .prepare('SELECT * FROM anonchannels WHERE server=?')
-          .all(msg.guild.id);
+        const channels = await prisma.anonchannels.findMany({
+          where: { server: msg.guild.id },
+        });
         if (channels.length == 0) {
           await msg.dbReply('No anon channels');
         } else {
@@ -342,9 +342,9 @@ const main_commands = {
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'whosaid') return;
         if (!msg.guild || !msg.guild.id) return;
-        const author = db
-          .prepare('SELECT * FROM anonmessages WHERE id=? AND server=?')
-          .get(cmd.id, msg.guild.id);
+        const author = await prisma.anonmessages.findFirst({
+          where: { id: cmd.id, server: msg.guild.id },
+        });
         if (author) {
           await msg.dbReply(util_functions.desc_embed(`<@${author.user}>`));
         } else {
@@ -382,7 +382,7 @@ const main_commands = {
             text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
             time: moment().add(parse(cmd.time, 'ms'), 'ms').unix(),
           });
-          util_functions.schedule_event(
+          await util_functions.schedule_event(
             {
               type: 'reminder',
               text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
@@ -780,12 +780,14 @@ const main_commands = {
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'anonban' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-        anonchannels.insert_anon_ban.run({
-          user: cmd.user,
-          server: msg.guild.id,
+        await prisma.anonbans.create({
+          data: {
+            user: cmd.user,
+            server: msg.guild.id,
+          },
         });
         if (cmd.time) {
-          util_functions.schedule_event(
+          await util_functions.schedule_event(
             {
               type: 'anonunban',
               channel: msg.channel.id,
@@ -825,9 +827,11 @@ const main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'anonunban' || !msg.guild) return;
-        anonchannels.remove_anon_ban.run({
-          user: cmd.user,
-          server: msg.guild.id,
+        await prisma.anonbans.deleteMany({
+          where: {
+            user: cmd.user,
+            server: msg.guild.id,
+          },
         });
         await msg.dbReply(
           util_functions.embed(`Unbanned <@${cmd.user}>`, 'success')
@@ -889,7 +893,7 @@ const main_commands = {
             'Failed to create channel: ' + e
           );
         }
-        util_functions.schedule_event(
+        await util_functions.schedule_event(
           { type: 'deletechannel', channel: channel.id },
           cmd.duration
         );
@@ -943,10 +947,12 @@ const main_commands = {
         if (cmd.command !== 'setpinperms' || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (cmd.allowed) {
-          db.prepare('INSERT INTO pinners VALUES (?, ?)').run(
-            cmd.role,
-            msg.guild.id
-          );
+          await prisma.pinners.create({
+            data: {
+              roleid: cmd.role,
+              guild: msg.guild.id,
+            },
+          });
           msg.dbReply(
             util_functions.embed(
               `<@&${cmd.role}> are now allowed to pin messages with :pushpin:`,
@@ -958,10 +964,12 @@ const main_commands = {
             `Allowed <@&${cmd.role}> to pin messages with :pushpin:`
           );
         } else {
-          db.prepare('DELETE FROM pinners WHERE roleid=? AND guild=?').run(
-            cmd.role,
-            msg.guild.id
-          );
+          await prisma.pinners.deleteMany({
+            where: {
+              roleid: cmd.role,
+              guild: msg.guild.id,
+            },
+          });
           msg.dbReply(
             util_functions.embed(
               `<@&${cmd.role}> are no longer allowed to pin messages with :pushpin:`,
@@ -985,9 +993,9 @@ const main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'listpinperms' || !msg.guild) return;
-        const roles = db
-          .prepare('SELECT * FROM pinners WHERE guild=?')
-          .all(msg.guild.id);
+        const roles = await prisma.pinners.findMany({
+          where: { guild: msg.guild.id },
+        });
         msg.dbReply(
           util_functions.desc_embed(
             roles
@@ -1057,9 +1065,14 @@ const main_commands = {
                 'What should I reply with?',
                 50000
               );
-              db.prepare(
-                'REPLACE INTO autoresponders(prompt, type, text_response, server) VALUES (?, ?, ?, ?)'
-              ).run(prompt, 'text', response, msg.guild.id);
+              await prisma.autoresponders.create({
+                data: {
+                  prompt,
+                  type: 'text',
+                  text_response: response,
+                  server: msg.guild.id,
+                },
+              });
             } else if (message_type === 1) {
               const embed_title = await util_functions.askOrNone(
                 'What should the embed title be?',
@@ -1070,9 +1083,15 @@ const main_commands = {
                 'What should the embed description be?',
                 50000
               );
-              db.prepare(
-                'REPLACE INTO autoresponders(prompt, type, embed_title, embed_description, server) VALUES (?, ?, ?, ?, ?)'
-              ).run(prompt, 'embed', embed_title, embed_desc, msg.guild.id);
+              await prisma.autoresponders.create({
+                data: {
+                  prompt,
+                  type: 'embed',
+                  embed_title,
+                  embed_description: embed_desc,
+                  server: msg.guild.id,
+                },
+              });
             } else {
               return;
             }
@@ -1095,12 +1114,13 @@ const main_commands = {
             'What AutoResponder would you like to remove?',
             50000
           );
-          const rc = db
-            .prepare(
-              'DELETE FROM autoresponders WHERE lower(prompt)=lower(?) AND server=?'
-            )
-            .run(prompt, msg.guild.id);
-          if (rc.changes) {
+          const rc = await prisma.autoresponders.deleteMany({
+            where: {
+              prompt,
+              server: msg.guild.id,
+            },
+          });
+          if (rc.count) {
             await msg.dbReply(
               util_functions.desc_embed('Removed AutoResponder')
             );
@@ -1113,9 +1133,11 @@ const main_commands = {
               util_functions.desc_embed("Couldn't find AutoResponder")
             );
         } else if (cmd.action === 'list') {
-          const ars = db
-            .prepare('SELECT * FROM autoresponders WHERE server=?')
-            .all(msg.guild.id);
+          const ars = await prisma.autoresponders.findMany({
+            where: {
+              server: msg.guild.id,
+            },
+          });
           await msg.dbReply(
             util_functions.desc_embed(
               ars
@@ -1224,9 +1246,9 @@ const main_commands = {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
           if (
-            db
-              .prepare('SELECT * FROM join_roles WHERE server=?')
-              .get(msg.guild.id)
+            await prisma.join_roles.findFirst({
+              where: { server: msg.guild.id },
+            })
           ) {
             throw new util_functions.BotError(
               'user',
@@ -1261,24 +1283,28 @@ const main_commands = {
               'user',
               'That role is above or equal to your current highest role'
             );
-          db.prepare('INSERT INTO join_roles VALUES (?, ?)').run(
-            msg.guild.id,
-            rrole
-          );
+          await prisma.join_roles.create({
+            data: {
+              server: msg.guild.id,
+              role: rrole,
+            },
+          });
           await msg.dbReply(util_functions.desc_embed('Setup!'));
           await Types.LogChannel.tryToLog(msg, 'Added JoinRole');
         } else if (cmd.action === 'disable') {
           if (
-            !db
-              .prepare('SELECT * FROM join_roles WHERE server=?')
-              .get(msg.guild.id)
+            !(await prisma.join_roles.findFirst({
+              where: { server: msg.guild.id },
+            }))
           ) {
             throw new util_functions.BotError(
               'user',
               "This server doesn't have a join role."
             );
           }
-          db.prepare('DELETE FROM join_roles WHERE server=?').run(msg.guild.id);
+          await prisma.join_roles.deleteMany({
+            where: { server: msg.guild.id },
+          });
           await msg.dbReply(util_functions.desc_embed('Disabled!'));
           await Types.LogChannel.tryToLog(msg, 'Removed JoinRole');
         }
@@ -1412,15 +1438,15 @@ const main_commands = {
           for (const react of reacts_formatted) {
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
-              db.prepare(
-                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
-              ).run(
-                rr_mes.id,
-                msg.guild.id,
-                react.emoji,
-                react.role,
-                removable !== 1 ? 1 : 0
-              );
+              await prisma.reactionroles.create({
+                data: {
+                  message: rr_mes.id,
+                  server: msg.guild.id,
+                  role: react.role,
+                  emoji: react.emoji,
+                  removable: removable !== 1 ? 1 : 0,
+                },
+              });
             } else {
               const em = msg.guild.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
@@ -1434,15 +1460,15 @@ const main_commands = {
                 await rr_mes.delete();
                 return;
               }
-              db.prepare(
-                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
-              ).run(
-                rr_mes.id,
-                msg.guild.id,
-                em.id,
-                react.role,
-                removable !== 1 ? 1 : 0
-              );
+              await prisma.reactionroles.create({
+                data: {
+                  message: rr_mes.id,
+                  server: msg.guild.id,
+                  role: react.role,
+                  emoji: em.id,
+                  removable: removable !== 1 ? 1 : 0,
+                },
+              });
               await rr_mes.react(em.id);
             }
           }
@@ -1571,21 +1597,21 @@ const main_commands = {
               return;
             }
           }
-          db.prepare('DELETE FROM reactionroles WHERE message=?').run(
-            rr_mes.id
-          );
+          await prisma.reactionroles.deleteMany({
+            where: { message: rr_mes.id },
+          });
           for (const react of reacts_formatted) {
             if (!react.emoji.includes('<')) {
               await rr_mes.react(react.emoji);
-              db.prepare(
-                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
-              ).run(
-                rr_mes.id,
-                msg.guild.id,
-                react.emoji,
-                react.role,
-                removable !== 1 ? 1 : 0
-              );
+              await prisma.reactionroles.create({
+                data: {
+                  message: rr_mes.id,
+                  server: msg.guild.id,
+                  role: react.role,
+                  emoji: react.emoji,
+                  removable: removable !== 1 ? 1 : 0,
+                },
+              });
             } else {
               const em = msg.guild.emojis.cache.find(
                 (n) => `<:${n.name}:${n.id}>` == react.emoji
@@ -1598,37 +1624,16 @@ const main_commands = {
                 );
                 return;
               }
-              db.prepare(
-                'INSERT INTO reactionroles VALUES (?, ?, ?, ?, ?)'
-              ).run(
-                rr_mes.id,
-                msg.guild.id,
-                em.id,
-                react.role,
-                removable !== 1 ? 1 : 0
-              );
+              await prisma.reactionroles.create({
+                data: {
+                  message: rr_mes.id,
+                  server: msg.guild.id,
+                  role: react.role,
+                  emoji: em.id,
+                  removable: removable !== 1 ? 1 : 0,
+                },
+              });
               await rr_mes.react(em.id);
-            }
-          }
-          for (const reaction of rr_mes.reactions.cache.array()) {
-            if (!reaction.message.guild)
-              throw new util_functions.BotError(
-                'user',
-                'Error removing reactions from message'
-              );
-            let rr = check_for_reactionrole.get(
-              reaction.emoji.name,
-              reaction.message.id,
-              reaction.message.guild.id
-            );
-            if (!rr)
-              rr = check_for_reactionrole.get(
-                reaction.emoji.id,
-                reaction.message.id,
-                reaction.message.guild.id
-              );
-            if (!rr) {
-              reaction.remove();
             }
           }
           await msg.dbReply(util_functions.desc_embed('Edited!'));
@@ -1758,7 +1763,7 @@ const main_commands = {
               );
             }
             await kickee.roles.remove(cmd.role);
-            util_functions.schedule_event(
+            await util_functions.schedule_event(
               {
                 type: 'tmprole',
                 user: kickee.id,
@@ -1789,7 +1794,7 @@ const main_commands = {
               );
             }
             await kickee.roles.add(cmd.role);
-            util_functions.schedule_event(
+            await util_functions.schedule_event(
               {
                 type: 'tmprole',
                 user: kickee.id,
@@ -1879,7 +1884,9 @@ const main_commands = {
         const mm_nick =
           mentioned_member?.displayName || mentioned_user.username;
         const mute_role = mutes
-          ? mutes.getMuteRole.get(msg.guild.id)
+          ? await prisma.mute_roles.findFirst({
+              where: { server: msg.guild.id },
+            })
           : undefined;
         const desc: Array<string> = [];
         let use_pronouns = false;
@@ -1913,14 +1920,24 @@ const main_commands = {
               : mentioned_user.username
           } joined discord ${moment(mentioned_user.createdAt).fromNow()}.`
         );
-        const usernotes = db
-          .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
-          .all(mentioned_member?.id || cmd.user, msg.guild.id, 'note')
-          .map((n: { message: string }) => n.message);
-        const userwarns = db
-          .prepare('SELECT * FROM notes WHERE user=? AND server=? AND type=?')
-          .all(mentioned_member?.id || cmd.user, msg.guild.id, 'warn')
-          .map((n: { message: string }) => n.message);
+        const usernotes = (
+          await prisma.notes.findMany({
+            where: {
+              user: mentioned_member?.id || cmd.user,
+              server: msg.guild.id,
+              type: 'note',
+            },
+          })
+        ).map((n) => n.message);
+        const userwarns = (
+          await prisma.notes.findMany({
+            where: {
+              user: mentioned_member?.id || cmd.user,
+              server: msg.guild.id,
+              type: 'warn',
+            },
+          })
+        ).map((n) => n.message);
         msg.dbReply(
           new Discord.MessageEmbed()
             .setAuthor(mm_nick, mentioned_user.displayAvatarURL())
@@ -1963,13 +1980,15 @@ const main_commands = {
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'note' || !msg.guild) return;
         const id = nanoid.nanoid(5);
-        db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
-          'note',
-          cmd.text,
-          cmd.user,
-          msg.guild.id,
-          id
-        );
+        await prisma.notes.create({
+          data: {
+            type: 'note',
+            message: cmd.text,
+            user: cmd.user,
+            server: msg.guild.id,
+            id,
+          },
+        });
         await msg.channel.send(
           util_functions.desc_embed(
             `Added note to <@${cmd.user}>, note ID \`${id}\`!`
@@ -1992,13 +2011,15 @@ const main_commands = {
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'warn' || !msg.guild) return;
         const id = nanoid.nanoid(5);
-        db.prepare('INSERT INTO notes VALUES (?, ?, ?, ?, ?)').run(
-          'warn',
-          cmd.text,
-          cmd.user,
-          msg.guild.id,
-          id
-        );
+        await prisma.notes.create({
+          data: {
+            type: 'warn',
+            message: cmd.text,
+            user: cmd.user,
+            server: msg.guild.id,
+            id,
+          },
+        });
         const mentioned_member = msg.guild.members.cache.get(cmd.user);
         if (!mentioned_member)
           throw new util_functions.BotError(
@@ -2040,9 +2061,12 @@ const main_commands = {
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'forgive' || !msg.guild) return;
-        const warn_item = db
-          .prepare('SELECT * FROM notes WHERE server=? AND id=? ')
-          .get(msg.guild.id, cmd.id);
+        const warn_item = await prisma.notes.findFirst({
+          where: {
+            server: msg.guild.id,
+            id: cmd.id,
+          },
+        });
         if (!warn_item) {
           await msg.dbReply(
             util_functions.desc_embed(`Couldn't find ${cmd.id}`)
@@ -2057,10 +2081,12 @@ const main_commands = {
           );
           return;
         }
-        db.prepare('DELETE FROM notes WHERE server=? AND id=? ').run(
-          msg.guild.id,
-          cmd.id
-        );
+        await prisma.notes.deleteMany({
+          where: {
+            server: msg.guild.id,
+            id: cmd.id,
+          },
+        });
         await msg.dbReply(util_functions.desc_embed(`Removed ${cmd.id}`));
         await Types.LogChannel.tryToLog(msg, `Removed warn/note \`${cmd.id}\``);
       },
@@ -2114,9 +2140,13 @@ client.on('ready', async () => {
   const already_delivered_reminders: string[] = [];
   setInterval(async () => {
     const ts = Math.round(Date.now() / 1000);
-    const events = db
-      .prepare('SELECT * FROM timerevents WHERE timestamp<=?')
-      .all(ts);
+    const events = await prisma.timerevents.findMany({
+      where: {
+        timestamp: {
+          lte: ts,
+        },
+      },
+    });
     for (const event_item of events) {
       const event = JSON.parse(event_item.event);
       if (event.type == 'reminder') {
@@ -2179,9 +2209,11 @@ client.on('ready', async () => {
       }
       if (event.type == 'anonunban') {
         try {
-          anonchannels.remove_anon_ban.run({
-            user: event.user,
-            server: event.server,
+          await prisma.anonbans.deleteMany({
+            where: {
+              user: event.user,
+              server: event.server,
+            },
           });
           const c = client.channels.cache.get(
             event.channel
@@ -2205,9 +2237,12 @@ client.on('ready', async () => {
           channel.updateOverwrite(event.user, {
             SEND_MESSAGES: true,
           });
-          db.prepare(
-            'DELETE FROM slowmoded_users WHERE user=? AND channel=?'
-          ).run(event.user, event.channel);
+          await prisma.slowmoded_users.deleteMany({
+            where: {
+              user: event.user,
+              channel: event.channel,
+            },
+          });
         } catch (e) {
           console.log(e);
         }
@@ -2289,14 +2324,18 @@ client.on('ready', async () => {
           const channel = client.channels.cache.get(
             event.channel
           ) as Discord.TextChannel;
-          const perm = db
-            .prepare('SELECT * FROM locked_channels WHERE channel=?')
-            .get(channel.id);
-          await channel.overwritePermissions(JSON.parse(perm.permissions));
-          await channel.send('Unlocked!');
-          db.prepare('DELETE FROM locked_channels WHERE channel=?').run(
-            channel.id
+          const perm = await prisma.locked_channels.findFirst({
+            where: { channel: channel.id },
+          });
+          await channel.overwritePermissions(
+            JSON.parse(perm?.permissions || '{}')
           );
+          await channel.send('Unlocked!');
+          await prisma.locked_channels.deleteMany({
+            where: {
+              channel: channel.id,
+            },
+          });
           await Types.LogChannel.tryToLog(
             channel.guild,
             `Unlocked ${channel}`,
@@ -2307,7 +2346,13 @@ client.on('ready', async () => {
         }
       }
     }
-    db.prepare('DELETE FROM timerevents WHERE timestamp<=?').run(ts);
+    await prisma.timerevents.deleteMany({
+      where: {
+        timestamp: {
+          lte: ts,
+        },
+      },
+    });
   }, 5000);
 });
 
@@ -2327,13 +2372,13 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
     if (!reaction.message.guild) return;
     const member = reaction.message.guild.member(user as Discord.User);
-    const roles_that_can_pin = check_if_can_pin.all();
+    const roles_that_can_pin = await prisma.pinners.findMany();
     if (
       member &&
       member.roles.cache.find(
         (n) =>
           roles_that_can_pin.filter(
-            (rcp: { roleid: string; id: string; guild: string }) =>
+            (rcp) =>
               rcp.roleid == n.id && rcp.guild == reaction.message.guild?.id
           ).length > 0
       ) &&
@@ -2375,29 +2420,41 @@ client.on('messageReactionAdd', async (reaction, user) => {
         );
       }
     }
-    let rr = check_for_reactionrole.get(
-      reaction.emoji.name,
-      reaction.message.id,
-      reaction.message.guild.id
-    );
+    let rr = await prisma.reactionroles.findFirst({
+      where: {
+        emoji: reaction.emoji.name,
+        message: reaction.message.id,
+        server: reaction.message.guild.id,
+      },
+    });
     if (!rr)
-      rr = check_for_reactionrole.get(
-        reaction.emoji.id,
-        reaction.message.id,
-        reaction.message.guild.id
-      );
+      rr = await prisma.reactionroles.findFirst({
+        where: {
+          emoji: reaction.emoji.id || '',
+          message: reaction.message.id,
+          server: reaction.message.guild.id,
+        },
+      });
     if (!user.bot && rr) {
       const member = reaction.message.guild.member(user as Discord.User);
       try {
         if (member) await member.roles.add(rr.role);
       } catch (e) {
         if (
-          alertchannels?.check_for_alert_channel.get(reaction.message.guild.id)
+          await prisma.alert_channels.findFirst({
+            where: {
+              server: reaction.message.guild.id,
+            },
+          })
         ) {
           const tmp = reaction.message.guild.channels.cache.get(
-            alertchannels?.check_for_alert_channel.get(
-              reaction.message.guild.id
-            ).channel
+            (
+              await prisma.alert_channels.findFirst({
+                where: {
+                  server: reaction.message.guild.id,
+                },
+              })
+            )?.channel || ''
           );
           if (tmp && tmp.type == 'text')
             (tmp as Discord.TextChannel).send(
@@ -2409,10 +2466,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
       }
     } else if (
       !user.bot &&
-      check_for_reactionrole_msg.get(
-        reaction.message.id,
-        reaction.message.guild.id
-      )
+      (await prisma.reactionroles.findFirst({
+        where: {
+          message: reaction.message.id,
+          server: reaction.message.guild.id,
+        },
+      }))
     ) {
       await reaction.remove();
     }
@@ -2449,13 +2508,13 @@ client.on('messageReactionRemove', async (reaction, user) => {
       }
     }
     const member = reaction.message.guild.member(user as Discord.User);
-    const roles_that_can_pin = check_if_can_pin.all();
+    const roles_that_can_pin = await prisma.pinners.findMany();
     if (
       member &&
       member.roles.cache.find(
         (n) =>
           roles_that_can_pin.filter(
-            (rcp: { roleid: string; id: string; guild: string }) =>
+            (rcp) =>
               rcp.roleid == n.id && rcp.guild == reaction.message.guild?.id
           ).length > 0
       ) &&
@@ -2470,28 +2529,40 @@ client.on('messageReactionRemove', async (reaction, user) => {
       );
     }
     const rr =
-      check_for_reactionrole.get(
-        reaction.emoji.name,
-        reaction.message.id,
-        reaction.message.guild.id
-      ) ||
-      check_for_reactionrole.get(
-        reaction.emoji.id,
-        reaction.message.id,
-        reaction.message.guild.id
-      );
+      (await prisma.reactionroles.findFirst({
+        where: {
+          emoji: reaction.emoji.name,
+          message: reaction.message.id,
+          server: reaction.message.guild.id,
+        },
+      })) ||
+      (await prisma.reactionroles.findFirst({
+        where: {
+          emoji: reaction.emoji.id || '',
+          message: reaction.message.id,
+          server: reaction.message.guild.id,
+        },
+      }));
     if (!user.bot && rr && rr.removable) {
       const member = reaction.message.guild.member(user as Discord.User);
       try {
         if (member) await member.roles.remove(rr.role);
       } catch (e) {
         if (
-          alertchannels?.check_for_alert_channel.get(reaction.message.guild.id)
+          await prisma.alert_channels.findFirst({
+            where: {
+              server: reaction.message.guild.id,
+            },
+          })
         ) {
           const tmp = reaction.message.guild.channels.cache.get(
-            alertchannels?.check_for_alert_channel.get(
-              reaction.message.guild.id
-            ).channel
+            (
+              await prisma.alert_channels.findFirst({
+                where: {
+                  server: reaction.message.guild.id,
+                },
+              })
+            )?.channel || ''
           );
           if (tmp)
             (tmp as Discord.TextChannel).send(
@@ -2523,12 +2594,13 @@ for (const module of all_command_modules) {
   if (module.cog) module.cog(client);
 }
 client.on('guildMemberAdd', async (member) => {
-  if (
-    db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
-  )
+  if (await prisma.join_roles.findFirst({ where: { server: member.guild.id } }))
     member.roles.add(
-      db.prepare('SELECT * FROM join_roles WHERE server=?').get(member.guild.id)
-        .role
+      (
+        await prisma.join_roles.findFirst({
+          where: { server: member.guild.id },
+        })
+      )?.role || ''
     );
 });
 client.on(
@@ -2539,9 +2611,9 @@ client.on(
     if (
       bm.length &&
       !(await message.getPluralKitSender()) &&
-      !db
-        .prepare('SELECT * FROM anonchannels WHERE id=?')
-        .get(msg.channel.id) &&
+      !(await prisma.anonchannels.findFirst({
+        where: { id: msg.channel.id },
+      })) &&
       msg.author?.id !== '757021641040724070' // Not overseeer
     ) {
       try {
@@ -2602,9 +2674,11 @@ async function arTextFill(
 async function processAutoresponders(msg: Discord.Message) {
   const message = msg as util_functions.EMessage;
   if (!msg.guild) return;
-  const guildArs = db
-    .prepare('SELECT * FROM autoresponders WHERE server = ?')
-    .all(msg.guild.id);
+  const guildArs = await prisma.autoresponders.findMany({
+    where: {
+      server: msg.guild.id,
+    },
+  });
   for (const ar of guildArs) {
     const parsedPrompt = AutoResponders.parsePrompt(ar.prompt);
     const [matched, variables] = AutoResponders.parseText(
@@ -2615,7 +2689,12 @@ async function processAutoresponders(msg: Discord.Message) {
       if (ar.type == 'text')
         message.dbReply(
           await util_functions.cleanPings(
-            await arTextFill(ar.text_response, msg, variables),
+            await arTextFill(
+              ar.text_response ||
+                'FAILED TO PROCESS AUTORESPONDER, SOMETHING IS VERY WRONG',
+              msg,
+              variables
+            ),
             msg.guild
           )
         );
@@ -2624,7 +2703,12 @@ async function processAutoresponders(msg: Discord.Message) {
           new Discord.MessageEmbed()
             .setTitle(ar.embed_title)
             .setDescription(
-              await arTextFill(ar.embed_description, msg, variables)
+              await arTextFill(
+                ar.embed_description ||
+                  'FAILED TO PROCESS AUTORESPONDER, SOMETHING IS VERY WRONG',
+                msg,
+                variables
+              )
             )
         );
     }
@@ -2692,8 +2776,16 @@ async function noAlertChannelWarning(msg: Discord.Message) {
   if (
     alertchannels &&
     msg.member?.hasPermission('MANAGE_CHANNELS') &&
-    !alertchannels.check_for_alert_channel.get(msg.guild.id) &&
-    !alertchannels.check_for_alert_channel_ignore.get(msg.guild.id) &&
+    !(await prisma.alert_channels.findFirst({
+      where: {
+        server: msg.guild.id,
+      },
+    })) &&
+    !(await prisma.alert_channels_ignore.findFirst({
+      where: {
+        server: msg.guild.id,
+      },
+    })) &&
     !msg.content.includes('alertchannel') &&
     !alertChannelNotifsSent.has(msg.guild.id + msg.author.id)
   ) {
@@ -3022,8 +3114,7 @@ client.on('message', async (msg: Discord.Message) => {
                       registered_command.version || 1,
                       msg
                     ),
-                    client,
-                    db
+                    client
                   );
                   const cancelMsg = await msg.channel.awaitMessages(
                     (m) =>
@@ -3056,8 +3147,7 @@ client.on('message', async (msg: Discord.Message) => {
                       registered_command.version || 1,
                       msg
                     ),
-                    client,
-                    db
+                    client
                   );
               } else {
                 throw new util_functions.BotError(

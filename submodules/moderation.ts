@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
-const db = require('better-sqlite3')('perms.db3', {});
 import Discord from 'discord.js';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import { Command, Context, DisabledCommand } from '../types';
 import * as Types from '../types';
 const lockdown = {
@@ -23,9 +24,9 @@ const lockdown = {
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     if (
-      db
-        .prepare('SELECT * FROM locked_channels WHERE channel=?')
-        .get(msg.channel.id)
+      await prisma.locked_channels.findFirst({
+        where: { channel: msg.channel.id },
+      })
     )
       throw new util_functions.BotError(
         'user',
@@ -34,17 +35,19 @@ const lockdown = {
           '` to unlock'
       );
     if (cmd.time)
-      util_functions.schedule_event(
+      await util_functions.schedule_event(
         {
           type: 'unlockdown',
           channel: msg.channel.id,
         },
         cmd.time
       );
-    db.prepare('INSERT INTO locked_channels VALUES (?, ?)').run(
-      msg.channel.id,
-      JSON.stringify(msg.channel.permissionOverwrites)
-    );
+    await prisma.locked_channels.create({
+      data: {
+        channel: msg.channel.id,
+        permissions: JSON.stringify(msg.channel.permissionOverwrites),
+      },
+    });
     msg.channel.startTyping();
     try {
       for (const perm of msg.channel.permissionOverwrites) {
@@ -93,9 +96,9 @@ const unlockdown = {
       await msg.dbReply("Channel doesn't exist!");
       return;
     }
-    const perm = db
-      .prepare('SELECT * FROM locked_channels WHERE channel=?')
-      .get(channel.id);
+    const perm = await prisma.locked_channels.findFirst({
+      where: { channel: channel.id },
+    });
     if (!perm) {
       await msg.dbReply("Channel isn't locked!");
       return;
@@ -104,7 +107,7 @@ const unlockdown = {
     await (channel as Discord.TextChannel).send('Unlocked!');
     if (channel.id !== msg.channel.id) await msg.dbReply('Unlocked!');
     await Types.LogChannel.tryToLog(msg, `Unlocked ${channel}`);
-    db.prepare('DELETE FROM locked_channels WHERE channel=?').run(channel.id);
+    await prisma.locked_channels.delete({ where: { channel: channel.id } });
   },
 };
 const logging = {

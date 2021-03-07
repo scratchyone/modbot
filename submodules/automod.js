@@ -1,6 +1,7 @@
 /* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-var-requires */
-const db = require('better-sqlite3')('perms.db3', {});
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 const Discord = require('discord.js');
 let util_functions = require('../util_functions');
 import * as Types from '../types';
@@ -19,7 +20,11 @@ let automod = {
       'MANAGE_ROLES',
     ]);
     if (cmd.action === 'enable') {
-      if (db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id))
+      if (
+        await prisma.automods.findFirst({
+          where: { server: msg.guild.id },
+        })
+      )
         throw new util_functions.BotError(
           'user',
           'AutoMod is already enabled, you can disable it with `m: automod disable`'
@@ -62,10 +67,12 @@ let automod = {
       await channel.send(
         util_functions.desc_embed('Created AutoMod deletion log channel!')
       );
-      db.prepare('INSERT INTO automods VALUES (?, ?)').run(
-        msg.guild.id,
-        channel.id
-      );
+      await prisma.automods.create({
+        data: {
+          server: msg.guild.id,
+          channel: channel.id,
+        },
+      });
       await msg.channel.send(
         util_functions.desc_embed(
           `Created ${channel} and enabled automod! Add some triggers with \`m: automod add\``
@@ -77,16 +84,26 @@ let automod = {
       );
     } else if (cmd.action === 'disable') {
       if (
-        !db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id)
+        !(await prisma.automods.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        }))
       )
         throw new util_functions.BotError(
           'user',
           'AutoMod is already disabled, you can enable it with `m: automod enable`'
         );
-      db.prepare('DELETE FROM automods WHERE server=?').run(msg.guild.id);
-      db.prepare('DELETE FROM automod_triggers WHERE server=?').run(
-        msg.guild.id
-      );
+      await prisma.automods.deleteMany({
+        where: {
+          server: msg.guild.id,
+        },
+      });
+      await prisma.automod_triggers.deleteMany({
+        where: {
+          server: msg.guild.id,
+        },
+      });
       await msg.channel.send(
         util_functions.desc_embed('Disabled AutoMod and deleted all triggers!')
       );
@@ -96,7 +113,11 @@ let automod = {
       );
     } else if (cmd.action === 'add') {
       if (
-        !db.prepare('SELECT * FROM automods WHERE server=?').get(msg.guild.id)
+        !(await prisma.automods.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        }))
       )
         throw new util_functions.BotError(
           'user',
@@ -150,13 +171,15 @@ let automod = {
           'Warning: This trigger will only apply to people below you in the role list'
         )
       );
-      db.prepare('INSERT INTO automod_triggers VALUES (?, ?, ?, ?, ?)').run(
-        msg.guild.id,
-        msg.member.roles.highest.id,
-        triggerName,
-        triggerRegex,
-        JSON.stringify(punishments)
-      );
+      await prisma.automod_triggers.create({
+        data: {
+          server: msg.guild.id,
+          setuprole: msg.member.roles.highest.id,
+          name: triggerName,
+          regex: triggerRegex,
+          punishments: JSON.stringify(punishments),
+        },
+      });
       await msg.channel.send(util_functions.desc_embed('Trigger added!'));
       await Types.LogChannel.tryToLog(
         msg,
@@ -168,10 +191,13 @@ let automod = {
         10000,
         msg
       );
-      let res = db
-        .prepare('DELETE FROM automod_triggers WHERE server=? AND name=?')
-        .run(msg.guild.id, triggerName);
-      if (res.changes == 0)
+      let res = await prisma.automod_triggers.deleteMany({
+        where: {
+          server: msg.guild.id,
+          name: triggerName,
+        },
+      });
+      if (res.count == 0)
         throw new util_functions.BotError('user', 'Trigger not found');
       await msg.channel.send(util_functions.desc_embed('Trigger removed!'));
       await Types.LogChannel.tryToLog(
@@ -180,11 +206,12 @@ let automod = {
       );
     } else if (cmd.action === 'list') {
       let triggers =
-        db
-          .prepare('SELECT * FROM automod_triggers WHERE server=?')
-          .all(msg.guild.id)
+        (await prisma.automod_triggers
+          .findMany({
+            where: { server: msg.guild.id },
+          })
           .map((n) => n.name)
-          .join('\n') || 'No Triggers Configured Yet';
+          .join('\n')) || 'No Triggers Configured Yet';
       await msg.channel.send(util_functions.desc_embed(triggers));
     } else if (cmd.action === 'inspect') {
       let triggerName = await util_functions.ask(
@@ -192,9 +219,12 @@ let automod = {
         10000,
         msg
       );
-      let trigger = db
-        .prepare('SELECT * FROM automod_triggers WHERE server=? AND name=?')
-        .get(msg.guild.id, triggerName);
+      let trigger = await prisma.automod_triggers.findFirst({
+        where: {
+          server: msg.guild.id,
+          name: triggerName,
+        },
+      });
       if (!trigger)
         throw new util_functions.BotError('user', 'Trigger not found');
       await msg.channel.send(
@@ -222,14 +252,18 @@ let automod = {
     }
   },
 };
-let check_for_triggers = db.prepare(
-  'SELECT * FROM automod_triggers WHERE server=?'
-);
-let check_for_automod = db.prepare('SELECT * FROM automods WHERE server=?');
 exports.checkForTriggers = async (msg) => {
-  let am = check_for_automod.get(msg.guild.id);
+  let am = await prisma.automods.findFirst({
+    where: {
+      server: msg.guild.id,
+    },
+  });
   if (am && msg.channel.id != am.channel) {
-    let triggers = check_for_triggers.all(msg.guild.id);
+    let triggers = await prisma.automod_triggers.findMany({
+      where: {
+        server: msg.guild.id,
+      },
+    });
     for (let trigger of triggers) {
       let match = trigger.regex.match(new RegExp('^/(.*?)/([gimy]*)$'));
       // sanity check here
@@ -270,19 +304,18 @@ exports.checkForTriggers = async (msg) => {
               !(await msg.isAnonMessage())
             )
               if (punishment.action === 'mute' && msg.member) {
-                if (
-                  db
-                    .prepare('SELECT * FROM mute_roles WHERE server=?')
-                    .get(msg.guild.id)
-                ) {
-                  let mute_role_db = db
-                    .prepare('SELECT * FROM mute_roles WHERE server=?')
-                    .get(msg.guild.id);
+                let mute_role_db = await prisma.mute_roles.findFirst({
+                  where: {
+                    server: msg.guild.id,
+                  },
+                });
+
+                if (mute_role_db) {
                   let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
                   let mutee = msg.member;
                   mutee.roles.add(mute_role);
 
-                  util_functions.schedule_event(
+                  await util_functions.schedule_event(
                     {
                       type: 'unmute',
                       channel: msg.channel.id,
