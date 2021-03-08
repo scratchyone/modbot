@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^2.18.0",
+    "@scratchyone/command_parser": "^1.0.0",
     "@sentry/node": "^6.0.2",
     "@sentry/types": "^6.0.2",
     "@tsconfig/node12": "^1.0.7",

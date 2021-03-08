@@ -26,9 +26,11 @@ const alertchannel = {
     } else if (cmd.action === 'enable') {
       util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
       if (
-        exports.db
-          .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
-          .get(msg.guild.id)
+        await prisma.alert_channels.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        })
       ) {
         msg.channel.send(
           'An alert channel already exists! You can remove it with `m: alertchannel disable`'
@@ -97,9 +99,13 @@ const alertchannel = {
         });
         await client.channels.cache
           .get(
-            exports.db
-              .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
-              .get(msg.guild.id).channel
+            (
+              await prisma.alert_channels.findFirst({
+                where: {
+                  server: msg.guild.id,
+                },
+              })
+            ).channel
           )
           .send(util_functions.desc_embed('Alert channel enabled!'));
         await msg.channel.send(
@@ -112,23 +118,29 @@ const alertchannel = {
       }
     } else if (cmd.action === 'disable') {
       if (
-        !exports.db
-          .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
-          .get(msg.guild.id)
+        !(await prisma.alert_channels.findFirst({
+          where: {
+            server: msg.guild.id,
+          },
+        }))
       ) {
         msg.channel.send("An alert channel doesn't exist in this server!");
       } else {
         try {
           await client.channels.cache
             .get(
-              exports.db
-                .prepare('SELECT * FROM alert_channels_ignore WHERE server=?')
-                .get(msg.guild.id).channel
+              (
+                await prisma.alert_channels.findFirst({
+                  where: {
+                    server: msg.guild.id,
+                  },
+                })
+              ).channel
             )
             .send(util_functions.desc_embed('Alert channel disabled!'));
         } catch (e) {}
-        await prisma.alert_channels.create({
-          data: {
+        await prisma.alert_channels.deleteMany({
+          where: {
             server: msg.guild.id,
           },
         });

@@ -9,11 +9,11 @@ const onStarReactRemove = async (reaction, client) => {
         message: reaction.message.id,
       },
     })) &&
-    !prisma.starboards.findFirst({
+    !(await prisma.starboards.findFirst({
       where: {
         channel: reaction.message.channel.id,
       },
-    })
+    }))
   ) {
     let sb = await prisma.starboards.findFirst({
       where: {
@@ -50,11 +50,11 @@ const onStarReactRemove = async (reaction, client) => {
         message: reaction.message.id,
       },
     })) &&
-    !prisma.starboards.findFirst({
+    !(await prisma.starboards.findFirst({
       where: {
         channel: reaction.message.channel.id,
       },
-    })
+    }))
   ) {
     let sb_msg = await prisma.starboard_messages.findFirst({
       where: {
@@ -453,7 +453,7 @@ let starGetCommand = {
     if (sb) {
       if (cmd.action === 'random') {
         let star = util_functions.randArrayItem(
-          await prisma.starboard_messages.findFirst({
+          await prisma.starboard_messages.findMany({
             where: {
               server: msg.guild.id,
             },
