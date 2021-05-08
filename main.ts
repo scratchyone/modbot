@@ -3321,7 +3321,6 @@ client.on('message', async (msg: Discord.Message) => {
     if (!matched_any) {
       let highestTokenLevel = 0;
       for (const match of possibleMatches) {
-        console.log(match.tokenLevel, match.grammar);
         if (match.tokenLevel > highestTokenLevel)
           highestTokenLevel = match.tokenLevel;
       }
