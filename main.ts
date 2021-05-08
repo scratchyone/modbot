@@ -68,7 +68,7 @@ const client = new Discord.Client({
 interface MatcherCommand {
   command: string;
 }
-import { Command, Prefix } from './types';
+import { Prefix } from './types';
 import * as Types from './types';
 import parse from 'parse-duration';
 const main_commands = {
@@ -1025,7 +1025,10 @@ const main_commands = {
       explanation: 'List all roles with :pushpin: permissions',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: Record<string, never>
+      ) => {
         if (cmd.command !== 'listpinperms' || !msg.guild) return;
         const roles = await prisma.pinners.findMany({
           where: { guild: msg.guild.id },
@@ -1253,7 +1256,10 @@ const main_commands = {
       syntax: 'support',
       explanation: 'Get an invite to the support server',
       permissions: () => true,
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: Record<string, never>
+      ) => {
         if (cmd.command !== 'support') return;
         msg.dbReply(
           new Discord.MessageEmbed()

@@ -3,7 +3,7 @@ import * as util_functions from '../util_functions';
 import * as Utils from '../util_functions';
 import moment from 'moment';
 import Discord, { GuildEmoji, MessageReaction, User } from 'discord.js';
-import { Command, EGuild, Prefix, Context } from '../types';
+import { EGuild, Prefix, Context } from '../types';
 import * as Types from '../types';
 import { Defer } from '../defer';
 import Canvas from 'canvas';

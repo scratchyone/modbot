@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
 import Discord from 'discord.js';
-import { Command } from '../types';
 import { mintCapabilityToken } from '../web';
 import * as Types from '../types';
 

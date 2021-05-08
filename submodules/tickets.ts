@@ -2,7 +2,6 @@
 import * as util_functions from '../util_functions';
 import Discord from 'discord.js';
 import { nanoid } from 'nanoid';
-import { Command } from '../types';
 import * as Types from '../types';
 const ticketcreate = {
   name: 'ticket',

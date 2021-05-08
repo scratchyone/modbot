@@ -3,7 +3,7 @@ import * as util_functions from '../util_functions';
 import Discord from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import { Command, Context, DisabledCommand } from '../types';
+import { Context, DisabledCommand } from '../types';
 import * as Types from '../types';
 const lockdown = {
   name: 'lockdown',
