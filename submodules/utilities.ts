@@ -642,7 +642,11 @@ const removeemoji = {
     // Find all emojis with the name specified by the user
     const matchingEmojis = msg.guild.emojis.cache
       .array()
-      .filter((e) => e.name === cmd.name);
+      .filter(
+        (e) =>
+          e.name === cmd.name ||
+          (cmd.name.match(/<a?:[^:]+:(\d+)>/) || [])[1] == e.id
+      );
 
     // Create a variable for storing the final emoji that will be deleted
     let finalEmoji: GuildEmoji | undefined;
