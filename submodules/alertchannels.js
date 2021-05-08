@@ -4,10 +4,8 @@ const util_functions = require('../util_functions');
 import * as Types from '../types';
 const alertchannel = {
   name: 'alertchannel',
-  syntax: 'm: alertchannel <enable/ignore/disable>',
+  syntax: 'alertchannel <action: "enable" | "ignore" | "disable">',
   explanation: 'Configure the alert channel',
-  matcher: (cmd) => cmd.command == 'alertchannel',
-  simplematcher: (cmd) => cmd[0] === 'alertchannel',
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     if (cmd.action === 'ignore') {

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import Discord from 'discord.js';
 import moment from 'moment';
+import { Types as ParserTypes } from './parser_types';
 const Sentry = require('@sentry/node');
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
@@ -33,8 +34,6 @@ moment.relativeTimeThreshold('ss', 15);
 const parse_duration = require('parse-duration');
 
 const nodefetch = require('node-fetch');
-const nearley = require('nearley');
-const commands = require('./commands.js');
 const mutes = (() => {
   try {
     return require('./submodules/mutes.js');
@@ -78,15 +77,11 @@ const main_commands = {
   commands: [
     {
       name: 'pin',
-      syntax: 'm: pin <MESSAGE>',
+      syntax: 'pin <text: string>',
       explanation: 'Allows you to pin something anonymously',
-      matcher: (cmd: MatcherCommand) => cmd.command === 'pin',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'pin',
-      responder: async (msg: Discord.Message, cmd: Command) => {
-        if (cmd.command !== 'pin') return;
-
+      responder: async (msg: Discord.Message, cmd: { text: string }) => {
         // Try to delete the message.
         // This can throw an error if the message was already deleted by another bot, so catch that if it does
         try {
@@ -112,19 +107,16 @@ const main_commands = {
     },
     {
       name: 'eval',
-      syntax: 'm: eval <CODE>',
+      syntax: 'eval <code: string>',
       explanation: 'Run code',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'eval',
       permissions: (msg: Discord.Message) =>
         msg.author.id === '234020040830091265' &&
         msg.member &&
         msg.member.hasPermission('MANAGE_MESSAGES'),
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'eval',
-      responder: async (msg: Discord.Message, cmd: Command) => {
+      responder: async (msg: Discord.Message, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         const discord = Discord;
-        if (cmd.command !== 'eval') return;
         try {
           // Define a function for cloning users that can be called from inside eval-ed code
           const cloneUser = async (user: string, text: string) => {
@@ -180,17 +172,20 @@ const main_commands = {
     },
     {
       name: 'say',
-      syntax: 'm: say [CHANNEL] <keep/remove> <TEXT>',
+      syntax: 'say [channel: channel] <keep: "keep" | "remove"> <text: string>',
       explanation: 'Make the bot say something in a channel',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'say',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'say',
       permissions: (msg: Discord.Message) =>
         (msg.member && msg.member.hasPermission('MANAGE_MESSAGES')) ||
         msg.author.id === '234020040830091265',
       version: 3,
-      responder: async (ctx: Types.Context, cmd: Command) => {
-        if (cmd.command !== 'say') return;
-
+      responder: async (
+        ctx: Types.Context,
+        cmd: {
+          channel?: Discord.TextChannel;
+          keep: 'keep' | 'remove';
+          text: string;
+        }
+      ) => {
         // If channel isn't a text channel, we can't send messages there, so throw an error
         if ((cmd.channel || ctx.msg.channel).type !== 'text')
           throw new util_functions.BotError(
@@ -238,7 +233,7 @@ const main_commands = {
           );
         } else {
           // Delete the command message if the user has chosen to remove it
-          if (!cmd.keep)
+          if (cmd.keep == 'remove')
             try {
               await ctx.msg.delete();
             } catch (e) {}
@@ -262,19 +257,20 @@ const main_commands = {
     },
     {
       name: 'setanonchannel',
-      syntax: 'm: setanonchannel <enabled/disabled> [CHANNEL]',
+      syntax:
+        'setanonchannel <enabled: "enabled" | "disabled"> [channel: channel_id]',
       explanation:
         'Add/Remove an anonymous channel. If no channel is provided it will use the current channel',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'setanonchannel',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'setanonchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'setanonchannel') return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { enabled: 'enabled' | 'disabled'; channel?: string }
+      ) => {
         if (!msg.guild || !msg.guild.id) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const channel = cmd.channel ? cmd.channel : msg.channel.id;
-        if (cmd.enabled) {
+        if (cmd.enabled == 'enabled') {
           await prisma.anonchannels.create({
             data: {
               id: channel,
@@ -291,8 +287,10 @@ const main_commands = {
         }
         msg.dbReply(
           util_functions.embed(
-            `${cmd.enabled ? 'Enabled' : 'Disabled'} <#${channel}>${
-              cmd.enabled
+            `${
+              cmd.enabled == 'enabled' ? 'Enabled' : 'Disabled'
+            } <#${channel}>${
+              cmd.enabled == 'enabled'
                 ? '. Start a message with \\ to prevent it from being sent anonymously'
                 : ''
             }`,
@@ -301,16 +299,16 @@ const main_commands = {
         );
         await Types.LogChannel.tryToLog(
           msg,
-          `${cmd.enabled ? 'Enabled' : 'Disabled'} anonchannel <#${channel}>`
+          `${
+            cmd.enabled == 'enabled' ? 'Enabled' : 'Disabled'
+          } anonchannel <#${channel}>`
         );
       },
     },
     {
       name: 'listanonchannels',
-      syntax: 'm: listanonchannels',
+      syntax: 'listanonchannels',
       explanation: 'Lists all anonymous channels',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'listanonchannels',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'listanonchannels',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage) => {
@@ -333,14 +331,11 @@ const main_commands = {
     },
     {
       name: 'whosaid',
-      syntax: 'm: whosaid <ID>',
+      syntax: 'whosaid <id: string>',
       explanation: 'See who sent an anon message',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'whosaid',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'whosaid',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'whosaid') return;
+      responder: async (msg: util_functions.EMessage, cmd: { id: string }) => {
         if (!msg.guild || !msg.guild.id) return;
         const author = await prisma.anonmessages.findFirst({
           where: { id: cmd.id, server: msg.guild.id },
@@ -358,154 +353,189 @@ const main_commands = {
     },
     {
       name: 'reminder',
-      syntax:
-        'm: reminder add <DURATION> <TEXT> / cancel <ID> / copy <ID> / list',
-      explanation: 'Set/cancel/copy a reminder, or list all reminders',
+      syntax: 'reminder/rm add <duration: duration> <text: string>',
+      explanation: 'Set a reminder',
       version: 2,
-      matcher: (cmd: MatcherCommand) => cmd.command === 'reminder',
-      simplematcher: (cmd: Array<string>) =>
-        cmd[0] === 'reminder' || cmd[0] === 'reminders' || cmd[0] === 'rm',
       permissions: () => true,
       responder: async (
         ctx: Types.Context,
-        cmd: Command
+        cmd: { duration: number; text: string }
       ): Promise<Array<() => void> | undefined> => {
-        if (cmd.command !== 'reminder' || !ctx.msg.guild) return;
+        if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
-        if (cmd.action === 'add') {
-          if (parse(cmd.time, 'ms') === null)
-            throw new util_functions.BotError('user', 'Invalid timeframe');
-          const id = nanoid.nanoid(5);
-          await Types.Reminder.query().insert({
-            author: ctx.msg.author.id,
-            id,
+        const id = nanoid.nanoid(5);
+        await Types.Reminder.query().insert({
+          author: ctx.msg.author.id,
+          id,
+          text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
+          time: moment().add(cmd.duration, 'ms').unix(),
+        });
+        await util_functions.schedule_event(
+          {
+            type: 'reminder',
             text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
-            time: moment().add(parse(cmd.time, 'ms'), 'ms').unix(),
-          });
-          await util_functions.schedule_event(
-            {
-              type: 'reminder',
-              text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
-              channel: ctx.msg.channel.id,
-              user: ctx.msg.author.id,
-              message: ctx.msg.url,
-              id,
-            },
-            cmd.time
-          );
-          undoStack.push(
-            async () => await Types.Reminder.query().delete().where('id', id)
-          );
-          await ctx.msg.dbReply(
-            util_functions.embed(
-              `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
-              'success',
-              'Set Reminder!'
-            )
-          );
-        } else if (cmd.action === 'copy') {
-          const orig = await Types.Reminder.query().where('id', cmd.id);
-          if (!orig.length)
-            throw new util_functions.BotError('user', 'Reminder not found');
-          await Types.ReminderSubscriber.query().insert({
+            channel: ctx.msg.channel.id,
             user: ctx.msg.author.id,
-            id: cmd.id,
-          });
-          await ctx.msg.dbReply(
-            util_functions.embed(
-              'You will be notifed when the reminder is ready!',
-              'success'
-            )
+            message: ctx.msg.url,
+            id,
+          },
+          cmd.duration + 'ms'
+        );
+        undoStack.push(
+          async () => await Types.Reminder.query().delete().where('id', id)
+        );
+        await ctx.msg.dbReply(
+          util_functions.embed(
+            `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
+            'success',
+            'Set Reminder!'
+          )
+        );
+
+        return undoStack;
+      },
+    },
+    {
+      name: 'reminder',
+      syntax: 'reminder/rm cancel <id: string>',
+      explanation: 'Cancel a reminder',
+      version: 2,
+      permissions: () => true,
+      responder: async (
+        ctx: Types.Context,
+        cmd: { id: string }
+      ): Promise<Array<() => void> | undefined> => {
+        if (!ctx.msg.guild) return;
+        const undoStack: Array<() => void> = [];
+        await Types.Reminder.query()
+          .delete()
+          .where('author', ctx.msg.author.id)
+          .where('id', cmd.id);
+        await ctx.msg.dbReply(util_functions.embed('Cancelled!', 'success'));
+        return undoStack;
+      },
+    },
+    {
+      name: 'reminder',
+      syntax: 'reminder/rm copy <id: string>',
+      explanation: 'Copy a reminder',
+      version: 2,
+      permissions: () => true,
+      responder: async (
+        ctx: Types.Context,
+        cmd: { id: string }
+      ): Promise<Array<() => void> | undefined> => {
+        if (!ctx.msg.guild) return;
+        const undoStack: Array<() => void> = [];
+        const orig = await Types.Reminder.query().where('id', cmd.id);
+        if (!orig.length)
+          throw new util_functions.BotError('user', 'Reminder not found');
+        await Types.ReminderSubscriber.query().insert({
+          user: ctx.msg.author.id,
+          id: cmd.id,
+        });
+        await ctx.msg.dbReply(
+          util_functions.embed(
+            'You will be notifed when the reminder is ready!',
+            'success'
+          )
+        );
+
+        return undoStack;
+      },
+    },
+    {
+      name: 'reminder',
+      syntax: 'reminder/rm list',
+      explanation: 'List all reminders',
+      version: 2,
+      permissions: () => true,
+      responder: async (
+        ctx: Types.Context
+      ): Promise<Array<() => void> | undefined> => {
+        if (!ctx.msg.guild) return;
+        const undoStack: Array<() => void> = [];
+        const reminders = await Types.Reminder.query().where(
+          'author',
+          ctx.msg.author.id
+        );
+        let otherOp: number | null = 1;
+        if (process.env.UI_URL) {
+          otherOp = await util_functions.embed_options(
+            'Would you like to view your reminders on discord or be given a link to a website that will allow you to manage them more easily?',
+            ['Website', 'Discord'],
+            ['🕸️', '✍️'],
+            ctx.msg
           );
-        } else if (cmd.action === 'cancel') {
-          await Types.Reminder.query()
-            .delete()
-            .where('author', ctx.msg.author.id)
-            .where('id', cmd.id);
-          await ctx.msg.dbReply(util_functions.embed('Cancelled!', 'success'));
-        } else if (cmd.action === 'list') {
-          const reminders = await Types.Reminder.query().where(
-            'author',
-            ctx.msg.author.id
+        }
+        if (otherOp == 1) {
+          const fields = util_functions.chunk(
+            reminders
+              .filter((n) => n.text)
+              .filter((r) => (r.time || 0) > Date.now() / 1000)
+              .flatMap((reminder) => {
+                return [
+                  { name: 'Text', value: reminder.text, inline: true },
+                  {
+                    name: 'Time',
+                    value: reminder.time
+                      ? moment.unix(reminder.time).fromNow()
+                      : '[CREATED BEFORE REMINDERS UPDATE]',
+                    inline: true,
+                  },
+                  { name: 'ID', value: reminder.id, inline: true },
+                ];
+              }),
+            21
           );
-          let otherOp: number | null = 1;
-          if (process.env.UI_URL) {
-            otherOp = await util_functions.embed_options(
-              'Would you like to view your reminders on discord or be given a link to a website that will allow you to manage them more easily?',
-              ['Website', 'Discord'],
-              ['🕸️', '✍️'],
-              ctx.msg
+          const replies = [
+            new Discord.MessageEmbed().setTitle(
+              `${ctx.msg.member?.displayName}'s Reminders`
+            ),
+          ];
+          if (fields.length === 0)
+            // Show Explanation for why reminders might be missing, but only for 1 month after update release
+            replies[0].setDescription(
+              'No reminders set.' +
+                (moment().isBefore(moment('11/8/2020', 'MM-DD-YY'))
+                  ? ' (Only showing reminders created after October 8th, 2020)'
+                  : '')
+            );
+          if (fields.length === 1) replies[0].addFields(fields[0]);
+          else if (fields.length > 1) {
+            replies[0].addFields(fields[0]);
+            for (let i = 1; i < fields.length; i++) {
+              replies.push(new Discord.MessageEmbed().addFields(fields[i]));
+            }
+          }
+          await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
+          try {
+            for (const reply of replies)
+              await (await ctx.msg.author.createDM()).send(reply);
+          } catch (e) {
+            ctx.msg.dbReply(
+              'Failed to send DM, do you have DMs enabled for this server?'
             );
           }
-          if (otherOp == 1) {
-            const fields = util_functions.chunk(
-              reminders
-                .filter((n) => n.text)
-                .filter((r) => (r.time || 0) > Date.now() / 1000)
-                .flatMap((reminder) => {
-                  return [
-                    { name: 'Text', value: reminder.text, inline: true },
-                    {
-                      name: 'Time',
-                      value: reminder.time
-                        ? moment.unix(reminder.time).fromNow()
-                        : '[CREATED BEFORE REMINDERS UPDATE]',
-                      inline: true,
-                    },
-                    { name: 'ID', value: reminder.id, inline: true },
-                  ];
-                }),
-              21
+        } else if (otherOp === 0) {
+          await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
+          try {
+            await (await ctx.msg.author.createDM()).send(
+              new Discord.MessageEmbed()
+                .setURL(
+                  `${
+                    process.env.UI_URL
+                  }reminders/${await Web.mintCapabilityToken(
+                    ctx.msg.author.id,
+                    'reminders'
+                  )}`
+                )
+                .setTitle('Click here to manage your reminders')
             );
-            const replies = [
-              new Discord.MessageEmbed().setTitle(
-                `${ctx.msg.member?.displayName}'s Reminders`
-              ),
-            ];
-            if (fields.length === 0)
-              // Show Explanation for why reminders might be missing, but only for 1 month after update release
-              replies[0].setDescription(
-                'No reminders set.' +
-                  (moment().isBefore(moment('11/8/2020', 'MM-DD-YY'))
-                    ? ' (Only showing reminders created after October 8th, 2020)'
-                    : '')
-              );
-            if (fields.length === 1) replies[0].addFields(fields[0]);
-            else if (fields.length > 1) {
-              replies[0].addFields(fields[0]);
-              for (let i = 1; i < fields.length; i++) {
-                replies.push(new Discord.MessageEmbed().addFields(fields[i]));
-              }
-            }
-            await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
-            try {
-              for (const reply of replies)
-                await (await ctx.msg.author.createDM()).send(reply);
-            } catch (e) {
-              ctx.msg.dbReply(
-                'Failed to send DM, do you have DMs enabled for this server?'
-              );
-            }
-          } else if (otherOp === 0) {
-            await ctx.msg.dbReply(util_functions.desc_embed('DMing you!'));
-            try {
-              await (await ctx.msg.author.createDM()).send(
-                new Discord.MessageEmbed()
-                  .setURL(
-                    `${
-                      process.env.UI_URL
-                    }reminders/${await Web.mintCapabilityToken(
-                      ctx.msg.author.id,
-                      'reminders'
-                    )}`
-                  )
-                  .setTitle('Click here to manage your reminders')
-              );
-            } catch (e) {
-              ctx.msg.dbReply(
-                'Failed to send DM, do you have DMs enabled for this server?'
-              );
-            }
+          } catch (e) {
+            ctx.msg.dbReply(
+              'Failed to send DM, do you have DMs enabled for this server?'
+            );
           }
         }
         return undoStack;
@@ -513,10 +543,8 @@ const main_commands = {
     },
     {
       name: 'clonepurge',
-      syntax: 'm: clonepurge',
+      syntax: 'clonepurge',
       explanation: 'Purge a channels entire history',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'clonepurge',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'clonepurge',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage) => {
@@ -624,10 +652,8 @@ const main_commands = {
     },
     {
       name: 'deletechannel',
-      syntax: 'm: deletechannel',
+      syntax: 'deletechannel',
       explanation: 'Delete channel',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'deletechannel',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'deletechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
       version: 2,
@@ -654,14 +680,16 @@ const main_commands = {
     },
     {
       name: 'channeluser',
-      syntax: 'm: channeluser <add/remove> <USER> [CHANNEL]',
+      syntax:
+        'channeluser <allowed: "add" | "remove"> <user: user_id> [channel: channel_id]',
       explanation: 'Add/Remove a user from a channel',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'channeluser',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'channeluser',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'channeluser') return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { allowed: string; user: string; channel: string }
+      ) => {
+        const allowed = cmd.allowed == 'add';
         if (!client.user || !msg.member || !msg.guild)
           throw new util_functions.BotError(
             'user',
@@ -691,7 +719,7 @@ const main_commands = {
         }
         const user = msg.guild.member(cmd.user);
         if (!user) throw new util_functions.BotError('user', 'User not found');
-        if (!cmd.allowed) {
+        if (!allowed) {
           await realchannel.updateOverwrite(user, {
             VIEW_CHANNEL: false,
             SEND_MESSAGES: false,
@@ -704,34 +732,34 @@ const main_commands = {
         }
         await msg.dbReply(
           util_functions.embed(
-            `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
-              cmd.allowed ? 'to' : 'from'
+            `${allowed ? 'Allowed' : 'Disallowed'} ${user} ${
+              allowed ? 'to' : 'from'
             } ${
-              cmd.allowed ? 'read and send' : 'reading and sending'
+              allowed ? 'read and send' : 'reading and sending'
             } messages in ${channel}`,
             'success'
           )
         );
         await Types.LogChannel.tryToLog(
           msg,
-          `${cmd.allowed ? 'Allowed' : 'Disallowed'} ${user} ${
-            cmd.allowed ? 'to' : 'from'
-          } ${cmd.allowed ? 'read' : 'reading'} messages in ${channel}`
+          `${allowed ? 'Allowed' : 'Disallowed'} ${user} ${
+            allowed ? 'to' : 'from'
+          } ${allowed ? 'read' : 'reading'} messages in ${channel}`
         );
       },
     },
     {
       name: 'archivechannel',
-      syntax: 'm: archivechannel [ROLE]',
+      syntax: 'archivechannel [role: role_id]',
       explanation:
         "Archive a channel. Users with specified role will still be able to see it. If you don't supply a role, it will use your highest role.",
-      matcher: (cmd: MatcherCommand) => cmd.command == 'archivechannel',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'archivechannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'archivechannel' || !msg.guild || !msg.member)
-          return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { role: string }
+      ) => {
+        if (!msg.guild || !msg.member) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
         const deleted_category = (msg.guild.channels.cache.find(
           (n) => n.type == 'category' && n.name == 'archived'
@@ -771,14 +799,15 @@ const main_commands = {
     },
     {
       name: 'anonban',
-      syntax: 'm: anonban <USER> [TIME]',
+      syntax: 'anonban <user: user_id> [time: string]',
       explanation: 'Ban a user from going anonymous',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'anonban',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'anonban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'anonban' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string; time: string }
+      ) => {
+        if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         await prisma.anonbans.create({
           data: {
@@ -819,14 +848,15 @@ const main_commands = {
     },
     {
       name: 'anonunban',
-      syntax: 'm: anonunban <USER>',
+      syntax: 'anonunban <user: user_id>',
       explanation: 'Unban a user from going anonymous',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'anonunban',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'anonunban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'anonunban' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string }
+      ) => {
+        if (!msg.guild) return;
         await prisma.anonbans.deleteMany({
           where: {
             user: cmd.user,
@@ -844,14 +874,18 @@ const main_commands = {
     },
     {
       name: 'tmpchannel',
-      syntax: 'm: tmpchannel <NAME> <DURATION> <private/public>',
+      syntax:
+        'tmpchannel <name: word> <duration: word> <public: "private" | "public">',
       explanation: 'Create a temporary channel',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'tmpchannel',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'tmpchannel',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'tmpchannel' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { name: string; duration: string; public: string }
+      ) => {
+        if (!msg.guild) return;
+        const publicc = cmd.public == 'public';
+
         if (!client.user)
           throw new util_functions.BotError(
             'user',
@@ -865,7 +899,7 @@ const main_commands = {
         try {
           channel = await msg.guild.channels.create(cmd.name, {
             type: 'text',
-            permissionOverwrites: cmd.public
+            permissionOverwrites: publicc
               ? [
                   {
                     id: client.user.id,
@@ -937,16 +971,18 @@ const main_commands = {
     },
     {
       name: 'setpinperms',
-      syntax: 'm: setpinperms <allowed/disallowed> <ROLE>',
+      syntax: 'setpinperms <allowed: "allowed" | "disallowed"> <role: role_id>',
       explanation: 'Choose if a role can pin messages with the :pushpin: react',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'setpinperms',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'setpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'setpinperms' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { allowed: string; role: string }
+      ) => {
+        if (!msg.guild) return;
+        const allowed = cmd.allowed == 'allowed';
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-        if (cmd.allowed) {
+        if (allowed) {
           await prisma.pinners.create({
             data: {
               roleid: cmd.role,
@@ -985,10 +1021,8 @@ const main_commands = {
     },
     {
       name: 'listpinperms',
-      syntax: 'm: listpinperms',
+      syntax: 'listpinperms',
       explanation: 'List all roles with :pushpin: permissions',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'listpinperms',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'listpinperms',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
@@ -1007,14 +1041,15 @@ const main_commands = {
     },
     {
       name: 'autoresponder',
-      syntax: 'm: autoresponder <add/remove/list>',
-      explanation: 'Configure the AutoResponder',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'autoresponder',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'autoresponder',
+      syntax: 'autoresponder/ar <action: "add" | "remove" | "list">',
+      explanation: 'Configure an AutoResponder',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'autoresponder' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { action: string }
+      ) => {
+        if (!msg.guild) return;
         if (cmd.action === 'add') {
           try {
             await msg.dbReply(
@@ -1150,15 +1185,11 @@ const main_commands = {
     },
     {
       name: 'alpha',
-      syntax: 'm: alpha <TEXT>',
+      syntax: 'alpha <text: string>',
       explanation: 'Query Wolfram Alpha',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'alpha',
       version: 2,
-      simplematcher: (cmd: Array<string>) =>
-        cmd[0] === 'alpha' || cmd[0] === 'a',
       permissions: () => process.env.WOLFRAMALPHA_KEY,
-      responder: async (ctx: Types.Context, cmd: Command) => {
-        if (cmd.command !== 'alpha') return;
+      responder: async (ctx: Types.Context, cmd: { text: string }) => {
         ctx.store.addOrCreate(
           `rateLimits.alpha.${ctx.msg.author.id}`,
           1,
@@ -1219,10 +1250,8 @@ const main_commands = {
     },
     {
       name: 'support',
-      syntax: 'm: support',
+      syntax: 'support',
       explanation: 'Get an invite to the support server',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'support',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'support',
       permissions: () => true,
       responder: async (msg: util_functions.EMessage, cmd: Command) => {
         if (cmd.command !== 'support') return;
@@ -1235,14 +1264,15 @@ const main_commands = {
     },
     {
       name: 'joinroles',
-      syntax: 'm: joinroles <enable/disable>',
+      syntax: 'joinroles <action: "enable" | "disable">',
       explanation: 'Configure roles given automatically to users who join',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'joinroles',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'joinroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'joinroles' || !msg.guild || !msg.member) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { action: string }
+      ) => {
+        if (!msg.guild || !msg.member) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         if (cmd.action === 'enable') {
           if (
@@ -1312,15 +1342,15 @@ const main_commands = {
     },
     {
       name: 'reactionroles',
-      syntax: 'm: reactionroles <add/edit>',
+      syntax: 'reactionroles/rr <action: "add" | "edit">',
       explanation: 'Configure reaction roles',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'reactionroles',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'reactionroles',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'reactionroles' || !msg.guild || !msg.member)
-          return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { action: string }
+      ) => {
+        if (!msg.guild || !msg.member) return;
         util_functions.assertHasPerms(msg.guild, [
           'MANAGE_ROLES',
           'MANAGE_MESSAGES',
@@ -1646,14 +1676,15 @@ const main_commands = {
     },
     {
       name: 'kick',
-      syntax: 'm: kick <USER>',
+      syntax: 'kick <user: user_id>',
       explanation: 'Kick a user',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'kick',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'kick',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('KICK_MEMBERS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'kick' || !msg.member || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string }
+      ) => {
+        if (!msg.member || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['KICK_MEMBERS']);
         const hp = msg.member.roles.highest.position;
         const kickee = msg.guild.members.cache.get(cmd.user);
@@ -1686,14 +1717,15 @@ const main_commands = {
     },
     {
       name: 'ban',
-      syntax: 'm: ban <USER>',
+      syntax: 'ban <user: user_id>',
       explanation: 'Ban a user',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'ban',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'ban',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('BAN_MEMBERS'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'ban' || !msg.member || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string }
+      ) => {
+        if (!msg.member || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['BAN_MEMBERS']);
         const hp = msg.member.roles.highest.position;
         const kickeem = msg.guild.members.cache.get(cmd.user);
@@ -1732,14 +1764,16 @@ const main_commands = {
     },
     {
       name: 'tmprole',
-      syntax: 'm: tmprole <add/remove> <USER> <ROLE> <DURATION>',
+      syntax:
+        'tmprole <action: "add" | "remove"> <user: user_id> <role: role_id> <duration: string>',
       explanation: "Temporarily change a user's role",
-      matcher: (cmd: MatcherCommand) => cmd.command == 'tmprole',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'tmprole',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_ROLES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'tmprole' || !msg.member || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { action: string; user: string; role: string; duration: string }
+      ) => {
+        if (!msg.member || !msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
         const hp = msg.member.roles.highest.position;
         const kickee = msg.guild.members.cache.get(cmd.user);
@@ -1820,16 +1854,17 @@ const main_commands = {
     },
     {
       name: 'purge',
-      syntax: 'm: purge <COUNT>',
+      syntax: 'purge <count: string>',
       explanation: 'Purge messages',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'purge',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'purge',
       permissions: (msg: Discord.Message) =>
         msg.member &&
         msg.channel.type == 'text' &&
         msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'purge' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { count: string }
+      ) => {
+        if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
         if (count > 50) {
@@ -1859,14 +1894,15 @@ const main_commands = {
     },
     {
       name: 'usercard',
-      syntax: 'm: usercard <USER>',
+      syntax: 'usercard <user: user_id>',
       explanation: "Get a user's information card",
-      matcher: (cmd: MatcherCommand) => cmd.command == 'usercard',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'usercard',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'usercard' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string }
+      ) => {
+        if (!msg.guild) return;
         const mentioned_member = msg.guild.members.cache.get(cmd.user);
         let mentioned_user;
         try {
@@ -1971,14 +2007,15 @@ const main_commands = {
     },
     {
       name: 'note',
-      syntax: 'm: note <USER> <REASON>',
+      syntax: 'note <user: user_id> <text: string>',
       explanation: 'Add a note to a user',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'note',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'note',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'note' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string; text: string }
+      ) => {
+        if (!msg.guild) return;
         const id = nanoid.nanoid(5);
         await prisma.notes.create({
           data: {
@@ -2002,14 +2039,15 @@ const main_commands = {
     },
     {
       name: 'warn',
-      syntax: 'm: warn <USER> <REASON>',
+      syntax: 'warn <user: user_id> <text: string>',
       explanation: 'Add a warn to a user',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'warn',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'warn',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'warn' || !msg.guild) return;
+      responder: async (
+        msg: util_functions.EMessage,
+        cmd: { user: string; text: string }
+      ) => {
+        if (!msg.guild) return;
         const id = nanoid.nanoid(5);
         await prisma.notes.create({
           data: {
@@ -2053,14 +2091,12 @@ const main_commands = {
     },
     {
       name: 'forgive',
-      syntax: 'm: forgive <ID>',
+      syntax: 'forgive <id: string>',
       explanation: 'Remove a warn/note',
-      matcher: (cmd: MatcherCommand) => cmd.command == 'forgive',
-      simplematcher: (cmd: Array<string>) => cmd[0] === 'forgive',
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
-      responder: async (msg: util_functions.EMessage, cmd: Command) => {
-        if (cmd.command !== 'forgive' || !msg.guild) return;
+      responder: async (msg: util_functions.EMessage, cmd: { id: string }) => {
+        if (!msg.guild) return;
         const warn_item = await prisma.notes.findFirst({
           where: {
             server: msg.guild.id,
@@ -2126,7 +2162,9 @@ client.on('ready', async () => {
     if (!client.user) return;
     client.user.setPresence({
       activity: {
-        name: `m: help | in ${client.guilds.cache.size} servers with ${client.users.cache.size} users`,
+        name: `${process.env.BOT_PREFIX || 'm: '}help | in ${
+          client.guilds.cache.size
+        } servers with ${client.users.cache.size} users`,
         type: 'PLAYING',
         url: 'https://github.com/scratchyone/modbot',
       },
@@ -2583,13 +2621,37 @@ client.on('messageReactionRemove', async (reaction, user) => {
     Sentry.captureException(e);
   }
 });
+import {
+  generateCommandString,
+  matchCommand,
+  parseCommandGrammar,
+  ParsedCommandDef,
+  ParseError,
+} from '@scratchyone/command_parser';
 import fs from 'fs';
-const all_command_modules = [
+let all_command_modules = [
   main_commands,
   ...fs
     .readdirSync(__dirname + '/submodules')
     .map((mod) => require(__dirname + '/submodules/' + mod).commandModule),
 ];
+all_command_modules = all_command_modules.map((module) => {
+  const c = module.commands;
+  delete module['commands'];
+  return {
+    commands: c
+      .map((command: { syntax: string; name: string }) => {
+        try {
+          return { grammar: parseCommandGrammar(command.syntax), ...command };
+        } catch (e) {
+          console.error(command.name + ' ' + e);
+          return undefined;
+        }
+      })
+      .filter((n: any) => !!n),
+    ...module,
+  };
+});
 for (const module of all_command_modules) {
   if (module.cog) module.cog(client);
 }
@@ -2717,7 +2779,9 @@ async function processAutoresponders(msg: Discord.Message) {
 async function getPrefix(msg: Discord.Message): Promise<string | null> {
   if (!msg.guild) return null;
   const prefixes = await Prefix.query().where('server', msg.guild.id);
-  prefixes.push(Prefix.newPrefix(msg.guild.id, 'm: '));
+  prefixes.push(
+    Prefix.newPrefix(msg.guild.id, process.env.BOT_PREFIX || 'm: ')
+  );
   const matchingPrefixes = prefixes.filter((p: Prefix) =>
     msg.content.startsWith(p.prefix)
   );
@@ -2820,8 +2884,8 @@ async function runHelpCommands(
               )
           )
           .map(
-            (cmd: { syntax: string }) =>
-              `\`${cmd.syntax.replace('m: ', matchingPrefix)}\``
+            (cmd: { grammar: ParsedCommandDef }) =>
+              `\`${matchingPrefix + generateCommandString(cmd.grammar)}\``
           )
           .join('\n');
         return {
@@ -2851,6 +2915,8 @@ async function runHelpCommands(
         msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
     );
     if (!chosen_module) {
+      const valid_commands = [];
+
       for (const module of all_command_modules) {
         for (const registered_command of module.commands)
           try {
@@ -2858,30 +2924,34 @@ async function runHelpCommands(
               registered_command.name.toLowerCase() ==
               msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
             ) {
-              message.dbReply(
-                new Discord.MessageEmbed()
-                  .setTitle(
-                    util_functions.fillStringVars('Help for __botName__')
-                  )
-                  .setDescription(
-                    '**' +
-                      Humanize.capitalize(registered_command.name) +
-                      '**\n' +
-                      (registered_command.explanation ||
-                        registered_command.long_explanation) +
-                      '\n*<> means required, [] means optional.*'
-                  )
-                  .addField(
-                    'Syntax',
-                    `\`${registered_command.syntax.replace(
-                      'm: ',
-                      matchingPrefix
-                    )}\``
-                  )
-              );
-              return true;
+              valid_commands.push(registered_command);
             }
           } catch (e) {}
+      }
+      if (valid_commands.length) {
+        message.dbReply(
+          new Discord.MessageEmbed()
+            .setTitle(util_functions.fillStringVars('Help for __botName__'))
+            .setDescription(
+              '*<> means required, [] means optional.*\n' +
+                valid_commands
+                  .map(
+                    (registered_command) =>
+                      '**' +
+                      Humanize.capitalize(registered_command.name) +
+                      '\n**' +
+                      (registered_command.explanation ||
+                        registered_command.long_explanation) +
+                      '\n**Syntax**\n' +
+                      `\`${
+                        matchingPrefix +
+                        generateCommandString(registered_command.grammar)
+                      }\``
+                  )
+                  .join('\n\n')
+            )
+        );
+        return true;
       }
       await message.dbReply('Module/Command not found!');
       return true;
@@ -2911,15 +2981,21 @@ async function runHelpCommands(
                     msg.author.id === '234020040830091265'
                 )
             )
-            .map((n: { name: string; syntax: string; explanation: string }) => {
-              return {
-                name: Humanize.capitalize(n.name),
-                value: `\`${n.syntax.replace('m: ', matchingPrefix)}\`\n${
-                  n.explanation
-                }`,
-                inline: false,
-              };
-            })
+            .map(
+              (n: {
+                name: string;
+                grammar: ParsedCommandDef;
+                explanation: string;
+              }) => {
+                return {
+                  name: Humanize.capitalize(n.name),
+                  value: `\`${
+                    matchingPrefix + generateCommandString(n.grammar)
+                  }\`\n${n.explanation}`,
+                  inline: false,
+                };
+              }
+            )
         )
     );
     return true;
@@ -2928,37 +3004,36 @@ async function runHelpCommands(
 }
 async function showSyntaxError(
   msg: Discord.Message,
-  input: string,
+  registered_commands: {
+    grammar: ParsedCommandDef;
+    long_explanation: string;
+    explanation: string;
+    message: string;
+  }[],
   matchingPrefix: string
-): Promise<boolean> {
+): Promise<void> {
   const message = msg as util_functions.EMessage;
-  for (const module of all_command_modules) {
-    for (const registered_command of module.commands)
-      try {
-        if (
-          registered_command.simplematcher(
-            input.replace(matchingPrefix, '').toLowerCase().split(' ')
-          )
-        ) {
-          await message.dbReply(
-            new Discord.MessageEmbed()
-              .setTitle('Syntax Error')
-              .setColor('#e74d4d')
-              .setDescription(
-                `**Help:**\n\`${registered_command.syntax.replace(
-                  'm: ',
-                  matchingPrefix
-                )}\`\n*${
+  try {
+    await message.dbReply(
+      new Discord.MessageEmbed()
+        .setTitle('Syntax Error')
+        .setColor('#e74d4d')
+        .setDescription(
+          `${registered_commands
+            .map(
+              (registered_command) =>
+                `**Help:**\n\`${
+                  matchingPrefix +
+                  generateCommandString(registered_command.grammar)
+                }\`\n${
                   registered_command.long_explanation ||
                   registered_command.explanation
-                }*`
-              )
-          );
-          return true;
-        }
-      } catch (e) {}
-  }
-  return false;
+                }\n**Message:**\n${registered_command.message}`
+            )
+            .join('\n\n')}`
+        )
+    );
+  } catch (e) {}
 }
 function logStats(msg: Discord.Message) {
   const mrt = store.getOrSet('stats.msgResponseTimes', []) as Array<number>;
@@ -3037,7 +3112,7 @@ client.on('message', async (msg: Discord.Message) => {
   const message = msg as util_functions.EMessage;
   try {
     if (!msg.guild) {
-      if (msg.content.startsWith('m: '))
+      if (msg.content.startsWith(process.env.BOT_PREFIX || 'm: '))
         msg.channel.send('Sorry, commands cannot be used in DMs');
       return;
     }
@@ -3064,22 +3139,48 @@ client.on('message', async (msg: Discord.Message) => {
       return;
     }
     if (await runHelpCommands(msg, matchingPrefix)) return;
-    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
+    /*const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
 
     try {
       parser.feed(msg.content.replace(matchingPrefix, ''));
     } catch (e) {
       await showSyntaxError(msg, msg.content, matchingPrefix);
     }
-    const results = parser.results;
+    const results = parser.results;*/
+    const possibleMatches = [];
+    let matched_any = false;
     for (const module of all_command_modules) {
       for (const registered_command of module.commands)
         try {
-          if (
-            results.length &&
-            results[0].length &&
-            registered_command.matcher(results[0][0])
-          ) {
+          let parseRes: any = undefined;
+          const ctx = new Types.Context(
+            msg,
+            await util_functions.cleanPings(matchingPrefix, msg.guild),
+            client,
+            store,
+            all_command_modules.flatMap((mod) =>
+              mod.commands.map((c: { name: string }) => c.name)
+            )
+          );
+          try {
+            parseRes = await matchCommand(
+              registered_command.grammar,
+              msg.content.replace(matchingPrefix, ''),
+              ParserTypes,
+              ctx
+            );
+          } catch (e) {
+            // TODO: Only show syntax errors once we are sure it did not match anywhere
+            if (e instanceof ParseError && e.tokenLevel > 0) {
+              possibleMatches.push({
+                message: e.message,
+                tokenLevel: e.tokenLevel,
+                ...registered_command,
+              });
+            }
+          }
+          if (parseRes) {
+            matched_any = true;
             try {
               if (
                 registered_command.permissions(msg) ||
@@ -3091,29 +3192,14 @@ client.on('message', async (msg: Discord.Message) => {
                 )
               ) {
                 logStats(msg);
-                await checkDisabledCommand(msg, results[0][0].command);
+                await checkDisabledCommand(msg, registered_command.name);
                 if (
                   registered_command.version === 2 ||
                   registered_command.version === 3
                 ) {
                   const result = await registered_command.responder(
-                    new Types.Context(
-                      msg,
-                      await util_functions.cleanPings(
-                        matchingPrefix,
-                        msg.guild
-                      ),
-                      client,
-                      store,
-                      all_command_modules.flatMap((mod) =>
-                        mod.commands.map((c: { name: string }) => c.name)
-                      )
-                    ),
-                    processObjects(
-                      results[0][0],
-                      registered_command.version || 1,
-                      msg
-                    ),
+                    ctx,
+                    parseRes,
                     client
                   );
                   const cancelMsg = await msg.channel.awaitMessages(
@@ -3140,15 +3226,7 @@ client.on('message', async (msg: Discord.Message) => {
                       );
                   }
                 } else
-                  await registered_command.responder(
-                    msg,
-                    processObjects(
-                      results[0][0],
-                      registered_command.version || 1,
-                      msg
-                    ),
-                    client
-                  );
+                  await registered_command.responder(msg, parseRes, client);
               } else {
                 throw new util_functions.BotError(
                   'user',
@@ -3175,14 +3253,14 @@ client.on('message', async (msg: Discord.Message) => {
                   { max: 1, time: 20000 }
                 );
                 Sentry.configureScope(function (scope: SentryTypes.Scope) {
-                  scope.setTag('command', results[0][0].command);
+                  scope.setTag('command', registered_command.name);
                   scope.setUser({
                     id: msg.author.id.toString(),
                     username: msg.author.tag.toString(),
                   });
                   scope.setContext('Info', {
                     'Message Text': msg.content,
-                    'Parse Result': results[0][0],
+                    'Parse Result': parseRes,
                     Feedback: feedback.array()[0]
                       ? feedback.array()[0].content
                       : null,
@@ -3212,14 +3290,14 @@ client.on('message', async (msg: Discord.Message) => {
                     { max: 1, time: 30000 }
                   );
                   Sentry.configureScope(function (scope: SentryTypes.Scope) {
-                    scope.setTag('command', results[0][0].command);
+                    scope.setTag('command', registered_command.name);
                     scope.setUser({
                       id: msg.author.id.toString(),
                       username: msg.author.tag.toString(),
                     });
                     scope.setContext('Info', {
                       'Message Text': msg.content,
-                      'Parse Result': results[0][0],
+                      'Parse Result': parseRes,
                       Feedback: feedback.array()[0]
                         ? feedback.array()[0].content
                         : null,
@@ -3235,16 +3313,25 @@ client.on('message', async (msg: Discord.Message) => {
                 }
               }
             }
-          } else if (
-            registered_command.simplematcher(
-              msg.content.replace(matchingPrefix, '').toLowerCase().split(' ')
-            )
-          ) {
-            await showSyntaxError(msg, msg.content, matchingPrefix);
           }
         } catch (e) {
           //
         }
+    }
+    if (!matched_any) {
+      let highestTokenLevel = 0;
+      for (const match of possibleMatches) {
+        console.log(match.tokenLevel, match.grammar);
+        if (match.tokenLevel > highestTokenLevel)
+          highestTokenLevel = match.tokenLevel;
+      }
+      if (highestTokenLevel > 0) {
+        await showSyntaxError(
+          msg,
+          possibleMatches.filter((n) => n.tokenLevel >= highestTokenLevel),
+          matchingPrefix
+        );
+      }
     }
   } catch (e) {
     console.error(e);

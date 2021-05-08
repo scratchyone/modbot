@@ -7,11 +7,9 @@ let util_functions = require('../util_functions');
 import * as Types from '../types';
 let automod = {
   name: 'automod',
-  syntax: 'm: automod <enable/disable/add/remove/list>',
+  syntax: 'automod <action: "enable" | "disable" | "add" | "remove" | "list">',
   explanation:
     'Enable/Disable the automod, Add/Remove automod triggers, and list all configured triggers. You can use m: inspect to view more info about a specific trigger',
-  matcher: (cmd) => cmd.command == 'automod',
-  simplematcher: (cmd) => cmd[0] === 'automod',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, [
@@ -206,12 +204,13 @@ let automod = {
       );
     } else if (cmd.action === 'list') {
       let triggers =
-        (await prisma.automod_triggers
-          .findMany({
+        (
+          await prisma.automod_triggers.findMany({
             where: { server: msg.guild.id },
           })
+        )
           .map((n) => n.name)
-          .join('\n')) || 'No Triggers Configured Yet';
+          .join('\n') || 'No Triggers Configured Yet';
       await msg.channel.send(util_functions.desc_embed(triggers));
     } else if (cmd.action === 'inspect') {
       let triggerName = await util_functions.ask(

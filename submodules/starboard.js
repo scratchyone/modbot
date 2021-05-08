@@ -249,12 +249,10 @@ const onMessageDelete = async (msg, client) => {
 import * as Types from '../types';
 let starboardCommand = {
   name: 'starboard',
-  syntax: 'm: starboard <enable/disable/configure/fixperms>',
+  syntax: 'starboard <action: "enable" | "disable" | "configure" | "fixperms">',
   explanation: 'Configure the starboard',
   long_explanation:
     'Create/Delete the starboard with `enable`/`disable`. Change starboard settings with `configure`. Fix the channel permissions for the starboard channel with `fixperms`',
-  matcher: (cmd) => cmd.command == 'starboard',
-  simplematcher: (cmd) => cmd[0] === 'starboard',
   permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
   responder: async (msg, cmd, client) => {
     if (cmd.action === 'enable') {
@@ -438,11 +436,9 @@ let starboardCommand = {
 };
 let starGetCommand = {
   name: 'star',
-  syntax: 'm: star <random>',
+  syntax: 'star <action: "random">',
   explanation: 'Get a star',
   long_explanation: 'Get a message from the starboard',
-  matcher: (cmd) => cmd.command == 'star',
-  simplematcher: (cmd) => cmd[0] === 'star',
   permissions: () => true,
   responder: async (msg, cmd, client) => {
     let sb = await prisma.starboards.findFirst({

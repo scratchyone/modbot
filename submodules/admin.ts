@@ -7,17 +7,14 @@ import * as Types from '../types';
 
 const announce = {
   name: 'announce',
-  syntax: 'm: announce',
+  syntax: 'announce',
   explanation: 'Send an announcement to all alertchannels',
-  matcher: (cmd: Command) => cmd.command == 'announce',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'announce',
   permissions: (msg: Discord.Message) => msg.author.id === '234020040830091265',
   responder: async (
     msg: util_functions.EMessage,
-    cmd: Command,
+    cmd: Record<string, never>,
     client: Discord.Client
   ) => {
-    if (cmd.command !== 'announce') return;
     if (!msg.guild) return;
     if (!client.user) return;
     if (!msg.member) return;
@@ -40,10 +37,8 @@ const announce = {
 };
 const admin = {
   name: 'admin',
-  syntax: 'm: admin',
+  syntax: 'admin',
   explanation: "Wouldn't you like to know",
-  matcher: (cmd: Command) => cmd.command == 'admin',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'admin',
   permissions: (msg: Discord.Message) => msg.author.id === '234020040830091265',
   responder: async (msg: util_functions.EMessage) => {
     await (await msg.author.createDM()).send(

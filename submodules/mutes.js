@@ -4,12 +4,10 @@ let util_functions = require('../util_functions');
 import * as Types from '../types';
 let setupmute = {
   name: 'setupmute',
-  syntax: 'm: setupmute',
+  syntax: 'setupmute',
   explanation: 'Configure mutes',
   long_explanation:
     'Create/Delete the mute role, and fix its channel permissions if they get changed',
-  matcher: (cmd) => cmd.command == 'setupmute',
-  simplematcher: (cmd) => cmd[0] === 'setupmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg) => {
     if (
@@ -163,12 +161,10 @@ function checkChannelsThingCanTalkInAlways(guild, thing) {
 var parse_duration = require('parse-duration');
 let mute = {
   name: 'mute',
-  syntax: 'm: mute <USER> [DURATION]',
+  syntax: 'mute <user: user_id> [duration: word]',
   explanation: 'Mute a user',
   long_explanation:
     'Mute a user. [DURATION] is an optional duration in the form `5m`',
-  matcher: (cmd) => cmd.command == 'mute',
-  simplematcher: (cmd) => cmd[0] === 'mute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd, client) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);
@@ -300,11 +296,9 @@ let mute = {
 };
 let unmute = {
   name: 'unmute',
-  syntax: 'm: unmute <USER>',
+  syntax: 'unmute <user: user_id>',
   explanation: 'Unmute a user',
   long_explanation: 'Unmute a user',
-  matcher: (cmd) => cmd.command == 'unmute',
-  simplematcher: (cmd) => cmd[0] === 'unmute',
   permissions: (msg) => msg.member.hasPermission('MANAGE_ROLES'),
   responder: async (msg, cmd) => {
     util_functions.assertHasPerms(msg.guild, ['MANAGE_ROLES']);

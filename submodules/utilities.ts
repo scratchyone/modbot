@@ -11,9 +11,8 @@ import fetch from 'node-fetch';
 // Get bot invite link
 const invite = {
   name: 'invite',
-  syntax: 'm: invite',
+  syntax: 'invite',
   explanation: util_functions.fillStringVars('Get a __botName__ server invite'),
-  matcher: (cmd: Command) => cmd.command == 'invite',
   permissions: () => true,
   version: 2,
   responder: async (ctx: Context) => {
@@ -56,13 +55,10 @@ async function reRenderPoll(message: Discord.Message) {
 }
 const poll = {
   name: 'poll',
-  syntax: 'm: poll <TEXT>',
+  syntax: 'poll <text: string>',
   explanation: 'Run a yes/no poll',
-  matcher: (cmd: Command) => cmd.command == 'poll',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'poll',
   permissions: () => Types.MediaGen.enabled,
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'poll') return;
+  responder: async (msg: util_functions.EMessage, cmd: { text: string }) => {
     util_functions.warnIfNoPerms(msg, ['MANAGE_MESSAGES']);
     await new Types.MediaGen().assert();
     try {
@@ -113,13 +109,11 @@ const poll = {
 };
 const spoil = {
   name: 'spoil',
-  syntax: 'm: spoil <TEXT>',
+  syntax: 'spoil <text: string>',
   explanation: 'Repost message with all attachments spoilered',
-  matcher: (cmd: Command) => cmd.command == 'spoil',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'spoil',
   permissions: () => true,
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'spoil' || !msg.guild) return;
+  responder: async (msg: util_functions.EMessage, cmd: { text: string }) => {
+    if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
     if (msg.guild !== null && msg.channel.type == 'text') {
       const uuser = msg.member;
@@ -153,14 +147,12 @@ const spoil = {
 };
 const pfp = {
   name: 'pfp',
-  syntax: 'm: pfp <USER>',
+  syntax: 'pfp <user: user_id>',
   explanation: "Get a user's profile picture",
-  matcher: (cmd: Command) => cmd.command == 'pfp',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'pfp',
   permissions: () => true,
   version: 2,
-  responder: async (ctx: Types.Context, cmd: Command) => {
-    if (cmd.command !== 'pfp' || !ctx.msg.guild) return;
+  responder: async (ctx: Types.Context, cmd: { user: string }) => {
+    if (!ctx.msg.guild) return;
     let user;
     try {
       user = await ctx.client.users.fetch(cmd.user);
@@ -180,17 +172,17 @@ const pfp = {
 };
 const pick = {
   name: 'pick',
-  syntax: 'm: pick <option one; option two; etc>',
+  syntax: 'pick <items: string>',
   explanation: 'Pick a random item from a list of options, seperated by `;`',
-  matcher: (cmd: Command) => cmd.command == 'pick',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'pick',
   version: 2,
   permissions: () => true,
-  responder: async (ctx: Types.Context, cmd: Command) => {
-    if (cmd.command !== 'pick' || !ctx.msg.guild) return;
+  responder: async (ctx: Types.Context, cmd: { items: string }) => {
+    if (!ctx.msg.guild) return;
     ctx.msg.dbReply(
       `I choose ${await util_functions.cleanPings(
-        util_functions.randArrayItem(cmd.text.split('; ').join(';').split(';')),
+        util_functions.randArrayItem(
+          cmd.items.split('; ').join(';').split(';')
+        ),
         ctx.msg.guild
       )}`
     );
@@ -198,11 +190,8 @@ const pick = {
 };
 const suggestion = {
   name: 'suggestion',
-  syntax: 'm: suggestion',
+  syntax: 'suggestion',
   explanation: 'Submit a suggestion to ModBot',
-  matcher: (cmd: Command) => cmd.command == 'suggestion',
-  simplematcher: (cmd: Array<string>) =>
-    cmd[0] === 'suggestion' || cmd[0] === 'suggest',
   permissions: () =>
     process.env.SUGGESTIONMANAGER_URL && process.env.SUGGESTIONMANAGER_TOKEN,
   responder: async (msg: util_functions.EMessage) => {
@@ -254,20 +243,21 @@ const suggestion = {
 };
 const prefix = {
   name: 'prefix',
-  syntax: 'm: prefix <add/remove/list>',
+  syntax: 'prefix <action: "add" | "remove" | "list">',
   explanation: 'Change bot prefixes',
-  matcher: (cmd: Command) => cmd.command == 'prefix',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'prefix',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'prefix' || !msg.guild) return;
+  responder: async (
+    msg: util_functions.EMessage,
+    cmd: { action: 'add' | 'remove' | 'list' }
+  ) => {
+    if (!msg.guild) return;
     if (cmd.action == 'list') {
       msg.dbReply(
         util_functions.desc_embed(
           [
             ...(await Prefix.query().where('server', msg.guild.id)),
-            { server: msg.guild.id, prefix: 'm: ' } as Prefix,
+            { server: msg.guild.id, prefix: process.env.BOT_PREFIX } as Prefix,
           ]
             .map((p: Prefix) => `\`${p.prefix}\``)
             .join('\n')
@@ -280,7 +270,7 @@ const prefix = {
         20000,
         msg
       );
-      if (prefix === 'm: ')
+      if (prefix === process.env.BOT_PREFIX)
         throw new util_functions.BotError('user', 'Prefix already registered');
       if (prefix.length > 5)
         throw new util_functions.BotError('user', 'Prefix is too long');
@@ -301,7 +291,7 @@ const prefix = {
         20000,
         msg
       );
-      if (prefix === 'm: ')
+      if (prefix === process.env.BOT_PREFIX)
         throw new util_functions.BotError(
           'user',
           "Default prefix can't be removed"
@@ -324,10 +314,8 @@ const prefix = {
 };
 const userpic = {
   name: 'userpic',
-  syntax: 'm: userpic',
+  syntax: 'userpic',
   explanation: 'Get a nice message',
-  matcher: (cmd: Command) => cmd.command == 'userpic',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'userpic',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
     msg.channel.startTyping();
@@ -379,14 +367,10 @@ const userpic = {
 import Color from 'color';
 const color = {
   name: 'color',
-  syntax: 'm: color <COLOR>',
+  syntax: 'color/colour <color: string>',
   explanation: 'Get info about a color',
-  matcher: (cmd: Command) => cmd.command == 'color',
-  simplematcher: (cmd: Array<string>) =>
-    cmd[0] === 'color' || cmd[0] === 'colour',
   permissions: () => true,
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'color') return;
+  responder: async (msg: util_functions.EMessage, cmd: { color: string }) => {
     try {
       let canvas = Canvas.createCanvas(100, 100);
       let ctx = canvas.getContext('2d');
@@ -453,10 +437,8 @@ const color = {
 };
 const ping = {
   name: 'ping',
-  syntax: 'm: ping',
+  syntax: 'ping',
   explanation: 'Ping the bot',
-  matcher: (cmd: Command) => cmd.command == 'ping',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'ping',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
     await msg.dbReply(
@@ -466,18 +448,18 @@ const ping = {
 };
 const owo = {
   name: 'OwO',
-  syntax: 'm: owo <ACTION> [USER]',
+  syntax: 'owo <action: string> [user: user_id]',
   explanation: 'Get a gif',
-  matcher: (cmd: Command) => cmd.command == 'owo',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'owo',
   permissions: () => Types.MediaGen.enabled,
   version: 2,
-  responder: async (ctx: Types.Context, cmd: Types.Command) => {
-    if (cmd.command !== 'owo') return;
+  responder: async (
+    ctx: Types.Context,
+    cmd: { action: string; user: string }
+  ) => {
     await new Types.MediaGen().assert();
     // Get the tagged user, or none
-    const authee = cmd.authee
-      ? ctx.msg.guild?.members.cache.get(cmd.authee)?.displayName
+    const authee = cmd.user
+      ? ctx.msg.guild?.members.cache.get(cmd.user)?.displayName
       : undefined;
     // Get a message, image, and metadata from mediagen
     const data = await fetch(
@@ -508,6 +490,8 @@ const owo = {
     );
   },
 };
+// TODO: Reimplement
+/*
 // If mediagen is setup, update syntax for OwO command to include all available actions in mediagen
 if (Types.MediaGen.enabled)
   (async () => {
@@ -525,15 +509,13 @@ if (Types.MediaGen.enabled)
         1000 * 60 * 60 // One Hour
       );
     } catch (e) {}
-  })();
+  })();*/
 const average = require('average');
 const about = {
   name: 'about',
-  syntax: 'm: about',
+  syntax: 'about',
   explanation: 'Get bot info',
   version: 2,
-  matcher: (cmd: Command) => cmd.command == 'about',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'about',
   permissions: () => true,
   responder: async (ctx: Types.Context) => {
     let pj;
@@ -579,18 +561,19 @@ const path = require('path');
 const url = require('url');
 const addemoji = {
   name: 'addemoji',
-  syntax: 'm: addemoji <NAME> <EMOJI/URL/ATTACH A FILE>',
+  syntax: 'addemoji <name: string> [emojiData: string]',
   explanation:
     'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
-  matcher: (cmd: Command) => cmd.command === 'addemoji',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'addemoji',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_EMOJIS'),
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
+  responder: async (
+    msg: util_functions.EMessage,
+    cmd: { emojiData: string | undefined; name: string }
+  ) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
     await new Types.MediaGen().assert();
-    if (cmd.command !== 'addemoji' || !msg.guild) return;
+    if (!msg.guild) return;
 
     let emojiUrl = undefined;
     if (/<:.*:(\d+)>/.test(cmd.emojiData || '')) {
@@ -647,16 +630,14 @@ const addemoji = {
 };
 const removeemoji = {
   name: 'removeemoji',
-  syntax: 'm: removeemoji <NAME>',
+  syntax: 'removeemoji <name: string>',
   explanation: 'Remove an emoji from a server',
-  matcher: (cmd: Command) => cmd.command === 'removeemoji',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'removeemoji',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_EMOJIS'),
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
+  responder: async (msg: util_functions.EMessage, cmd: { name: string }) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
-    if (cmd.command !== 'removeemoji' || !msg.guild) return;
+    if (!msg.guild) return;
 
     // Find all emojis with the name specified by the user
     const matchingEmojis = msg.guild.emojis.cache
@@ -860,15 +841,12 @@ async function designEmbed(
 }
 const setchannelname = {
   name: 'setchannelname',
-  syntax: 'm: setchannelname <NAME>',
+  syntax: 'setchannelname <name: string>',
   explanation: "Set a channel's name",
-  matcher: (cmd: Command) => cmd.command == 'setchannelname',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'setchannelname',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   version: 2,
-  responder: async (ctx: Types.Context, cmd: Command) => {
-    if (cmd.command !== 'setchannelname') return;
+  responder: async (ctx: Types.Context, cmd: { name: string }) => {
     await (ctx.msg.channel as Discord.TextChannel).setName(cmd.name);
     await ctx.msg.dbReply(util_functions.embed('Set channel name!', 'success'));
     await Types.LogChannel.tryToLog(
@@ -879,15 +857,12 @@ const setchannelname = {
 };
 const setservername = {
   name: 'setservername',
-  syntax: 'm: setservername <NAME>',
+  syntax: 'setservername <name: string>',
   explanation: "Set the server's name",
-  matcher: (cmd: Command) => cmd.command == 'setservername',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'setservername',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_GUILD'),
   version: 2,
-  responder: async (ctx: Types.Context, cmd: Command) => {
-    if (cmd.command !== 'setservername') return;
+  responder: async (ctx: Types.Context, cmd: { name: string }) => {
     await ctx.msg.guild?.setName(cmd.name);
     await ctx.msg.dbReply(util_functions.embed('Set server name!', 'success'));
     await Types.LogChannel.tryToLog(ctx.msg, `Set server name to ${cmd.name}`);
@@ -895,14 +870,15 @@ const setservername = {
 };
 const embed = {
   name: 'embed',
-  syntax: 'm: embed <create/edit>',
+  syntax: 'embed <action: "create" | "edit">',
   explanation: 'Create/Edit a custom embed',
-  matcher: (cmd: Command) => cmd.command == 'embed',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'embed',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg: util_functions.EMessage, cmd: Command) => {
-    if (cmd.command !== 'embed' || !msg.guild) return;
+  responder: async (
+    msg: util_functions.EMessage,
+    cmd: { action: 'create' | 'edit' }
+  ) => {
+    if (!msg.guild) return;
     if (cmd.action == 'create') {
       const channel = await util_functions.ask('What channel?', 40000, msg);
       const dChannel = msg.guild.channels.cache.get(
@@ -941,10 +917,8 @@ const embed = {
 };
 const cat = {
   name: 'cat',
-  syntax: 'm: cat',
+  syntax: 'cat',
   explanation: 'By special request, a photo of a cat',
-  matcher: (cmd: Command) => cmd.command == 'cat',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'cat',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
     try {
@@ -982,10 +956,8 @@ const cat = {
 const git = require('git-rev-sync');
 const waitforupdate = {
   name: 'waitforupdate',
-  syntax: 'm: waitforupdate',
+  syntax: 'waitforupdate',
   explanation: 'Get pinged when the bot restarts',
-  matcher: (cmd: Command) => cmd.command == 'waitforupdate',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'waitforupdate',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
     await msg.dbReply(

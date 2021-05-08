@@ -7,18 +7,15 @@ import { Command, Context, DisabledCommand } from '../types';
 import * as Types from '../types';
 const lockdown = {
   name: 'lockdown',
-  syntax: 'm: lockdown [TIME]',
+  syntax: 'lockdown [time: string]',
   explanation: 'Prevent everyone for sending messages in this channel',
-  matcher: (cmd: Command) => cmd.command == 'lockdown',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'lockdown',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
-    cmd: Command,
+    cmd: { time: string },
     client: Discord.Client
   ) => {
-    if (cmd.command !== 'lockdown') return;
     if (msg.channel.type !== 'text') return;
     if (!msg.guild) return;
     if (!client.user) return;
@@ -76,18 +73,15 @@ const lockdown = {
 };
 const unlockdown = {
   name: 'unlockdown',
-  syntax: 'm: unlockdown <CHANNEL>',
+  syntax: 'unlockdown <channel: channel_id>',
   explanation: 'Unlockdown a channel',
-  matcher: (cmd: Command) => cmd.command == 'unlockdown',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'unlockdown',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
-    cmd: Command,
+    cmd: { channel: string },
     client: Discord.Client
   ) => {
-    if (cmd.command !== 'unlockdown') return;
     if (!msg.guild) return;
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
@@ -112,15 +106,16 @@ const unlockdown = {
 };
 const logging = {
   name: 'logging',
-  syntax: 'm: logging <enable/disable>',
+  syntax: 'logging <action: "enable" | "disable">',
   explanation: 'Enable or disable logging of actions done by ModBot',
-  matcher: (cmd: Command) => cmd.command == 'logging',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'logging',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_CHANNELS'),
   version: 2,
-  responder: async (ctx: Types.Context, cmd: Command) => {
-    if (cmd.command !== 'logging' || !ctx.msg.guild) return;
+  responder: async (
+    ctx: Types.Context,
+    cmd: { action: 'enable' | 'disable' }
+  ) => {
+    if (!ctx.msg.guild) return;
     util_functions.assertHasPerms(ctx.msg.guild, ['MANAGE_CHANNELS']);
     if (cmd.action === 'enable') {
       if (await Types.LogChannel.fromGuild(ctx.msg.guild))
@@ -180,22 +175,19 @@ const logging = {
 };
 const disablecommand = {
   name: 'disablecommand',
-  syntax: 'm: disablecommand <COMMAND>',
+  syntax: 'disablecommand <command: string>',
   explanation: 'Disable a command in a server',
-  matcher: (cmd: Command) => cmd.command == 'disablecommand',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'disablecommand',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
   version: 2,
-  responder: async (ctx: Context, cmd: Command) => {
-    if (cmd.command !== 'disablecommand') return;
+  responder: async (ctx: Context, cmd: { command: string }) => {
     if (
       !ctx.validCommands
         .map((c) => c.toLowerCase())
-        .includes(cmd.text.toLowerCase())
+        .includes(cmd.command.toLowerCase())
     )
       throw new util_functions.BotError('user', 'Command not found');
-    if (cmd.text.toLowerCase() === 'enablecommand')
+    if (cmd.command.toLowerCase() === 'enablecommand')
       throw new util_functions.BotError(
         'user',
         "You can't disable that command"
@@ -204,7 +196,7 @@ const disablecommand = {
       ctx.validCommands[
         ctx.validCommands
           .map((c) => c.toLowerCase())
-          .indexOf(cmd.text.toLowerCase())
+          .indexOf(cmd.command.toLowerCase())
       ];
     if (
       (
@@ -232,26 +224,23 @@ const disablecommand = {
 };
 const enablecommand = {
   name: 'enablecommand',
-  syntax: 'm: enablecommand <COMMAND>',
+  syntax: 'enablecommand <command: string>',
   explanation: 'Enable a command in a server',
-  matcher: (cmd: Command) => cmd.command == 'enablecommand',
-  simplematcher: (cmd: Array<string>) => cmd[0] === 'enablecommand',
   permissions: (msg: Discord.Message) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
   version: 2,
-  responder: async (ctx: Context, cmd: Command) => {
-    if (cmd.command !== 'enablecommand') return;
+  responder: async (ctx: Context, cmd: { command: string }) => {
     if (
       !ctx.validCommands
         .map((c) => c.toLowerCase())
-        .includes(cmd.text.toLowerCase())
+        .includes(cmd.command.toLowerCase())
     )
       throw new util_functions.BotError('user', 'Command not found');
     const commandRealName =
       ctx.validCommands[
         ctx.validCommands
           .map((c) => c.toLowerCase())
-          .indexOf(cmd.text.toLowerCase())
+          .indexOf(cmd.command.toLowerCase())
       ];
     if (
       !(

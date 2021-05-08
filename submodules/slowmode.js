@@ -3,10 +3,8 @@ var parse_duration = require('parse-duration');
 import * as Types from '../types';
 let slowmodeCommand = {
   name: 'slowmode',
-  syntax: 'm: slowmode <enable/disable> <CHANNEL>',
+  syntax: 'slowmode <action: "enable" | "disable"> <channel: channel_id>',
   explanation: 'Configure slowmode',
-  matcher: (cmd) => cmd.command == 'slowmode',
-  simplematcher: (cmd) => cmd[0] === 'slowmode',
   permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
   responder: async (msg, cmd) => {
     let channel = msg.guild.channels.cache.get(cmd.channel);
