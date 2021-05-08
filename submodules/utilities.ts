@@ -109,7 +109,7 @@ const poll = {
 };
 const spoil = {
   name: 'spoil',
-  syntax: 'spoil <text: string>',
+  syntax: 'spoil/spoiler <text: string>',
   explanation: 'Repost message with all attachments spoilered',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage, cmd: { text: string }) => {
