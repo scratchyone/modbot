@@ -82,7 +82,8 @@ async function genSBMessage(message) {
       desc += '> **' + message.embeds[0].author.name + '**\n';
     if (message.embeds[0].title)
       desc += '> **' + message.embeds[0].title + '**\n';
-    desc += '> ' + (message.embeds[0].description || '');
+    if (message.embeds[0].description)
+      desc += '> ' + message.embeds[0].description.split('\n').join('\n> ');
   }
   let image;
   let spoiler = false;
