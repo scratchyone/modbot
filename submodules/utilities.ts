@@ -243,27 +243,16 @@ const suggestion = {
 };
 const prefix = {
   name: 'prefix',
-  syntax: 'prefix <action: "add" | "remove" | "list">',
+  syntax: 'prefix <action: "add" | "remove">',
   explanation: 'Change bot prefixes',
   permissions: (msg: util_functions.EMessage) =>
     msg.member?.hasPermission('MANAGE_MESSAGES'),
   responder: async (
     msg: util_functions.EMessage,
-    cmd: { action: 'add' | 'remove' | 'list' }
+    cmd: { action: 'add' | 'remove' }
   ) => {
     if (!msg.guild) return;
-    if (cmd.action == 'list') {
-      msg.dbReply(
-        util_functions.desc_embed(
-          [
-            ...(await Prefix.query().where('server', msg.guild.id)),
-            { server: msg.guild.id, prefix: process.env.BOT_PREFIX } as Prefix,
-          ]
-            .map((p: Prefix) => `\`${p.prefix}\``)
-            .join('\n')
-        )
-      );
-    }
+
     if (cmd.action == 'add') {
       const prefix = await util_functions.ask(
         'What should the prefix be?',
@@ -310,6 +299,25 @@ const prefix = {
         await msg.dbReply('Failed to remove prefix');
       }
     }
+  },
+};
+const prefixlist = {
+  name: 'prefix',
+  syntax: 'prefix list',
+  explanation: 'List bot prefixes',
+  permissions: () => true,
+  responder: async (msg: util_functions.EMessage) => {
+    if (!msg.guild) return;
+    msg.dbReply(
+      util_functions.desc_embed(
+        [
+          ...(await Prefix.query().where('server', msg.guild.id)),
+          { server: msg.guild.id, prefix: process.env.BOT_PREFIX } as Prefix,
+        ]
+          .map((p: Prefix) => `\`${p.prefix}\``)
+          .join('\n')
+      )
+    );
   },
 };
 const userpic = {
@@ -996,6 +1004,7 @@ exports.commandModule = {
     suggestion,
     color,
     prefix,
+    prefixlist,
     embed,
     addemoji,
     removeemoji,
