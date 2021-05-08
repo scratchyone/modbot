@@ -448,7 +448,7 @@ const ping = {
 };
 const owo = {
   name: 'OwO',
-  syntax: 'owo <action: string> [user: user_id]',
+  syntax: 'owo <action: word> [user: user_id]',
   explanation: 'Get a gif',
   permissions: () => Types.MediaGen.enabled,
   version: 2,
@@ -561,7 +561,7 @@ const path = require('path');
 const url = require('url');
 const addemoji = {
   name: 'addemoji',
-  syntax: 'addemoji <name: string> [emojiData: string]',
+  syntax: 'addemoji <name: word> [emojiData: string]',
   explanation:
     'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
   permissions: (msg: util_functions.EMessage) =>
