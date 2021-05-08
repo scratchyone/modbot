@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { Client, Message, TextChannel } from 'discord.js';
 const prisma = new PrismaClient();
 const util_functions = require('../util_functions');
 import * as Types from '../types';
@@ -6,8 +7,13 @@ const alertchannel = {
   name: 'alertchannel',
   syntax: 'alertchannel <action: "enable" | "ignore" | "disable">',
   explanation: 'Configure the alert channel',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_CHANNELS'),
-  responder: async (msg, cmd, client) => {
+  permissions: (msg: Message) => msg.member?.permissions.has('MANAGE_CHANNELS'),
+  responder: async (
+    msg: Message,
+    cmd: { action: 'enable' | 'ignore' | 'disable' },
+    client: Client
+  ) => {
+    if (!msg.guild || !client.user) return;
     if (cmd.action === 'ignore') {
       await prisma.alert_channels_ignore.create({
         data: {
@@ -35,7 +41,7 @@ const alertchannel = {
         );
       } else {
         msg.channel.send('What should the channel be named?');
-        let channel_name = await msg.channel.awaitMessages(
+        const channel_name = await msg.channel.awaitMessages(
           (m) => m.author.id == msg.author.id,
           {
             max: 1,
@@ -49,7 +55,7 @@ const alertchannel = {
         msg.channel.send(
           'What role should be allowed to view it? (Probably your moderator role)'
         );
-        let role = await msg.channel.awaitMessages(
+        const role = await msg.channel.awaitMessages(
           (m) => m.author.id == msg.author.id,
           {
             max: 1,
@@ -60,7 +66,7 @@ const alertchannel = {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
-        let drole = msg.guild.roles.cache.get(
+        const drole = msg.guild.roles.cache.get(
           role.array()[0].content.replace('<@&', '').replace('>', '')
         );
         if (!drole) {
@@ -69,7 +75,7 @@ const alertchannel = {
           );
           return;
         }
-        let channel = await msg.guild.channels.create(
+        const channel = await msg.guild.channels.create(
           channel_name.array()[0].content,
           {
             type: 'text',
@@ -95,17 +101,15 @@ const alertchannel = {
             server: msg.guild.id,
           },
         });
-        await client.channels.cache
-          .get(
-            (
-              await prisma.alert_channels.findFirst({
-                where: {
-                  server: msg.guild.id,
-                },
-              })
-            ).channel
-          )
-          .send(util_functions.desc_embed('Alert channel enabled!'));
+        await (client.channels.cache.get(
+          (await prisma.alert_channels.findFirst({
+            where: {
+              server: msg.guild.id,
+            },
+          }))!.channel
+        ) as TextChannel).send(
+          util_functions.desc_embed('Alert channel enabled!')
+        );
         await msg.channel.send(
           util_functions.desc_embed(`Created alert channel ${channel}`)
         );
@@ -125,17 +129,15 @@ const alertchannel = {
         msg.channel.send("An alert channel doesn't exist in this server!");
       } else {
         try {
-          await client.channels.cache
-            .get(
-              (
-                await prisma.alert_channels.findFirst({
-                  where: {
-                    server: msg.guild.id,
-                  },
-                })
-              ).channel
-            )
-            .send(util_functions.desc_embed('Alert channel disabled!'));
+          await (client.channels.cache.get(
+            (await prisma.alert_channels.findFirst({
+              where: {
+                server: msg.guild.id,
+              },
+            }))!.channel
+          )! as TextChannel).send(
+            util_functions.desc_embed('Alert channel disabled!')
+          );
         } catch (e) {}
         await prisma.alert_channels.deleteMany({
           where: {

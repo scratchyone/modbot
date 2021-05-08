@@ -2,16 +2,22 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-const Discord = require('discord.js');
-let util_functions = require('../util_functions');
+import Discord from 'discord.js';
+import * as util_functions from '../util_functions';
 import * as Types from '../types';
-let automod = {
+const automod = {
   name: 'automod',
   syntax: 'automod <action: "enable" | "disable" | "add" | "remove" | "list">',
   explanation:
     'Enable/Disable the automod, Add/Remove automod triggers, and list all configured triggers. You can use m: inspect to view more info about a specific trigger',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd, client) => {
+  permissions: (msg: Discord.Message) =>
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
+  responder: async (
+    msg: util_functions.EMessage,
+    cmd: { action: 'enable' | 'disable' | 'add' | 'remove' | 'list' },
+    client: Discord.Client
+  ) => {
+    if (!msg.guild || !client.user || !msg.member) return;
     util_functions.assertHasPerms(msg.guild, [
       'MANAGE_CHANNELS',
       'MANAGE_MESSAGES',
@@ -27,12 +33,12 @@ let automod = {
           'user',
           'AutoMod is already enabled, you can disable it with `m: automod disable`'
         );
-      let channelname = await util_functions.ask(
+      const channelname = await util_functions.ask(
         'What should the AutoMod punishment log channel be named?',
         10000,
         msg
       );
-      let channelViewRole = msg.guild.roles.cache.get(
+      const channelViewRole = msg.guild.roles.cache.get(
         (
           await util_functions.ask(
             'What role should be able to see it?',
@@ -45,7 +51,7 @@ let automod = {
       );
       if (!channelViewRole)
         throw new util_functions.BotError('user', "That role doesn't exist");
-      let channel = await msg.guild.channels.create(channelname, {
+      const channel = await msg.guild.channels.create(channelname, {
         type: 'text',
         permissionOverwrites: [
           {
@@ -121,22 +127,22 @@ let automod = {
           'user',
           'AutoMod is not enabled, you can enable it with `m: automod enable`'
         );
-      let triggerName = await util_functions.ask(
+      const triggerName = await util_functions.ask(
         'What should the trigger be named?',
         10000,
         msg
       );
-      let triggerRegex = await util_functions.ask(
+      const triggerRegex = await util_functions.ask(
         'What should the regex be ( https://regexr.com/ )?',
         40000,
         msg
       );
-      let triggerMessage = await util_functions.ask(
+      const triggerMessage = await util_functions.ask(
         'What should AutoMod say when this trigger is activated?',
         40000,
         msg
       );
-      let punishment = await util_functions.embed_options(
+      const punishment = await util_functions.embed_options(
         'What should the punishment be?',
         ['Only reply', 'Reply and delete', 'Reply, delete, and mute'],
         ['💬', '🗑️', '🤐'],
@@ -153,7 +159,7 @@ let automod = {
           { action: 'delete' },
         ];
       } else if (punishment === 2) {
-        let muteDur = await util_functions.ask(
+        const muteDur = await util_functions.ask(
           'How long should the user be muted?',
           10000,
           msg
@@ -184,12 +190,12 @@ let automod = {
         `Added AutoMod trigger \`${triggerName}\``
       );
     } else if (cmd.action === 'remove') {
-      let triggerName = await util_functions.ask(
+      const triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to remove?',
         10000,
         msg
       );
-      let res = await prisma.automod_triggers.deleteMany({
+      const res = await prisma.automod_triggers.deleteMany({
         where: {
           server: msg.guild.id,
           name: triggerName,
@@ -203,7 +209,7 @@ let automod = {
         `Removed AutoMod trigger \`${triggerName}\``
       );
     } else if (cmd.action === 'list') {
-      let triggers =
+      const triggers =
         (
           await prisma.automod_triggers.findMany({
             where: { server: msg.guild.id },
@@ -213,12 +219,12 @@ let automod = {
           .join('\n') || 'No Triggers Configured Yet';
       await msg.channel.send(util_functions.desc_embed(triggers));
     } else if (cmd.action === 'inspect') {
-      let triggerName = await util_functions.ask(
+      const triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to inspect?',
         10000,
         msg
       );
-      let trigger = await prisma.automod_triggers.findFirst({
+      const trigger = await prisma.automod_triggers.findFirst({
         where: {
           server: msg.guild.id,
           name: triggerName,
@@ -234,7 +240,7 @@ let automod = {
           .addField(
             'Punishments',
             JSON.parse(trigger.punishments)
-              .map((p) => {
+              .map((p: any) => {
                 if (p.action === 'delete') {
                   return 'Delete message';
                 }
@@ -251,26 +257,27 @@ let automod = {
     }
   },
 };
-exports.checkForTriggers = async (msg) => {
-  let am = await prisma.automods.findFirst({
+exports.checkForTriggers = async (msg: util_functions.EMessage) => {
+  if (!msg.guild) return;
+  const am = await prisma.automods.findFirst({
     where: {
       server: msg.guild.id,
     },
   });
   if (am && msg.channel.id != am.channel) {
-    let triggers = await prisma.automod_triggers.findMany({
+    const triggers = await prisma.automod_triggers.findMany({
       where: {
         server: msg.guild.id,
       },
     });
-    for (let trigger of triggers) {
-      let match = trigger.regex.match(new RegExp('^/(.*?)/([gimy]*)$'));
+    for (const trigger of triggers) {
+      const match = trigger.regex.match(new RegExp('^/(.*?)/([gimy]*)$'));
       // sanity check here
-      let re = match
+      const re = match
         ? new RegExp(match[1], match[2])
         : new RegExp(trigger.regex);
       if (re.test(msg.content)) {
-        let role = msg.guild.roles.cache.get(trigger.setuprole);
+        const role = msg.guild.roles.cache.get(trigger.setuprole);
         if (!role) {
           msg.channel.send(
             util_functions.desc_embed(
@@ -279,13 +286,13 @@ exports.checkForTriggers = async (msg) => {
           );
           return;
         }
-        let realMember = await msg.getRealMember();
+        const realMember = await msg.getRealMember();
         if (
           realMember ? realMember.roles.highest.position < role.position : true
         ) {
-          let punishments_sorted = JSON.parse(trigger.punishments);
-          punishments_sorted.sort((x) => (x.action === 'delete' ? -1 : 0));
-          for (let punishment of JSON.parse(trigger.punishments)) {
+          const punishments_sorted = JSON.parse(trigger.punishments);
+          punishments_sorted.sort((x: any) => (x.action === 'delete' ? -1 : 0));
+          for (const punishment of JSON.parse(trigger.punishments)) {
             if (punishment.action === 'delete') {
               try {
                 await msg.delete();
@@ -303,15 +310,18 @@ exports.checkForTriggers = async (msg) => {
               !(await msg.isAnonMessage())
             )
               if (punishment.action === 'mute' && msg.member) {
-                let mute_role_db = await prisma.mute_roles.findFirst({
+                const mute_role_db = await prisma.mute_roles.findFirst({
                   where: {
                     server: msg.guild.id,
                   },
                 });
 
                 if (mute_role_db) {
-                  let mute_role = msg.guild.roles.cache.get(mute_role_db.role);
-                  let mutee = msg.member;
+                  const mute_role = msg.guild.roles.cache.get(
+                    mute_role_db.role
+                  );
+                  if (!mute_role) return;
+                  const mutee = msg.member;
                   mutee.roles.add(mute_role);
 
                   await util_functions.schedule_event(
@@ -338,14 +348,16 @@ exports.checkForTriggers = async (msg) => {
                 }
               }
           }
-          let channel = msg.guild.channels.cache.get(am.channel);
+          const channel = msg.guild.channels.cache.get(am.channel) as
+            | Discord.TextChannel
+            | undefined;
           if (!channel) {
             msg.channel.send(
               util_functions.desc_embed("Error: Log channel doesn't exist")
             );
             return;
           }
-          let loghook = await channel.createWebhook(
+          const loghook = await channel.createWebhook(
             msg.member ? msg.member.displayName : msg.author.username,
             {
               avatar: msg.author.displayAvatarURL(),
@@ -358,7 +370,7 @@ exports.checkForTriggers = async (msg) => {
                 new Discord.MessageEmbed().setTitle('Punished').setDescription(
                   `Author: ${msg.author}\n` +
                     JSON.parse(trigger.punishments)
-                      .map((p) => {
+                      .map((p: any) => {
                         if (p.action === 'delete') {
                           return 'Deleted message';
                         }

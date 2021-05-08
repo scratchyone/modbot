@@ -33,7 +33,7 @@ const invite = {
   },
 };
 // Edit a poll message with an updated image
-async function reRenderPoll(message: Discord.Message) {
+async function reRenderPoll(message: Discord.Message | Discord.PartialMessage) {
   try {
     await message.edit({
       embed: message.embeds[0].setImage(
@@ -246,7 +246,7 @@ const prefix = {
   syntax: 'prefix <action: "add" | "remove">',
   explanation: 'Change bot prefixes',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_MESSAGES'),
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { action: 'add' | 'remove' }
@@ -573,7 +573,7 @@ const addemoji = {
   explanation:
     'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_EMOJIS'),
+    msg.member?.permissions.has('MANAGE_EMOJIS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { emojiData: string | undefined; name: string }
@@ -641,7 +641,7 @@ const removeemoji = {
   syntax: 'removeemoji <name: string>',
   explanation: 'Remove an emoji from a server',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_EMOJIS'),
+    msg.member?.permissions.has('MANAGE_EMOJIS'),
   responder: async (msg: util_functions.EMessage, cmd: { name: string }) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
@@ -856,7 +856,7 @@ const setchannelname = {
   syntax: 'setchannelname <name: string>',
   explanation: "Set a channel's name",
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   version: 2,
   responder: async (ctx: Types.Context, cmd: { name: string }) => {
     await (ctx.msg.channel as Discord.TextChannel).setName(cmd.name);
@@ -872,7 +872,7 @@ const setservername = {
   syntax: 'setservername <name: string>',
   explanation: "Set the server's name",
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_GUILD'),
+    msg.member?.permissions.has('MANAGE_GUILD'),
   version: 2,
   responder: async (ctx: Types.Context, cmd: { name: string }) => {
     await ctx.msg.guild?.setName(cmd.name);
@@ -885,7 +885,7 @@ const embed = {
   syntax: 'embed <action: "create" | "edit">',
   explanation: 'Create/Edit a custom embed',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_MESSAGES'),
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { action: 'create' | 'edit' }

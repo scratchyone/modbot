@@ -10,7 +10,7 @@ const lockdown = {
   syntax: 'lockdown [time: string]',
   explanation: 'Prevent everyone for sending messages in this channel',
   permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { time: string },
@@ -76,7 +76,7 @@ const unlockdown = {
   syntax: 'unlockdown <channel: channel_id>',
   explanation: 'Unlockdown a channel',
   permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { channel: string },
@@ -109,7 +109,7 @@ const logging = {
   syntax: 'logging <action: "enable" | "disable">',
   explanation: 'Enable or disable logging of actions done by ModBot',
   permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   version: 2,
   responder: async (
     ctx: Types.Context,
@@ -178,7 +178,7 @@ const disablecommand = {
   syntax: 'disablecommand <command: string>',
   explanation: 'Disable a command in a server',
   permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_MESSAGES'),
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
   version: 2,
   responder: async (ctx: Context, cmd: { command: string }) => {
     if (
@@ -227,7 +227,7 @@ const enablecommand = {
   syntax: 'enablecommand <command: string>',
   explanation: 'Enable a command in a server',
   permissions: (msg: Discord.Message) =>
-    msg.member?.hasPermission('MANAGE_MESSAGES'),
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
   version: 2,
   responder: async (ctx: Context, cmd: { command: string }) => {
     if (

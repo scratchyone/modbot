@@ -1,13 +1,18 @@
-let util_functions = require('../util_functions');
-var parse_duration = require('parse-duration');
+import * as util_functions from '../util_functions';
+import Discord from 'discord.js';
+const parse_duration = require('parse-duration');
 import * as Types from '../types';
-let slowmodeCommand = {
+const slowmodeCommand = {
   name: 'slowmode',
   syntax: 'slowmode <action: "enable" | "disable"> <channel: channel_id>',
   explanation: 'Configure slowmode',
-  permissions: (msg) => msg.member.hasPermission('MANAGE_MESSAGES'),
-  responder: async (msg, cmd) => {
-    let channel = msg.guild.channels.cache.get(cmd.channel);
+  permissions: (msg: Discord.Message) =>
+    msg.member?.permissions.has('MANAGE_MESSAGES'),
+  responder: async (
+    msg: util_functions.EMessage,
+    cmd: { action: 'enable' | 'disable'; channel: string }
+  ) => {
+    const channel = msg.guild?.channels.cache.get(cmd.channel);
     if (!channel)
       throw new util_functions.BotError('user', "Channel doesn't exist");
     if (cmd.action === 'enable') {
@@ -16,13 +21,13 @@ let slowmodeCommand = {
           'user',
           'Slowmode is already enabled'
         );
-      let delete_mm = !!(await util_functions.embed_options(
+      const delete_mm = !!(await util_functions.embed_options(
         'Should this slowmode also apply to users with the MANAGE_MESSAGES permission?',
         ['Yes', 'No'],
         ['✅', '❌'],
         msg
       ));
-      let time = await util_functions.ask(
+      const time = await util_functions.ask(
         'How long should the slowmode be? Must be more than 30 seconds',
         20000,
         msg
@@ -48,12 +53,12 @@ let slowmodeCommand = {
         `Set slowmode of ${time} for <#${cmd.channel}>`
       );
     } else if (cmd.action === 'disable') {
-      let channel = msg.guild.channels.cache.get(cmd.channel);
+      const channel = msg.guild?.channels.cache.get(cmd.channel);
       if (!channel)
         throw new util_functions.BotError('user', "Channel doesn't exist");
       if (!(await Types.Slowmode.query().where('channel', cmd.channel)).length)
         throw new util_functions.BotError('user', "Slowmode isn't enabled");
-      for (let sm_user of await Types.SlowmodedUsers.query().where(
+      for (const sm_user of await Types.SlowmodedUsers.query().where(
         'channel',
         cmd.channel
       ))
@@ -75,20 +80,24 @@ exports.commandModule = {
   title: 'Slowmode',
   description: "Commands for managing ModBot's slowmode system",
   commands: [slowmodeCommand],
-  cog: async (client) => {
+  cog: async (client: Discord.Client) => {
     client.on('message', async (msg) => {
-      let slowmodeRes = await Types.Slowmode.query()
+      const slowmodeRes = await Types.Slowmode.query()
         .where('channel', msg.channel.id)
         .first();
       if (slowmodeRes && msg.member && !msg.system)
         if (
-          (msg.member.hasPermission('MANAGE_MESSAGES') &&
+          (msg.member.permissions.has('MANAGE_MESSAGES') &&
             !slowmodeRes.delete_mm) ||
-          !msg.member.hasPermission('MANAGE_MESSAGES')
+          !msg.member.permissions.has('MANAGE_MESSAGES')
         ) {
-          if (msg.channel.permissionsFor(msg.member).has('SEND_MESSAGES')) {
+          if (
+            (msg.channel as Discord.TextChannel)
+              .permissionsFor(msg.member)
+              .has('SEND_MESSAGES')
+          ) {
             try {
-              msg.channel.updateOverwrite(msg.member, {
+              (msg.channel as Discord.TextChannel).updateOverwrite(msg.member, {
                 SEND_MESSAGES: false,
               });
               try {

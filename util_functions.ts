@@ -124,7 +124,8 @@ export async function embed_options(
   for (let i = 0; i < options.length; i++) msg.react(set[i]);
   const reactions = await msg.awaitReactions(
     (reaction, user) =>
-      set.indexOf(reaction.emoji.name) != -1 && user.id == message.author.id,
+      set.indexOf(reaction.emoji.name || '') != -1 &&
+      user.id == message.author.id,
     {
       time: time || 15000,
       max: 1,
@@ -140,16 +141,18 @@ export async function embed_options(
     );
   }
   try {
-    await msg.react(reactions.array()[0].emoji.name);
+    await msg.react(reactions.array()[0].emoji.name || '');
   } catch (e) {}
   if (reactions.array().length > 0) {
     msg.edit(
       new Discord.MessageEmbed()
         .setTitle(title)
-        .setDescription(n_options[set.indexOf(reactions.array()[0].emoji.name)])
+        .setDescription(
+          n_options[set.indexOf(reactions.array()[0].emoji.name || '')]
+        )
     );
     await deferred.cancel();
-    return set.indexOf(reactions.array()[0].emoji.name);
+    return set.indexOf(reactions.array()[0].emoji.name || '');
   } else {
     msg.edit(new Discord.MessageEmbed().setTitle('Cancelled'));
     await deferred.cancel();
@@ -185,7 +188,7 @@ export function assertHasPerms(
   perms: Array<Discord.PermissionResolvable>
 ): void {
   for (const perm of perms) {
-    if (!guild.me?.hasPermission(perm))
+    if (!guild.me?.permissions.has(perm))
       throw new BotError(
         'user',
         `ModBot needs the ${perm} permission to do this`
@@ -197,7 +200,7 @@ export function warnIfNoPerms(
   perms: Array<Discord.PermissionResolvable>
 ): void {
   for (const perm of perms) {
-    if (!msg.guild?.me?.hasPermission(perm))
+    if (!msg.guild?.me?.permissions.has(perm))
       msg.channel.send(
         desc_embed(
           `ModBot should have the ${perm} permission for best results, continuing anyways`

@@ -9,7 +9,7 @@ const ticketcreate = {
   explanation:
     'Create a ticket. Moderator role is the role allowed to view the channel and user is the user who will be added to the ticket',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { moderator_role: string; user: string },
@@ -74,7 +74,7 @@ const ticketdelete = {
   syntax: 'ticket delete',
   explanation: 'Delete the current ticket channel',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.hasPermission('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: Record<string, never>,

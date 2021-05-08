@@ -64,6 +64,15 @@ const anonchannels = require('./anonchannels');
 import * as util_functions from './util_functions';
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
+  intents: [
+    'GUILD_MEMBERS',
+    'GUILD_PRESENCES',
+    'DIRECT_MESSAGES',
+    'GUILDS',
+    'GUILD_MESSAGES',
+    'GUILD_MESSAGE_REACTIONS',
+    'DIRECT_MESSAGES',
+  ],
 });
 interface MatcherCommand {
   command: string;
@@ -80,7 +89,7 @@ const main_commands = {
       syntax: 'pin <text: string>',
       explanation: 'Allows you to pin something anonymously',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: { text: string }) => {
         // Try to delete the message.
         // This can throw an error if the message was already deleted by another bot, so catch that if it does
@@ -112,7 +121,7 @@ const main_commands = {
       permissions: (msg: Discord.Message) =>
         msg.author.id === '234020040830091265' &&
         msg.member &&
-        msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (msg: Discord.Message, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
@@ -175,7 +184,7 @@ const main_commands = {
       syntax: 'say [channel: channel] <keep: "keep" | "remove"> <text: string>',
       explanation: 'Make the bot say something in a channel',
       permissions: (msg: Discord.Message) =>
-        (msg.member && msg.member.hasPermission('MANAGE_MESSAGES')) ||
+        (msg.member && msg.member.permissions.has('MANAGE_MESSAGES')) ||
         msg.author.id === '234020040830091265',
       version: 3,
       responder: async (
@@ -262,7 +271,7 @@ const main_commands = {
       explanation:
         'Add/Remove an anonymous channel. If no channel is provided it will use the current channel',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { enabled: 'enabled' | 'disabled'; channel?: string }
@@ -310,7 +319,7 @@ const main_commands = {
       syntax: 'listanonchannels',
       explanation: 'Lists all anonymous channels',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild || !msg.guild.id) return;
         const channels = await prisma.anonchannels.findMany({
@@ -334,7 +343,7 @@ const main_commands = {
       syntax: 'whosaid <id: string>',
       explanation: 'See who sent an anon message',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (msg: util_functions.EMessage, cmd: { id: string }) => {
         if (!msg.guild || !msg.guild.id) return;
         const author = await prisma.anonmessages.findFirst({
@@ -546,7 +555,7 @@ const main_commands = {
       syntax: 'clonepurge',
       explanation: 'Purge a channels entire history',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (msg: util_functions.EMessage) => {
         if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, [
@@ -655,7 +664,7 @@ const main_commands = {
       syntax: 'deletechannel',
       explanation: 'Delete channel',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       version: 2,
       responder: async (
         ctx: Types.Context
@@ -684,7 +693,7 @@ const main_commands = {
         'channeluser <allowed: "add" | "remove"> <user: user_id> [channel: channel_id]',
       explanation: 'Add/Remove a user from a channel',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { allowed: string; user: string; channel: string }
@@ -717,7 +726,7 @@ const main_commands = {
           await msg.dbReply("Sorry, you can't access that channel");
           return;
         }
-        const user = msg.guild.member(cmd.user);
+        const user = msg.guild.members.cache.get(cmd.user);
         if (!user) throw new util_functions.BotError('user', 'User not found');
         if (!allowed) {
           await realchannel.updateOverwrite(user, {
@@ -754,7 +763,7 @@ const main_commands = {
       explanation:
         "Archive a channel. Users with specified role will still be able to see it. If you don't supply a role, it will use your highest role.",
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { role: string }
@@ -802,7 +811,7 @@ const main_commands = {
       syntax: 'anonban <user: user_id> [time: string]',
       explanation: 'Ban a user from going anonymous',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string; time: string }
@@ -851,7 +860,7 @@ const main_commands = {
       syntax: 'anonunban <user: user_id>',
       explanation: 'Unban a user from going anonymous',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string }
@@ -878,7 +887,7 @@ const main_commands = {
         'tmpchannel <name: word> <duration: word> <public: "private" | "public">',
       explanation: 'Create a temporary channel',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_CHANNELS'),
+        msg.member && msg.member.permissions.has('MANAGE_CHANNELS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { name: string; duration: string; public: string }
@@ -974,7 +983,7 @@ const main_commands = {
       syntax: 'setpinperms <allowed: "allowed" | "disallowed"> <role: role_id>',
       explanation: 'Choose if a role can pin messages with the :pushpin: react',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_ROLES'),
+        msg.member && msg.member.permissions.has('MANAGE_ROLES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { allowed: string; role: string }
@@ -1024,7 +1033,7 @@ const main_commands = {
       syntax: 'listpinperms',
       explanation: 'List all roles with :pushpin: permissions',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_ROLES'),
+        msg.member && msg.member.permissions.has('MANAGE_ROLES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: Record<string, never>
@@ -1047,7 +1056,7 @@ const main_commands = {
       syntax: 'autoresponder/ar <action: "add" | "remove" | "list">',
       explanation: 'Configure an AutoResponder',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { action: string }
@@ -1273,7 +1282,7 @@ const main_commands = {
       syntax: 'joinroles <action: "enable" | "disable">',
       explanation: 'Configure roles given automatically to users who join',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_ROLES'),
+        msg.member && msg.member.permissions.has('MANAGE_ROLES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { action: string }
@@ -1351,7 +1360,7 @@ const main_commands = {
       syntax: 'reactionroles/rr <action: "add" | "edit">',
       explanation: 'Configure reaction roles',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_ROLES'),
+        msg.member && msg.member.permissions.has('MANAGE_ROLES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { action: string }
@@ -1685,7 +1694,7 @@ const main_commands = {
       syntax: 'kick <user: user_id>',
       explanation: 'Kick a user',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('KICK_MEMBERS'),
+        msg.member && msg.member.permissions.has('KICK_MEMBERS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string }
@@ -1726,7 +1735,7 @@ const main_commands = {
       syntax: 'ban <user: user_id>',
       explanation: 'Ban a user',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('BAN_MEMBERS'),
+        msg.member && msg.member.permissions.has('BAN_MEMBERS'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string }
@@ -1774,7 +1783,7 @@ const main_commands = {
         'tmprole <action: "add" | "remove"> <user: user_id> <role: role_id> <duration: string>',
       explanation: "Temporarily change a user's role",
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_ROLES'),
+        msg.member && msg.member.permissions.has('MANAGE_ROLES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { action: string; user: string; role: string; duration: string }
@@ -1910,7 +1919,7 @@ const main_commands = {
       syntax: 'usercard <user: user_id>',
       explanation: "Get a user's information card",
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string }
@@ -2023,7 +2032,7 @@ const main_commands = {
       syntax: 'note <user: user_id> <text: string>',
       explanation: 'Add a note to a user',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string; text: string }
@@ -2055,7 +2064,7 @@ const main_commands = {
       syntax: 'warn <user: user_id> <text: string>',
       explanation: 'Add a warn to a user',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { user: string; text: string }
@@ -2107,7 +2116,7 @@ const main_commands = {
       syntax: 'forgive <id: string>',
       explanation: 'Remove a warn/note',
       permissions: (msg: Discord.Message) =>
-        msg.member && msg.member.hasPermission('MANAGE_MESSAGES'),
+        msg.member && msg.member.permissions.has('MANAGE_MESSAGES'),
       responder: async (msg: util_functions.EMessage, cmd: { id: string }) => {
         if (!msg.guild) return;
         const warn_item = await prisma.notes.findFirst({
@@ -2174,13 +2183,15 @@ client.on('ready', async () => {
   const sp = () => {
     if (!client.user) return;
     client.user.setPresence({
-      activity: {
-        name: `${process.env.BOT_PREFIX || 'm: '}help | in ${
-          client.guilds.cache.size
-        } servers with ${client.users.cache.size} users`,
-        type: 'PLAYING',
-        url: 'https://github.com/scratchyone/modbot',
-      },
+      activities: [
+        {
+          name: `${process.env.BOT_PREFIX || 'm: '}help | in ${
+            client.guilds.cache.size
+          } servers with ${client.users.cache.size} users`,
+          type: 'PLAYING',
+          url: 'https://github.com/scratchyone/modbot',
+        },
+      ],
     });
   };
   sp();
@@ -2223,7 +2234,7 @@ client.on('ready', async () => {
               event.channel
             ) as Discord.TextChannel;
             if (c) {
-              const origAuthor = c.guild.member(event.user);
+              const origAuthor = c.guild.members.cache.get(event.user) || null;
               await c.send(
                 reminderEmbed(event.user, origAuthor, event.text, event.message)
               );
@@ -2422,7 +2433,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
       }
     }
     if (!reaction.message.guild) return;
-    const member = reaction.message.guild.member(user as Discord.User);
+    const member = reaction.message.guild.members.cache.get(user.id);
     const roles_that_can_pin = await prisma.pinners.findMany();
     if (
       member &&
@@ -2473,7 +2484,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
     let rr = await prisma.reactionroles.findFirst({
       where: {
-        emoji: reaction.emoji.name,
+        emoji: reaction.emoji.name || undefined,
         message: reaction.message.id,
         server: reaction.message.guild.id,
       },
@@ -2487,7 +2498,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
         },
       });
     if (!user.bot && rr) {
-      const member = reaction.message.guild.member(user as Discord.User);
+      const member = reaction.message.guild.members.cache.get(user.id);
       try {
         if (member) await member.roles.add(rr.role);
       } catch (e) {
@@ -2558,7 +2569,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
         return;
       }
     }
-    const member = reaction.message.guild.member(user as Discord.User);
+    const member = reaction.message.guild.members.cache.get(user.id);
     const roles_that_can_pin = await prisma.pinners.findMany();
     if (
       member &&
@@ -2582,7 +2593,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
     const rr =
       (await prisma.reactionroles.findFirst({
         where: {
-          emoji: reaction.emoji.name,
+          emoji: reaction.emoji.name || undefined,
           message: reaction.message.id,
           server: reaction.message.guild.id,
         },
@@ -2595,7 +2606,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
         },
       }));
     if (!user.bot && rr && rr.removable) {
-      const member = reaction.message.guild.member(user as Discord.User);
+      const member = reaction.message.guild.members.cache.get(user.id);
       try {
         if (member) await member.roles.remove(rr.role);
       } catch (e) {
@@ -2827,7 +2838,7 @@ async function requestPermsCommand(
     (reaction: Discord.MessageReaction, user: Discord.User) =>
       !!reaction.message.guild?.members.cache
         .get(user.id)
-        ?.hasPermission('ADMINISTRATOR') && reaction.emoji.name === '✅',
+        ?.permissions.has('ADMINISTRATOR') && reaction.emoji.name === '✅',
     {
       max: 1,
       time: 60000,
@@ -2852,7 +2863,7 @@ async function noAlertChannelWarning(msg: Discord.Message) {
   const message = msg as util_functions.EMessage;
   if (
     alertchannels &&
-    msg.member?.hasPermission('MANAGE_CHANNELS') &&
+    msg.member?.permissions.has('MANAGE_CHANNELS') &&
     !(await prisma.alert_channels.findFirst({
       where: {
         server: msg.guild.id,
