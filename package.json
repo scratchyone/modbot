@@ -16,7 +16,7 @@
   "dependencies": {
     "@prisma/client": "^2.18.0",
     "@scratchyone/command_parser": "^2.4.0",
-    "@sentry/node": "^6.0.2",
+    "@sentry/node": "^6.3.5",
     "@sentry/types": "^6.0.2",
     "@tsconfig/node12": "^1.0.7",
     "@types/color": "^3.0.1",
