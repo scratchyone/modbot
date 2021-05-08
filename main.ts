@@ -1873,11 +1873,18 @@ const main_commands = {
         if (!msg.guild) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
-        if (count > 50) {
+        if (count > 100) {
           throw new util_functions.BotError(
             'user',
-            'Must be less than or equal to 50 messages'
+            'Must be less than or equal to 100 messages'
           );
+        }
+        if (count > 50) {
+          if (!(await util_functions.confirm(msg)))
+            throw new util_functions.BotError(
+              'user',
+              'Confirmation needed to delete more than 50 messages'
+            );
         }
         try {
           const purged_msg_num = await (msg.channel as Discord.TextChannel).bulkDelete(
