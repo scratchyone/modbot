@@ -1197,7 +1197,7 @@ const main_commands = {
     },
     {
       name: 'alpha',
-      syntax: 'alpha <text: string>',
+      syntax: 'alpha/a <text: string>',
       explanation: 'Query Wolfram Alpha',
       version: 2,
       permissions: () => process.env.WOLFRAMALPHA_KEY,
