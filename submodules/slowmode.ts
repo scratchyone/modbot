@@ -100,11 +100,20 @@ exports.commandModule = {
               (msg.channel as Discord.TextChannel).updateOverwrite(msg.member, {
                 SEND_MESSAGES: false,
               });
+
               try {
-                await Types.SlowmodedUsers.query().insert({
-                  channel: msg.channel.id,
-                  user: msg.author.id,
-                });
+                if (
+                  (
+                    await Types.SlowmodedUsers.query().where({
+                      channel: msg.channel.id,
+                      user: msg.author.id,
+                    })
+                  ).length == 0
+                )
+                  await Types.SlowmodedUsers.query().insert({
+                    channel: msg.channel.id,
+                    user: msg.author.id,
+                  });
               } catch (e) {
                 console.log(e);
               }
