@@ -3181,7 +3181,8 @@ client.on('message', async (msg: Discord.Message) => {
             store,
             all_command_modules.flatMap((mod) =>
               mod.commands.map((c: { name: string }) => c.name)
-            )
+            ),
+            all_command_modules
           );
           try {
             parseRes = await matchCommand(

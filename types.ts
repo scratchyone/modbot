@@ -2,6 +2,7 @@ import Discord from 'discord.js';
 import { Model } from 'objection';
 import KeyValueStore from './kvs';
 import * as Types from './util_functions';
+import commandParser from '@scratchyone/command_parser';
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;
 }
@@ -40,18 +41,37 @@ export class Context {
   client: Discord.Client;
   store: KeyValueStore;
   validCommands: Array<string>;
+  command_modules: Array<{
+    title: string;
+    commands: Array<{
+      grammar: commandParser.ParsedCommandDef;
+      name: string;
+      explanation: string;
+      syntax: string;
+    }>;
+  }>;
   constructor(
     msg: Discord.Message,
     prefix: string,
     client: Discord.Client,
     store: KeyValueStore,
-    validCommands: Array<string>
+    validCommands: Array<string>,
+    command_modules: Array<{
+      title: string;
+      commands: Array<{
+        grammar: commandParser.ParsedCommandDef;
+        name: string;
+        explanation: string;
+        syntax: string;
+      }>;
+    }>
   ) {
     this.msg = msg as Types.EMessage;
     this.prefix = prefix;
     this.client = client;
     this.store = store;
     this.validCommands = validCommands;
+    this.command_modules = command_modules;
   }
 }
 export class Poll extends Model {
