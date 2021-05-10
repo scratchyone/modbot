@@ -8,7 +8,7 @@
     "tsc": "copyfiles package.json build && tsc",
     "eslint": "eslint . --ext .js,.ts",
     "build": "npm run clear && npm run tsc",
-    "dev": "ts-node-dev --respawn ./main.ts",
+    "dev": "ts-node-dev --respawn --exit-child ./main.ts",
     "clear": "del-cli build/ commands.js"
   },
   "author": "",
