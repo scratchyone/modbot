@@ -1003,6 +1003,18 @@ const main_commands = {
         const allowed = cmd.allowed == 'allowed';
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         if (allowed) {
+          if (
+            await prisma.pinners.findFirst({
+              where: {
+                roleid: cmd.role,
+                guild: msg.guild.id,
+              },
+            })
+          )
+            throw new util_functions.BotError(
+              'user',
+              'That role is already allowed to pin'
+            );
           await prisma.pinners.create({
             data: {
               roleid: cmd.role,
