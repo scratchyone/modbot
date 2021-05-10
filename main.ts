@@ -122,21 +122,22 @@ const main_commands = {
       name: 'eval',
       syntax: 'eval <code: string>',
       explanation: 'Run code',
+      version: 2,
       permissions: (msg: Discord.Message) =>
         msg.author.id === '234020040830091265' &&
         msg.member &&
         msg.member.permissions.has('MANAGE_MESSAGES'),
-      responder: async (msg: Discord.Message, cmd: { code: string }) => {
+      responder: async (ctx: Types.Context, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         const discord = Discord;
         try {
           // Define a function for cloning users that can be called from inside eval-ed code
           const cloneUser = async (user: string, text: string) => {
-            if (msg.guild !== null && msg.channel.type == 'text') {
-              const uuser = msg.guild.members.cache.get(user);
+            if (ctx.msg.guild !== null && ctx.msg.channel.type == 'text') {
+              const uuser = ctx.msg.guild.members.cache.get(user);
               if (!uuser) throw new Error('User not found');
-              const loghook = await msg.channel.createWebhook(
+              const loghook = await ctx.msg.channel.createWebhook(
                 uuser.displayName,
                 {
                   avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
@@ -144,7 +145,7 @@ const main_commands = {
               );
               await loghook.send(text);
               await loghook.delete();
-              await msg.delete();
+              await ctx.msg.delete();
             }
           };
           if (!cloneUser) return;
@@ -174,10 +175,10 @@ const main_commands = {
           // Run created arrow function
           const funcResult = await func();
           if (funcResult)
-            await msg.channel.send(
+            await ctx.msg.channel.send(
               util_functions.embed(funcResult, 'success', '')
             );
-          else await msg.channel.send(util_functions.embed('', 'success'));
+          else await ctx.msg.channel.send(util_functions.embed('', 'success'));
         } catch (e) {
           throw new util_functions.BotError('user', e);
         }
