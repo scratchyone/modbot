@@ -869,7 +869,7 @@ const setchannelname = {
 const randommember = {
   name: 'randommember',
   syntax: 'randommember [role: role]',
-  explanation: "Set a channel's name",
+  explanation: 'Get a random member',
   permissions: () => true,
   version: 2,
   responder: async (
