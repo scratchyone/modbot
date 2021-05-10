@@ -3304,13 +3304,6 @@ client.on('message', async (msg: Discord.Message) => {
                   );
                 } else {
                   console.error(e);
-                  await message.dbReply(
-                    'An error has occurred. Would you please explain what you were trying to do?'
-                  );
-                  const feedback = await msg.channel.awaitMessages(
-                    (n) => n.author.id == msg.author.id,
-                    { max: 1, time: 30000 }
-                  );
                   Sentry.configureScope(function (scope: SentryTypes.Scope) {
                     scope.setTag('command', registered_command.name);
                     scope.setUser({
@@ -3320,17 +3313,22 @@ client.on('message', async (msg: Discord.Message) => {
                     scope.setContext('Info', {
                       'Message Text': msg.content,
                       'Parse Result': parseRes,
-                      Feedback: feedback.array()[0]
-                        ? feedback.array()[0].content
-                        : null,
                     });
                   });
                   await message.dbReply(
-                    'This error is likely not your fault. Please give the bot owner this ID: ' +
-                      Sentry.captureException(e)
-                  );
-                  await message.dbReply(
-                    `Use \`${matchingPrefix}support\` to get an invite to the support server`
+                    new Discord.MessageEmbed()
+                      .setColor('#e74d4d')
+                      .setTitle('Something went wrong')
+                      .setDescription(
+                        'An internal bot error has occurred. This has been reported to the development team.'
+                      )
+                      .addField(
+                        'Error Code',
+                        '`' + Sentry.captureException(e) + '`'
+                      )
+                      .setFooter(
+                        `Use ${matchingPrefix}support to get an invite to the support server`
+                      )
                   );
                 }
               }
