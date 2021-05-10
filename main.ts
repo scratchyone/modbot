@@ -280,6 +280,17 @@ const main_commands = {
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const channel = cmd.channel ? cmd.channel : msg.channel.id;
         if (cmd.enabled == 'enabled') {
+          if (
+            await prisma.anonchannels.findFirst({
+              where: {
+                id: channel,
+              },
+            })
+          )
+            throw new util_functions.BotError(
+              'user',
+              'That anonchannel is already enabled'
+            );
           await prisma.anonchannels.create({
             data: {
               id: channel,
