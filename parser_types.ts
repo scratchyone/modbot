@@ -125,8 +125,17 @@ function extract_generic_id(
   regex: RegExp,
   error_name: string,
   limit_to: any[] | undefined,
-  alises: [string, any][]
+  aliases: [string, any][]
 ): { stream: ParserStream<string>; result: any } {
+  for (const alias of aliases) {
+    if (command.nextn(alias[0].length).join('') == alias[0]) {
+      command.consumen(alias[0].length);
+      return {
+        stream: command,
+        result: alias[1],
+      };
+    }
+  }
   let buffer = '';
   while (command.peek() != ' ' && !command.atEnd) {
     buffer += command.consume();
@@ -140,11 +149,6 @@ function extract_generic_id(
     return {
       stream: command,
       result: buffer.match(regex)?.groups?.id,
-    };
-  else if (alises.find((a) => a[0] == buffer))
-    return {
-      stream: command,
-      result: alises.find((a) => a[0] == buffer)![1],
     };
   else throw new ParseError(command.count, 'Expected ' + error_name);
 }
