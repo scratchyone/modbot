@@ -119,14 +119,14 @@ export const Types = {
     };
   },
 };
-function extract_generic_id<T>(
+function extract_generic_id(
   command: ParserStream<string>,
   ctx: Context,
   regex: RegExp,
   error_name: string,
-  limit_to: { id: string }[] | undefined,
-  aliases: [string, string][]
-): { stream: ParserStream<string>; result: string } {
+  limit_to: any[] | undefined,
+  aliases: [string, any][]
+): { stream: ParserStream<string>; result: any } {
   for (const alias of aliases) {
     if (command.nextn(alias[0].length).join('') == alias[0]) {
       command.consumen(alias[0].length);
