@@ -877,10 +877,15 @@ const randommember = {
     cmd: { role: Discord.Role | undefined }
   ) => {
     let randomMember;
-    if (cmd.role) randomMember = cmd.role.members.random().id;
-    else randomMember = ctx.msg.guild?.members.cache.random().id;
+    if (cmd.role) randomMember = cmd.role.members.random();
+    else randomMember = ctx.msg.guild?.members.cache.random();
+    if (!randomMember)
+      throw new util_functions.BotError(
+        'user',
+        "That role doesn't have any members"
+      );
     await ctx.msg.dbReply(
-      util_functions.embed(`<@${randomMember}>`, 'tip', 'Random Member')
+      util_functions.embed(`<@${randomMember.id}>`, 'tip', 'Random Member')
     );
   },
 };
