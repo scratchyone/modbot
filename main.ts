@@ -12,6 +12,10 @@ import Knex from 'knex';
 import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
 import vm from 'vm';
+const adminServerPermissionOverwrites: Array<{
+  guild: string;
+  timestamp: number;
+}> = [];
 const store = new KeyValueStore();
 // Initialize knex.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2170,6 +2174,157 @@ const main_commands = {
         await Types.LogChannel.tryToLog(msg, `Removed warn/note \`${cmd.id}\``);
       },
     },
+    {
+      name: 'help',
+      syntax: 'help [topic: string]',
+      explanation: 'View a help menu',
+      version: 2,
+      permissions: () => true,
+      responder: async (
+        ctx: Types.Context,
+        cmd: { topic: string | undefined }
+      ) => {
+        if (cmd.topic) {
+          const chosen_module = all_command_modules.find(
+            (mod) =>
+              mod.title.toLowerCase() ==
+              ctx.msg.content.replace(`${ctx.prefix}help `, '').toLowerCase()
+          );
+          if (!chosen_module) {
+            const valid_commands = [];
+            for (const module of all_command_modules) {
+              for (const registered_command of module.commands)
+                try {
+                  if (
+                    registered_command.name.toLowerCase() ==
+                    ctx.msg.content
+                      .replace(`${ctx.prefix}help `, '')
+                      .toLowerCase()
+                  ) {
+                    valid_commands.push(registered_command);
+                  }
+                } catch (e) {}
+            }
+            if (valid_commands.length) {
+              ctx.msg.dbReply(
+                new Discord.MessageEmbed()
+                  .setTitle(
+                    util_functions.fillStringVars('Help for __botName__')
+                  )
+                  .setDescription(
+                    '*<> means required, [] means optional.*\n' +
+                      valid_commands
+                        .map(
+                          (registered_command) =>
+                            '**' +
+                            Humanize.capitalize(registered_command.name) +
+                            '\n**' +
+                            (registered_command.explanation ||
+                              registered_command.long_explanation) +
+                            '\n**Syntax**\n' +
+                            `\`${
+                              ctx.prefix +
+                              generateCommandString(registered_command.grammar)
+                            }\``
+                        )
+                        .join('\n\n')
+                  )
+              );
+              return;
+            }
+            throw new util_functions.BotError(
+              'user',
+              'Module/Command not found!'
+            );
+          }
+          ctx.msg.dbReply(
+            new Discord.MessageEmbed()
+              .setTitle(util_functions.fillStringVars('Help for __botName__'))
+              .setDescription(
+                '**' +
+                  chosen_module.title +
+                  '**\n' +
+                  chosen_module.description +
+                  '\n*<> means required, [] means optional.*\nType ' +
+                  ctx.prefix +
+                  'help <NAME> to get help for a specific command'
+              )
+              .addFields(
+                chosen_module.commands
+                  .filter(
+                    // eslint-disable-next-line no-unused-vars
+                    (command: {
+                      permissions: (arg0: Discord.Message) => boolean;
+                    }) =>
+                      command.permissions(ctx.msg) ||
+                      adminServerPermissionOverwrites.find(
+                        (p) =>
+                          p.timestamp > Date.now() / 1000 &&
+                          p.guild === ctx.msg.guild?.id &&
+                          ctx.msg.author.id === '234020040830091265'
+                      )
+                  )
+                  .map(
+                    (n: {
+                      name: string;
+                      grammar: ParsedCommandDef;
+                      explanation: string;
+                    }) => {
+                      return {
+                        name: Humanize.capitalize(n.name),
+                        value: `\`${
+                          ctx.prefix + generateCommandString(n.grammar)
+                        }\`\n${n.explanation}`,
+                        inline: false,
+                      };
+                    }
+                  )
+              )
+          );
+        } else {
+          const chunks = all_command_modules
+            .map((mod) => {
+              const cmds = mod.commands
+                .filter(
+                  // eslint-disable-next-line no-unused-vars
+                  (command: {
+                    permissions: (arg0: Discord.Message) => boolean;
+                  }) =>
+                    command.permissions(ctx.msg) ||
+                    adminServerPermissionOverwrites.find(
+                      (p) =>
+                        p.timestamp > Date.now() / 1000 &&
+                        p.guild === ctx.msg.guild?.id &&
+                        ctx.msg.author.id === '234020040830091265'
+                    )
+                )
+                .map(
+                  (cmd: { grammar: ParsedCommandDef }) =>
+                    `\`${ctx.prefix + generateCommandString(cmd.grammar)}\``
+                )
+                .join('\n');
+              return {
+                name: mod.title,
+                value: '*' + mod.description + '*\n' + cmds,
+                inline: false,
+                cmds: cmds,
+              };
+            })
+            .filter((n) => n.cmds.length);
+          //.chunk_inefficient(25);
+          ctx.msg.dbReply(
+            new Discord.MessageEmbed()
+              .setTitle(util_functions.fillStringVars('Help for __botName__'))
+              .setDescription(
+                '<> means required, [] means optional. Type `' +
+                  ctx.prefix +
+                  'help <NAME>` to get help for a specific command module or command'
+              )
+              .addFields(chunks)
+          );
+        }
+      },
+    },
   ],
 };
 function reminderEmbed(
@@ -2907,145 +3062,6 @@ async function noAlertChannelWarning(msg: Discord.Message) {
     alertChannelNotifsSent.add(msg.guild.id + msg.author.id);
   }
 }
-async function runHelpCommands(
-  msg: Discord.Message,
-  matchingPrefix: string
-): Promise<boolean> {
-  const message = msg as util_functions.EMessage;
-  if (msg.content == `${matchingPrefix}help`) {
-    const chunks = all_command_modules
-      .map((mod) => {
-        const cmds = mod.commands
-          .filter(
-            // eslint-disable-next-line no-unused-vars
-            (command: { permissions: (arg0: Discord.Message) => boolean }) =>
-              command.permissions(msg) ||
-              adminServerPermissionOverwrites.find(
-                (p) =>
-                  p.timestamp > Date.now() / 1000 &&
-                  p.guild === msg.guild?.id &&
-                  msg.author.id === '234020040830091265'
-              )
-          )
-          .map(
-            (cmd: { grammar: ParsedCommandDef }) =>
-              `\`${matchingPrefix + generateCommandString(cmd.grammar)}\``
-          )
-          .join('\n');
-        return {
-          name: mod.title,
-          value: '*' + mod.description + '*\n' + cmds,
-          inline: false,
-          cmds: cmds,
-        };
-      })
-      .filter((n) => n.cmds.length);
-    //.chunk_inefficient(25);
-    message.dbReply(
-      new Discord.MessageEmbed()
-        .setTitle(util_functions.fillStringVars('Help for __botName__'))
-        .setDescription(
-          '<> means required, [] means optional. Type `' +
-            matchingPrefix +
-            'help <NAME>` to get help for a specific command module or command'
-        )
-        .addFields(chunks)
-    );
-    return true;
-  } else if (msg.content.startsWith(`${matchingPrefix}help `)) {
-    const chosen_module = all_command_modules.find(
-      (mod) =>
-        mod.title.toLowerCase() ==
-        msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
-    );
-    if (!chosen_module) {
-      const valid_commands = [];
-
-      for (const module of all_command_modules) {
-        for (const registered_command of module.commands)
-          try {
-            if (
-              registered_command.name.toLowerCase() ==
-              msg.content.replace(`${matchingPrefix}help `, '').toLowerCase()
-            ) {
-              valid_commands.push(registered_command);
-            }
-          } catch (e) {}
-      }
-      if (valid_commands.length) {
-        message.dbReply(
-          new Discord.MessageEmbed()
-            .setTitle(util_functions.fillStringVars('Help for __botName__'))
-            .setDescription(
-              '*<> means required, [] means optional.*\n' +
-                valid_commands
-                  .map(
-                    (registered_command) =>
-                      '**' +
-                      Humanize.capitalize(registered_command.name) +
-                      '\n**' +
-                      (registered_command.explanation ||
-                        registered_command.long_explanation) +
-                      '\n**Syntax**\n' +
-                      `\`${
-                        matchingPrefix +
-                        generateCommandString(registered_command.grammar)
-                      }\``
-                  )
-                  .join('\n\n')
-            )
-        );
-        return true;
-      }
-      await message.dbReply('Module/Command not found!');
-      return true;
-    }
-    message.dbReply(
-      new Discord.MessageEmbed()
-        .setTitle(util_functions.fillStringVars('Help for __botName__'))
-        .setDescription(
-          '**' +
-            chosen_module.title +
-            '**\n' +
-            chosen_module.description +
-            '\n*<> means required, [] means optional.*\nType ' +
-            matchingPrefix +
-            'help <NAME> to get help for a specific command'
-        )
-        .addFields(
-          chosen_module.commands
-            .filter(
-              // eslint-disable-next-line no-unused-vars
-              (command: { permissions: (arg0: Discord.Message) => boolean }) =>
-                command.permissions(msg) ||
-                adminServerPermissionOverwrites.find(
-                  (p) =>
-                    p.timestamp > Date.now() / 1000 &&
-                    p.guild === msg.guild?.id &&
-                    msg.author.id === '234020040830091265'
-                )
-            )
-            .map(
-              (n: {
-                name: string;
-                grammar: ParsedCommandDef;
-                explanation: string;
-              }) => {
-                return {
-                  name: Humanize.capitalize(n.name),
-                  value: `\`${
-                    matchingPrefix + generateCommandString(n.grammar)
-                  }\`\n${n.explanation}`,
-                  inline: false,
-                };
-              }
-            )
-        )
-    );
-    return true;
-  }
-  return false;
-}
 async function showSyntaxError(
   msg: Discord.Message,
   registered_commands: {
@@ -3145,10 +3161,6 @@ function processObjects(
   }
   return outputObj;
 }
-const adminServerPermissionOverwrites: Array<{
-  guild: string;
-  timestamp: number;
-}> = [];
 import Humanize, { toFixed } from 'humanize-plus';
 import { Defer, processDeferredOnStart } from './defer';
 client.on('message', async (msg: Discord.Message) => {
@@ -3182,7 +3194,6 @@ client.on('message', async (msg: Discord.Message) => {
       await requestPermsCommand(msg, matchingPrefix);
       return;
     }
-    if (await runHelpCommands(msg, matchingPrefix)) return;
     /*const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
 
     try {
