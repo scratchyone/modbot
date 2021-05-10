@@ -229,7 +229,6 @@ const suggestion = {
         }
       );
       if (res.status !== 200) {
-        console.log(await res.json());
         throw new util_functions.BotError(
           'user',
           'Failed to submit suggestion. This is probably not your fault!'

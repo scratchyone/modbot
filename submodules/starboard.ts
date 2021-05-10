@@ -47,7 +47,6 @@ const onStarReactRemove = async (
         },
       });
     } else {
-      console.log('no sb');
     }
   }
   if (

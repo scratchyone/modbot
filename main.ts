@@ -1449,7 +1449,6 @@ const main_commands = {
             return;
           }
           const hp = msg.member.roles.highest.position;
-          console.log(hp);
           const reacts_formatted = reacts
             .array()[0]
             .content.split('\n')
@@ -1611,7 +1610,6 @@ const main_commands = {
             return;
           }
           const hp = msg.member.roles.highest.position;
-          console.log(hp);
           const reacts_formatted = reacts
             .array()[0]
             .content.split('\n')
@@ -2228,7 +2226,6 @@ client.on('ready', async () => {
             'id',
             event.id
           );
-          console.log(subs);
           if (res.length) {
             const c = client.channels.cache.get(
               event.channel
