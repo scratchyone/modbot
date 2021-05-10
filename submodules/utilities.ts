@@ -866,6 +866,24 @@ const setchannelname = {
     );
   },
 };
+const randommember = {
+  name: 'randommember',
+  syntax: 'randommember [role: role]',
+  explanation: "Set a channel's name",
+  permissions: () => true,
+  version: 2,
+  responder: async (
+    ctx: Types.Context,
+    cmd: { role: Discord.Role | undefined }
+  ) => {
+    let randomMember;
+    if (cmd.role) randomMember = cmd.role.members.random().id;
+    else randomMember = ctx.msg.guild?.members.cache.random().id;
+    await ctx.msg.dbReply(
+      util_functions.embed(`<@${randomMember}>`, 'tip', 'Random Member')
+    );
+  },
+};
 const setservername = {
   name: 'setservername',
   syntax: 'setservername <name: string>',
@@ -1013,6 +1031,7 @@ exports.commandModule = {
     setchannelname,
     setservername,
     waitforupdate,
+    randommember,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
