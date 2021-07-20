@@ -347,8 +347,8 @@ const datapack = {
     await storage
       .bucket(process.env.BUCKET_NAME || '')
       .file(fileName)
-      .save(Buffer.from(html, 'utf-8'), {
-        contentType: 'text/html',
+      .save(html, {
+        contentType: 'text/html; charset=utf-8',
       });
     try {
       await (await ctx.msg.author.createDM()).send(
