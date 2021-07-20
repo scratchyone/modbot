@@ -11,7 +11,6 @@ import fetch from 'node-fetch';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import mi from 'markdown-it';
-const md = mi();
 import MDTT from 'mdtt';
 import path from 'path';
 const serviceKey = path.join(__dirname, './keys.json');
@@ -206,6 +205,25 @@ const pick = {
     );
   },
 };
+function markdownifyDiscordFormatting(
+  input: string,
+  client: Discord.Client,
+  m: (strings: TemplateStringsArray, ...values: any[]) => string
+): string {
+  return input
+    .replaceAll(/&lt;@\\?!?(\d+)\\?&gt;/g, (match, group1) => {
+      return client.users.cache.get(group1)
+        ? m`**@${client.users.cache.get(group1)?.tag}**`
+        : m`<@${group1}>`;
+    })
+    .replaceAll(/&lt;a?:(\w+):(\d+)\\?&gt;/g, (match, name, group1) => {
+      return client.emojis.cache.get(group1)
+        ? m`<img src="${
+            client.emojis.cache.get(group1)?.url
+          }" class="emoji"></img>`
+        : match;
+    });
+}
 const datapack = {
   name: 'datapack',
   syntax: 'datapack',
@@ -258,7 +276,9 @@ const datapack = {
       },
     });
     await ctx.msg.dbReply('Generating datapack...');
-    const m = MDTT();
+    const m = MDTT({
+      sanitizeHtml: true,
+    });
     const markdown = stripIndent(
       m`
     # ${ctx.msg.author.username}'s Data Pack
@@ -316,7 +336,7 @@ const datapack = {
           { name: m`\`${n.channel}\`` }.name
         }\n`
     )}
-    ${slowmodedUsers.length == 0 ? m`Empty` : ''}
+    ${slowmodedUsers.length == 0 ? m`*Empty*` : ''}
     `,
       '    '
     );
@@ -326,6 +346,10 @@ const datapack = {
     <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
     <script>twemoji.parse(document.body, { ext: ".svg", folder: 'svg' });</script>
     <style>
+      a, a:visited {
+        color: #4e82ff;
+        text-decoration: none;
+      }
       code {
         font-family: monospace;
         background: #e6e6e6;
@@ -349,7 +373,14 @@ const datapack = {
     `,
       '    '
     );
-    const html = md.render(markdown) + '\n' + styles;
+    const md = mi({
+      html: true,
+      linkify: true,
+    });
+    const html =
+      md.render(markdownifyDiscordFormatting(markdown, ctx.client, m)) +
+      '\n' +
+      styles;
     await ctx.msg.dbReply('Datapack ready, DMing you now');
     const fileName = uuidv4() + '.html';
     await storage
@@ -358,6 +389,8 @@ const datapack = {
       .save(html, {
         contentType: 'text/html; charset=utf-8',
       });
+    await ctx.msg.dbReply(`https://datapacks.xyz/${fileName}`);
+
     try {
       await (await ctx.msg.author.createDM()).send(
         `https://datapacks.xyz/${fileName}`

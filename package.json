@@ -36,7 +36,7 @@
     "humanize-plus": "^1.8.2",
     "knex": "^0.21.16",
     "markdown-it": "^12.1.0",
-    "mdtt": "^1.1.4",
+    "mdtt": "^1.2.1",
     "moment": "^2.29.1",
     "nanoid": "^3.1.20",
     "node-fetch": ">=2.6.1",
