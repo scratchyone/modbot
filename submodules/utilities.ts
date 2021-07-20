@@ -213,7 +213,7 @@ function markdownifyDiscordFormatting(
   return input
     .replaceAll(/&lt;@\\?!?(\d+)\\?&gt;/g, (match, group1) => {
       return client.users.cache.get(group1)
-        ? m`**@${client.users.cache.get(group1)?.tag}**`
+        ? m`<span class="user">@${client.users.cache.get(group1)?.tag}</span>`
         : m`<@${group1}>`;
     })
     .replaceAll(/&lt;a?:(\w+):(\d+)\\?&gt;/g, (match, name, group1) => {
@@ -346,6 +346,11 @@ const datapack = {
     <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
     <script>twemoji.parse(document.body, { ext: ".svg", folder: 'svg' });</script>
     <style>
+      .user {
+        border-radius: 5px;
+        background: #e7e7ff;
+        font-weight: bold;
+      }
       a, a:visited {
         color: #4e82ff;
         text-decoration: none;
