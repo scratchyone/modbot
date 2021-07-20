@@ -323,6 +323,8 @@ const datapack = {
     const styles = stripIndent(
       `
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
+    <script>twemoji.parse(document.body, { ext: ".svg", folder: 'svg' });</script>
     <style>
       code {
         font-family: monospace;
@@ -337,6 +339,12 @@ const datapack = {
         max-width: 800px;
         padding: 15px;
       }
+      img.emoji {
+        height: 1.2em;
+        width: 1.2em;
+        margin: 0 .05em 0 .1em;
+        vertical-align: -0.25em;
+     }
     </style>
     `,
       '    '
