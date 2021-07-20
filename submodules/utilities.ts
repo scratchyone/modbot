@@ -347,7 +347,7 @@ const datapack = {
     await storage
       .bucket(process.env.BUCKET_NAME || '')
       .file(fileName)
-      .save(html, {
+      .save(Buffer.from(html, 'utf-8'), {
         contentType: 'text/html',
       });
     try {
