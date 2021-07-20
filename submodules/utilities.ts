@@ -8,6 +8,24 @@ import * as Types from '../types';
 import { Defer } from '../defer';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+import mi from 'markdown-it';
+const md = mi();
+import MDTT from 'mdtt';
+import path from 'path';
+const serviceKey = path.join(__dirname, './keys.json');
+import { Storage } from '@google-cloud/storage';
+import { v4 as uuidv4 } from 'uuid';
+
+const storage = new Storage();
+
+function stripIndent(text: string, indent: string): string {
+  return text
+    .split('\n')
+    .map((line) => (line.startsWith(indent) ? line.slice(indent.length) : line))
+    .join('\n');
+}
 // Get bot invite link
 const invite = {
   name: 'invite',
@@ -186,6 +204,162 @@ const pick = {
         ctx.msg.guild
       )}`
     );
+  },
+};
+const datapack = {
+  name: 'datapack',
+  syntax: 'datapack',
+  explanation:
+    'Creates a datapack with all the information ModBot has on your account',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context) => {
+    ctx.msg.dbReply('Gathering data...');
+    const anonbans = await prisma.anonbans.findMany({
+      where: {
+        user: ctx.msg.author.id,
+      },
+    });
+    const anonmessages = await prisma.anonmessages.count({
+      where: {
+        user: ctx.msg.author.id,
+      },
+    });
+    const capabilities = await prisma.capabilities.findMany({
+      where: {
+        user: ctx.msg.author.id,
+      },
+    });
+    const notesCount = await prisma.notes.count({
+      where: {
+        user: ctx.msg.author.id,
+        type: 'note',
+      },
+    });
+    const warns = await prisma.notes.findMany({
+      where: {
+        user: ctx.msg.author.id,
+        type: 'warn',
+      },
+    });
+    const reminderSubscribers = await prisma.reminderSubscribers.findMany({
+      where: {
+        user: ctx.msg.author.id,
+      },
+    });
+    const reminders = await prisma.reminders.findMany({
+      where: {
+        author: ctx.msg.author.id,
+      },
+    });
+    const slowmodedUsers = await prisma.slowmoded_users.findMany({
+      where: {
+        user: ctx.msg.author.id,
+      },
+    });
+    await ctx.msg.dbReply('Generating datapack...');
+    const m = MDTT();
+    const markdown = stripIndent(
+      m`
+    # ${ctx.msg.author.username}'s Data Pack
+    
+    This file contains all of the currently accessible data that ModBot has about your user account. Please keep in mind that some deleted data may still be stored in database backups, and some information may be private and cannot be shared in this document.
+    
+    ## Anon Bans
+    ModBot stores this information when your account is banned from an anonymous channel, to enforce the ban. ModBot stores your user ID and the ID of the server you have been anonbanned from. They are presented here as a list of server names.
+
+    ${anonbans.map(
+      (n) =>
+        m`* ${
+          ctx.client.guilds.cache.get(n.server) || { name: n.server }.name
+        }\n`
+    )}
+    ${anonbans.length == 0 ? m`*Empty*` : ''}
+    ${anonbans.length == 0 ? m`*Empty*` : ''}
+
+    ## Anon Messages
+    ModBot stores the ID of every message you send in an anon channel, along with your user ID and the ID of the server the message was sent in. This is done to allow moderators to enforce rules within anon channels. ModBot has stored the IDs of ${anonmessages} anonmessages sent by your account.
+    
+    ## Capabilities
+    ModBot stores various randomly generated tokens, along with your user ID, the permission given by the token, and when the token expires. These are used to generate one-time links to ModBot websites, such as the reminder dashboard.
+    ${capabilities.map((n) => m`* \`${n.token}\`: ${n.type}\n`)}
+    ${capabilities.length == 0 ? m`*Empty*` : ''}
+
+    ## Notes and Warns
+    When your account recieves a note or a warn from moderators, the message is stored along with your user ID and the ID of the server the note was sent in. Notes are private to server moderators, and cannot be shared here. You have recieved ${notesCount} total notes. Warns are presented here as a message and a server name.
+    
+    ${warns.map(
+      (n) =>
+        m`* *"${n.message}"*, ${
+          ctx.client.guilds.cache.get(n.server) ||
+          { name: m`\`${n.server}\`` }.name
+        }\n`
+    )}
+    ${warns.length == 0 ? m`*Empty*` : ''}
+
+    ## Reminder Subscribers
+    When you choose to copy a reminder, ModBot stores you as a "subscriber" to that reminder. ModBot stores your user ID along with the ID of the reminder you have subscribed to. They are presented here as a list of reminder IDs.
+    ${reminderSubscribers.map((n) => m`* \`${n.id}\`\n`)}
+    ${reminderSubscribers.length == 0 ? m`*Empty*` : ''}
+
+    # Reminders
+    When you create a reminder, ModBot stores your user ID, the reminder ID, the reminder text, and when the reminder is due.
+    ${reminders.map((n) => m`* \`${n.id}\`: *"${n.text}"*\n`)}
+    ${reminders.length == 0 ? m`*Empty*` : ''}
+
+    ## Slowmodes
+    When you send a message in a channel that has a bot enforced slowmode enabled, the bot stores your user ID and the channel ID, so the bot can give back your message permissions once the slowmode expires.
+    
+    ${slowmodedUsers.map(
+      (n) =>
+        m`* ${
+          ctx.client.channels.cache.get(n.channel) ||
+          { name: m`\`${n.channel}\`` }.name
+        }\n`
+    )}
+    ${slowmodedUsers.length == 0 ? m`Empty` : ''}
+    `,
+      '    '
+    );
+    const styles = stripIndent(
+      `
+    <style>
+      code {
+        font-family: monospace;
+        background: #e6e6e6;
+        padding: 2px;
+        border-radius: 5px;
+      }
+      * {
+        font-family: "system-ui", sans-serif;
+      }
+      body {
+        max-width: 800px;
+        padding: 15px;
+      }
+    </style>
+    `,
+      '    '
+    );
+    const html = md.render(markdown) + '\n' + styles;
+    await ctx.msg.dbReply('Datapack ready, DMing you now');
+    const fileName = uuidv4() + '.html';
+    await storage
+      .bucket(process.env.BUCKET_NAME || '')
+      .file(fileName)
+      .save(html, {
+        contentType: 'text/html',
+      });
+    try {
+      await (await ctx.msg.author.createDM()).send(
+        `https://datapacks.xyz/${fileName}`
+      );
+    } catch (e) {
+      throw new util_functions.BotError(
+        'user',
+        'Cannot DM you, check your privacy settings.'
+      );
+    }
   },
 };
 const suggestion = {
@@ -564,7 +738,6 @@ const about = {
     );
   },
 };
-const path = require('path');
 const url = require('url');
 const addemoji = {
   name: 'addemoji',
@@ -1037,6 +1210,7 @@ exports.commandModule = {
     setservername,
     waitforupdate,
     randommember,
+    datapack,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {

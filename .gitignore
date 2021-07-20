@@ -7,3 +7,4 @@ build
 report.*.json
 perms.db3-journal
 package-lock.json
+keys.json
