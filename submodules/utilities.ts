@@ -323,6 +323,7 @@ const datapack = {
     );
     const styles = stripIndent(
       `
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       code {
         font-family: monospace;
