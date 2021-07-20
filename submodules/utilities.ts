@@ -275,7 +275,6 @@ const datapack = {
         }\n`
     )}
     ${anonbans.length == 0 ? m`*Empty*` : ''}
-    ${anonbans.length == 0 ? m`*Empty*` : ''}
 
     ## Anon Messages
     ModBot stores the ID of every message you send in an anon channel, along with your user ID and the ID of the server the message was sent in. This is done to allow moderators to enforce rules within anon channels. ModBot has stored the IDs of ${anonmessages} anonmessages sent by your account.
