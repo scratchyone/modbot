@@ -210,19 +210,35 @@ function markdownifyDiscordFormatting(
   client: Discord.Client,
   m: (strings: TemplateStringsArray, ...values: any[]) => string
 ): string {
-  return input
-    .replaceAll(/&lt;@\\?!?(\d+)\\?&gt;/g, (match, group1) => {
-      return client.users.cache.get(group1)
-        ? m`<span class="user">@${client.users.cache.get(group1)?.tag}</span>`
+  return (
+    input
+      .replaceAll(/&lt;@\\?!?(\d+)&gt;/g, (match, id) => {
+        return client.users.cache.get(id)
+          ? m`<a class="mention" href="https://discordapp.com/users/${id}">@${
+              client.users.cache.get(id)?.tag
+            }</a>`
+          : m`<@${id}>`;
+      })
+      /*.replaceAll(/&lt;@&amp;(\d+)\\?&gt;/g, (match, group1) => {
+      return client.guilds.cache.get(group1)
+        ? m`<span class="mention">@${
+            client.roles.cache.get(group1)?.tag
+          }</span>`
         : m`<@${group1}>`;
-    })
-    .replaceAll(/&lt;a?:(\w+):(\d+)\\?&gt;/g, (match, name, group1) => {
-      return client.emojis.cache.get(group1)
-        ? m`<img src="${
-            client.emojis.cache.get(group1)?.url
-          }" class="emoji"></img>`
-        : match;
-    });
+    })*/
+      .replaceAll(/&lt;\\?#(\d+)&gt;/g, (match, id) => {
+        const channel = client.channels.cache.get(id) as Discord.TextChannel;
+        return channel
+          ? m`<a class="mention" href="https://discord.com/channels/${channel.guild.id}/${channel.id}">#${channel.name}</a>`
+          : m`<#${id}>`;
+      })
+      .replaceAll(/&lt;(a?):(\w+):(\d+)&gt;/g, (match, animatedA, name, id) => {
+        const animated = animatedA == 'a';
+        return m`<img alt="${name}" src="https://cdn.discordapp.com/emojis/${id}.${
+          animated ? 'gif' : 'png'
+        }" class="emoji"></img>`;
+      })
+  );
 }
 const datapack = {
   name: 'datapack',
@@ -346,14 +362,15 @@ const datapack = {
     <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
     <script>twemoji.parse(document.body, { ext: ".svg", folder: 'svg' });</script>
     <style>
-      .user {
-        border-radius: 5px;
-        background: #e7e7ff;
-        font-weight: bold;
-      }
       a, a:visited {
         color: #4e82ff;
         text-decoration: none;
+      }
+      .mention {
+        border-radius: 5px;
+        background: #e7e7ff;
+        font-weight: bold;
+        color: black !important;
       }
       code {
         font-family: monospace;
