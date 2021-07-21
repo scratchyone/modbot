@@ -411,7 +411,6 @@ const datapack = {
       .save(html, {
         contentType: 'text/html; charset=utf-8',
       });
-    await ctx.msg.dbReply(`https://datapacks.xyz/${fileName}`);
 
     try {
       await (await ctx.msg.author.createDM()).send(
