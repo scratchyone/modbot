@@ -98,22 +98,27 @@ const poll = {
         new Discord.MessageEmbed()
           .setTitle('Photosensitive Epilepsy Warning')
           .setDescription(
-            'Poll can flash when votes are rapidly submitted. React with ✅ to continue'
-          ),
+            'Poll can flash when votes are rapidly submitted. Accept to continue'
+          )
+          .setColor(util_functions.COLORS.error),
+      ],
+      components: [
+        new Discord.MessageActionRow().addComponents(
+          new Discord.MessageButton()
+            .setCustomId('accept')
+            .setLabel('Accept')
+            .setStyle('DANGER')
+        ),
       ],
     });
-    await pollMsg.react('✅');
     // Wait for confirmation
-    const react = await pollMsg.awaitReactions({
-      max: 1,
+    const react = await util_functions.awaitMessageComponent(pollMsg, {
       time: 50000,
-      filter: (r: Discord.MessageReaction, u: Discord.User) =>
-        u.id === msg.author.id && r.emoji.name === '✅',
+      filter: (r) => r.user.id === msg.author.id,
     });
     // If confirmation given
-    if (react.array().length) {
-      // Remove check mark reaction
-      await pollMsg.reactions.removeAll();
+    if (react) {
+      await react.deferUpdate();
       // Edit confirmation message into poll
       await pollMsg.edit({
         embeds: [
@@ -125,6 +130,7 @@ const poll = {
             .setTitle(cmd.text)
             .setImage(new Types.MediaGen().generatePoll({ up: 0, down: 0 })),
         ],
+        components: [],
       });
       // Add reactions for voting
       await pollMsg.react('👍');
@@ -132,14 +138,13 @@ const poll = {
       // Save poll in database
       await Types.Poll.query().insert({ message: pollMsg.id });
     } else {
-      // If no confirmation given, edit message with error
-      await pollMsg.reactions.removeAll();
       await pollMsg.edit({
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('Epilepsy Warning Not Accepted')
             .setColor(util_functions.COLORS.error),
         ],
+        components: [],
       });
     }
   },
