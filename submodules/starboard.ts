@@ -126,9 +126,9 @@ async function genSBMessage(message: Discord.Message) {
             ]
         ),
       ],
-      embed: new Discord.MessageEmbed()
+      embeds: [new Discord.MessageEmbed()
         .setAuthor(msg_username, await message.author.displayAvatarURL())
-        .setDescription(desc + '\n\n**[Source](' + message.url + ')**'),
+        .setDescription(desc + '\n\n**[Source](' + message.url + ')**')],
     };
   else if (!isImage && image)
     return {
@@ -141,19 +141,19 @@ async function genSBMessage(message: Discord.Message) {
           'vid.' + image.split('.')[image.split('.').length - 1]
         ),
       ],
-      embed: new Discord.MessageEmbed()
+      embeds: [new Discord.MessageEmbed()
         .setAuthor(msg_username, await message.author.displayAvatarURL())
-        .setDescription(desc + '\n\n**[Source](' + message.url + ')**'),
+        .setDescription(desc + '\n\n**[Source](' + message.url + ')**')],
     };
   else
     return {
       content: `${message.reactions.cache.get('⭐')!.count} ⭐\n${
         message.channel
       }`,
-      embed: new Discord.MessageEmbed()
+      embeds: [new Discord.MessageEmbed()
         .setAuthor(msg_username, await message.author.displayAvatarURL())
         .setDescription(desc + '\n\n**[Source](' + message.url + ')**')
-        .setImage(image as string),
+        .setImage(image as string)],
     };
 }
 const onStarReactAdd = async (
