@@ -1,4 +1,4 @@
-import { Client, MessageEmbed } from 'discord.js';
+import { Client, MessageEmbed, Snowflake } from 'discord.js';
 import { Model } from 'objection';
 import { v4 as uuidv4 } from 'uuid';
 import Discord from 'discord.js';
@@ -55,7 +55,11 @@ export async function processDeferredOnStart(client: Client): Promise<void> {
     try {
       const json = def.json;
       if (json.type === 'SendCancelledMessage') {
-        (client.channels.cache.get(json.channel) as Discord.TextChannel).send(
+        (
+          client.channels.cache.get(
+            json.channel as Snowflake
+          ) as Discord.TextChannel
+        ).send(
           Utils.embed(
             'This action has been cancelled due to a bot restart, please try again',
             'warning',
@@ -63,19 +67,25 @@ export async function processDeferredOnStart(client: Client): Promise<void> {
           )
         );
       } else if (json.type === 'SendMessage') {
-        (client.channels.cache.get(json.channel) as Discord.TextChannel).send(
-          json.content
-        );
+        (
+          client.channels.cache.get(
+            json.channel as Snowflake
+          ) as Discord.TextChannel
+        ).send(json.content);
       } else if (json.type === 'UpdateTmpDeletionMessage') {
         (
-          await (client.channels.cache.get(
-            json.channel
-          ) as Discord.TextChannel).messages.fetch(json.message)
-        ).edit(
-          new MessageEmbed().setDescription(
-            `This channel will be deleted ${json.deletionTime} after this message was sent`
-          )
-        );
+          await (
+            client.channels.cache.get(
+              json.channel as Snowflake
+            ) as Discord.TextChannel
+          ).messages.fetch(json.message as Snowflake)
+        ).edit({
+          embeds: [
+            new MessageEmbed().setDescription(
+              `This channel will be deleted ${json.deletionTime} after this message was sent`
+            ),
+          ],
+        });
       } else {
         console.warn(`Unknown defer found: ${JSON.stringify(json, null, 4)}`);
       }

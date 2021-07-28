@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import * as util_functions from '../util_functions';
-import Discord from 'discord.js';
+import Discord, { MessageReaction, Snowflake } from 'discord.js';
 const onStarReactRemove = async (
   reaction: Discord.MessageReaction,
   client: Discord.Client
@@ -32,11 +32,11 @@ const onStarReactRemove = async (
       });
       try {
         await (
-          await (client.channels.cache!.get(
-            sb.channel
-          )! as Discord.TextChannel).messages!.fetch(
-            sb_msg_db!.starboard_message
-          )
+          await (
+            client.channels.cache!.get(
+              sb.channel as Snowflake
+            )! as Discord.TextChannel
+          ).messages!.fetch(sb_msg_db!.starboard_message as Snowflake)
         ).delete();
       } catch (e) {
         console.log(e);
@@ -67,10 +67,10 @@ const onStarReactRemove = async (
       },
     });
     const sb_chan = client.channels.cache.get(
-      sb_msg!.starboard_message_channel
+      sb_msg!.starboard_message_channel as Snowflake
     ) as Discord.TextChannel | undefined;
     const sb_disc_msg = await sb_chan!.messages!.fetch(
-      sb_msg!.starboard_message
+      sb_msg!.starboard_message as Snowflake
     );
     await sb_disc_msg.edit(
       await genSBMessage(reaction.message as Discord.Message)
@@ -182,7 +182,7 @@ const onStarReactAdd = async (
         },
       });
       if (sb) {
-        const sb_chan = client.channels.cache.get(sb.channel) as
+        const sb_chan = client.channels.cache.get(sb.channel as Snowflake) as
           | Discord.TextChannel
           | undefined;
         const sb_msg = await sb_chan!.send(
@@ -219,10 +219,10 @@ const onStarReactAdd = async (
       },
     });
     const sb_chan = client.channels.cache.get(
-      sb_msg!.starboard_message_channel
+      sb_msg!.starboard_message_channel as Snowflake
     ) as Discord.TextChannel | undefined;
     const sb_disc_msg = await sb_chan!.messages.fetch(
-      sb_msg!.starboard_message
+      sb_msg!.starboard_message as Snowflake
     );
     await sb_disc_msg.edit(
       await genSBMessage(reaction.message as Discord.Message)
@@ -311,13 +311,11 @@ const starboardCommand = {
         );
       } else {
         await msg.channel.send('What should I name the channel?');
-        const sb_name = await msg.channel.awaitMessages(
-          (m) => m.author.id == msg.author.id,
-          {
-            max: 1,
-            time: 10000,
-          }
-        );
+        const sb_name = await msg.channel.awaitMessages({
+          max: 1,
+          time: 10000,
+          filter: (m) => m.author.id == msg.author.id,
+        });
         if (!sb_name.array().length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
@@ -325,7 +323,7 @@ const starboardCommand = {
         const channel = await msg.guild.channels.create(
           sb_name.array()[0].content,
           {
-            type: 'text',
+            type: 'GUILD_TEXT',
             permissionOverwrites: [
               {
                 id: msg.guild.id,
@@ -359,9 +357,11 @@ const starboardCommand = {
         },
       });
       if (sb) {
-        await ((await client.channels.cache.get(
-          sb.channel
-        )!) as Discord.TextChannel).overwritePermissions([
+        await (
+          (await client.channels.cache.get(
+            sb.channel as Snowflake
+          )!) as Discord.TextChannel
+        ).permissionOverwrites.set([
           {
             id: msg.guild.id,
             deny: ['SEND_MESSAGES'],
@@ -397,7 +397,9 @@ const starboardCommand = {
           if (conf) {
             if (choice === 0) {
               try {
-                await (await client.channels.cache.get(sb.channel)!).delete();
+                await (
+                  await client.channels.cache.get(sb.channel as Snowflake)!
+                ).delete();
               } catch (e) {
                 //
               }
@@ -436,13 +438,11 @@ const starboardCommand = {
         );
         if (choice === 0) {
           await msg.channel.send('How many stars should be required?');
-          const stars_req = await msg.channel.awaitMessages(
-            (m) => m.author.id == msg.author.id,
-            {
-              max: 1,
-              time: 10000,
-            }
-          );
+          const stars_req = await msg.channel.awaitMessages({
+            max: 1,
+            time: 10000,
+            filter: (m) => m.author.id == msg.author.id,
+          });
           if (!stars_req.array().length) {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
@@ -508,9 +508,11 @@ const starGetCommand = {
         }
         let sb_msg;
         try {
-          sb_msg = await (client.channels!.cache!.get(
-            sb.channel
-          )! as Discord.TextChannel).messages.fetch(star.starboard_message);
+          sb_msg = await (
+            client.channels!.cache!.get(
+              sb.channel as Snowflake
+            )! as Discord.TextChannel
+          ).messages.fetch(star.starboard_message as Snowflake);
         } catch (e) {
           console.log(e);
           await prisma.starboard_messages.deleteMany({
@@ -525,7 +527,7 @@ const starGetCommand = {
           );
           return;
         }
-        await msg.channel.send({ embed: sb_msg.embeds[0] });
+        await msg.channel.send({ embeds: [sb_msg.embeds[0]] });
       }
     } else {
       msg.channel.send(util_functions.desc_embed('No starboard found'));
@@ -557,7 +559,7 @@ exports.commandModule = {
         }
         if (!reaction.message.guild) return;
         if (reaction.emoji.name == '⭐') {
-          await onStarReactAdd(reaction, client);
+          await onStarReactAdd(reaction as MessageReaction, client);
         }
       } catch (e) {}
     });
@@ -580,7 +582,7 @@ exports.commandModule = {
         }
         if (!reaction.message.guild) return;
         if (reaction.emoji.name == '⭐') {
-          await onStarReactRemove(reaction, client);
+          await onStarReactRemove(reaction as MessageReaction, client);
         }
       } catch (e) {}
     });

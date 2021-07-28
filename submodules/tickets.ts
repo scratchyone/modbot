@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 import { nanoid } from 'nanoid';
 import * as Types from '../types';
 const ticketcreate = {
@@ -19,22 +19,22 @@ const ticketcreate = {
     if (!client.user) return;
     if (!msg.member) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-    if (!msg.member.roles.cache.get(cmd.moderator_role))
+    if (!msg.member.roles.cache.get(cmd.moderator_role as Snowflake))
       throw new util_functions.BotError('user', "You don't have that role!");
     try {
       const channel = await msg.guild.channels.create('ticket-' + nanoid(15), {
-        type: 'text',
+        type: 'GUILD_TEXT',
         permissionOverwrites: [
           {
-            id: msg.guild.id,
+            id: msg.guild.id as Snowflake,
             deny: ['VIEW_CHANNEL'],
           },
           {
-            id: cmd.moderator_role,
+            id: cmd.moderator_role as Snowflake,
             allow: ['VIEW_CHANNEL'],
           },
           {
-            id: cmd.user,
+            id: cmd.user as Snowflake,
             allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
         ],
@@ -42,17 +42,17 @@ const ticketcreate = {
       msg.dbReply(`Created ${channel}`);
       await channel.send(`<@${cmd.user}>, a ticket has been created for you`);
       setTimeout(() => {
-        channel.overwritePermissions([
+        channel.permissionOverwrites.set([
           {
-            id: channel.guild.id,
+            id: channel.guild.id as Snowflake,
             deny: ['VIEW_CHANNEL'],
           },
           {
-            id: cmd.moderator_role,
+            id: cmd.moderator_role as Snowflake,
             allow: ['VIEW_CHANNEL'],
           },
           {
-            id: cmd.user,
+            id: cmd.user as Snowflake,
             allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
           },
         ]);
@@ -84,9 +84,14 @@ const ticketdelete = {
     if (!client.user) return;
     if (!msg.member) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-    if (msg.channel.type == 'text' && msg.channel.name.startsWith('ticket-')) {
+    if (
+      msg.channel.type == 'GUILD_TEXT' &&
+      msg.channel.name.startsWith('ticket-')
+    ) {
       msg.dbReply('Deleting channel in 10 seconds');
-      msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
+      msg.channel.permissionOverwrites.edit(msg.guild.id, {
+        SEND_MESSAGES: false,
+      });
       setTimeout(() => {
         msg.channel.delete();
       }, 10000);

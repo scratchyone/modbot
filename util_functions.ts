@@ -1,4 +1,4 @@
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 import parse_duration from 'parse-duration';
 import node_fetch from 'node-fetch';
 import * as Types from './types';
@@ -15,8 +15,8 @@ export function randomIntFromInterval(min: number, max: number): number {
 /**
  * Convert string to simple embed
  */
-export function desc_embed(text: string): Discord.MessageEmbed {
-  return new Discord.MessageEmbed().setDescription(text);
+export function desc_embed(text: string): { embeds: Discord.MessageEmbed[] } {
+  return { embeds: [new Discord.MessageEmbed().setDescription(text)] };
 }
 /**
  * Create an embed showing various message types
@@ -27,15 +27,23 @@ export function embed(
   text: string,
   type: 'success' | 'warning' | 'tip',
   title?: string
-): Discord.MessageEmbed {
-  return new Discord.MessageEmbed()
-    .setTitle(
-      title == undefined
-        ? { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
-        : title
-    )
-    .setDescription(text)
-    .setColor({ success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[type]);
+): { embeds: Discord.MessageEmbed[] } {
+  return {
+    embeds: [
+      new Discord.MessageEmbed()
+        .setTitle(
+          title == undefined
+            ? { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
+            : title
+        )
+        .setDescription(text)
+        .setColor(
+          { success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[
+            type
+          ] as Discord.ColorResolvable
+        ),
+    ],
+  };
 }
 /**
  * Get a random item from an array
@@ -69,31 +77,33 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
     channel: message.channel.id,
   });
   deferred.cancelIn(20000);
-  const msg = await message.channel.send(
-    new Discord.MessageEmbed().setTitle(
-      'Click the ✅ when it appears to confirm'
-    )
-  );
+  const msg = await message.channel.send({
+    embeds: [
+      new Discord.MessageEmbed().setTitle(
+        'Click the ✅ when it appears to confirm'
+      ),
+    ],
+  });
   await msg.react('🔄');
   setTimeout(async () => {
     await msg.reactions.removeAll();
     await msg.react('✅');
   }, 3000);
-  const reactions = await msg.awaitReactions(
-    (reaction, user) =>
+  const reactions = await msg.awaitReactions({
+    time: 10000,
+    max: 1,
+    filter: (reaction, user) =>
       reaction.emoji.name == '✅' && user.id == message.author.id,
-    {
-      time: 10000,
-      max: 1,
-    }
-  );
+  });
   msg.reactions.removeAll();
   if (reactions.array().length > 0) {
-    msg.edit(new Discord.MessageEmbed().setTitle('Confirmed'));
+    msg.edit({ embeds: [new Discord.MessageEmbed().setTitle('Confirmed')] });
     await deferred.cancel();
     return true;
   } else {
-    msg.edit(new Discord.MessageEmbed().setTitle('Confirmation Failed'));
+    msg.edit({
+      embeds: [new Discord.MessageEmbed().setTitle('Confirmation Failed')],
+    });
     await deferred.cancel();
     return false;
   }
@@ -116,21 +126,21 @@ export async function embed_options(
     else n_options.push('<:emoji:' + set[i] + '>' + ' ' + options[i]);
   }
 
-  const msg = await message.dbReply(
-    new Discord.MessageEmbed()
-      .setTitle(title)
-      .setDescription(n_options.join('\n'))
-  );
+  const msg = await message.dbReply({
+    embeds: [
+      new Discord.MessageEmbed()
+        .setTitle(title)
+        .setDescription(n_options.join('\n')),
+    ],
+  });
   for (let i = 0; i < options.length; i++) msg.react(set[i]);
-  const reactions = await msg.awaitReactions(
-    (reaction, user) =>
+  const reactions = await msg.awaitReactions({
+    time: time || 15000,
+    max: 1,
+    filter: (reaction, user) =>
       set.indexOf(reaction.emoji.name || '') != -1 &&
       user.id == message.author.id,
-    {
-      time: time || 15000,
-      max: 1,
-    }
-  );
+  });
   try {
     await msg.reactions.removeAll();
   } catch (e) {
@@ -144,17 +154,19 @@ export async function embed_options(
     await msg.react(reactions.array()[0].emoji.name || '');
   } catch (e) {}
   if (reactions.array().length > 0) {
-    msg.edit(
-      new Discord.MessageEmbed()
-        .setTitle(title)
-        .setDescription(
-          n_options[set.indexOf(reactions.array()[0].emoji.name || '')]
-        )
-    );
+    msg.edit({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle(title)
+          .setDescription(
+            n_options[set.indexOf(reactions.array()[0].emoji.name || '')]
+          ),
+      ],
+    });
     await deferred.cancel();
     return set.indexOf(reactions.array()[0].emoji.name || '');
   } else {
-    msg.edit(new Discord.MessageEmbed().setTitle('Cancelled'));
+    msg.edit({ embeds: [new Discord.MessageEmbed().setTitle('Cancelled')] });
     await deferred.cancel();
     return null;
   }
@@ -171,7 +183,7 @@ export async function cleanPings(
   const role_pings = [...cleaned.matchAll(/<@&[0-9]+>/g)];
   for (const ping of role_pings) {
     const pinged_role = guild.roles.cache.get(
-      ping.toString().replace('<@&', '').replace('>', '')
+      ping.toString().replace('<@&', '').replace('>', '') as Snowflake
     );
     if (!pinged_role?.mentionable)
       cleaned = cleaned.replace(
@@ -238,13 +250,11 @@ export async function ask(
   });
   deferred.cancelIn(time);
   await msg.dbReply(question);
-  const sb_name = await msg.channel.awaitMessages(
-    (m) => m.author.id == msg.author.id,
-    {
-      max: 1,
-      time: time,
-    }
-  );
+  const sb_name = await msg.channel.awaitMessages({
+    max: 1,
+    time: time,
+    filter: (m) => m.author.id == msg.author.id,
+  });
   await deferred.cancel();
   if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
   if (sb_name.array()[0].attachments.array().length)
@@ -270,13 +280,11 @@ export async function askOrNone(
       const repm = await msg.dbReply(question);
       await repm.react('🚫');
       repm
-        .awaitReactions(
-          (r, u) => r.emoji.name === '🚫' && u.id === msg.author.id,
-          {
-            max: 1,
-            time: time,
-          }
-        )
+        .awaitReactions({
+          max: 1,
+          time: time,
+          filter: (r, u) => r.emoji.name === '🚫' && u.id === msg.author.id,
+        })
         .then((reactions) => {
           if (reactions.array().length) {
             addedEmoji = true;
@@ -284,13 +292,11 @@ export async function askOrNone(
             resolve('');
           }
         });
-      const sb_name = await msg.channel.awaitMessages(
-        (m) => m.author.id == msg.author.id,
-        {
-          max: 1,
-          time: time,
-        }
-      );
+      const sb_name = await msg.channel.awaitMessages({
+        max: 1,
+        time: time,
+        filter: (m) => m.author.id == msg.author.id,
+      });
       await deferred.cancel();
       if (!sb_name.array().length && !addedEmoji) {
         reject(new exports.BotError('user', 'Timed out'));
@@ -339,6 +345,7 @@ export class EGuild extends Discord.Guild {
 Structures.extend('Guild', () => {
   return EGuild;
 });
+
 export class EMessage extends Discord.Message {
   constructor(
     client: Discord.Client,
@@ -357,7 +364,7 @@ export class EMessage extends Discord.Message {
     return askOrNone(question, time, this);
   }
   async dbReply(
-    content: Discord.StringResolvable | Discord.APIMessage
+    content: string | Discord.MessagePayload | Discord.MessageOptions
   ): Promise<Discord.Message> {
     if (!this.guild)
       throw new BotError('bot', 'dbReply was called outside of a guild');
@@ -391,30 +398,32 @@ export class EMessage extends Discord.Message {
         id: this.id,
       },
     });
-    return tmp ? this.guild?.members.cache.get(tmp.user) : undefined;
+    return tmp
+      ? this.guild?.members.cache.get(tmp.user as Snowflake)
+      : undefined;
   }
   async isPluralKitMessage(): Promise<boolean> {
-    if (this.webhookID && (this.guild as EGuild | undefined)?.hasPluralKit) {
+    if (this.webhookId && (this.guild as EGuild | undefined)?.hasPluralKit) {
       return !!(await this.getPluralKitSender());
     } else {
       return false;
     }
   }
   async isAnonMessage(): Promise<boolean> {
-    if (this.webhookID) {
+    if (this.webhookId) {
       return !!(await this.getAnonSender());
     } else {
       return false;
     }
   }
   async getRealMember(): Promise<Discord.GuildMember | undefined | null> {
-    if (this.webhookID) {
+    if (this.webhookId) {
       const anonsender = await this.getAnonSender();
       if (anonsender) {
         return anonsender;
       }
     }
-    if (this.webhookID && (this.guild as EGuild | undefined)?.hasPluralKit) {
+    if (this.webhookId && (this.guild as EGuild | undefined)?.hasPluralKit) {
       return await this.getPluralKitSender();
     } else {
       return this.member;

@@ -61,14 +61,12 @@ async function handle_anon_message(msg: Discord.Message) {
       .find((webhook) => webhook.name == 'Anon') ||
     (await (msg.channel as Discord.TextChannel).createWebhook('Anon'));
   //}
-  const am = await anonhook.send(
-    await util_functions.cleanPings(msg.content, msg.guild),
-    {
-      embeds: msg.embeds,
-      files: msg.attachments.array().map((n) => n.url),
-      username: similars[last.count % similars.length],
-    }
-  );
+  const am = await anonhook.send({
+    content: await util_functions.cleanPings(msg.content, msg.guild),
+    embeds: msg.embeds,
+    files: msg.attachments.array().map((n) => n.url),
+    username: similars[last.count % similars.length],
+  });
   await prisma.anonmessages.create({
     data: {
       id: am.id,

@@ -153,9 +153,10 @@ function extract_generic_id(
   else throw new ParseError(command.count, 'Expected ' + error_name);
 }
 
-function extract_until_space(
-  command: ParserStream<string>
-): { stream: ParserStream<string>; result: any } {
+function extract_until_space(command: ParserStream<string>): {
+  stream: ParserStream<string>;
+  result: any;
+} {
   let buffer = '';
   while (command.peek() != ' ' && !command.atEnd) {
     console.log('Consumed: ' + '"' + command.peek() + '"');

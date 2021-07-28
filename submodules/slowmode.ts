@@ -1,5 +1,5 @@
 import * as util_functions from '../util_functions';
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 const parse_duration = require('parse-duration');
 import * as Types from '../types';
 const slowmodeCommand = {
@@ -12,7 +12,7 @@ const slowmodeCommand = {
     msg: util_functions.EMessage,
     cmd: { action: 'enable' | 'disable'; channel: string }
   ) => {
-    const channel = msg.guild?.channels.cache.get(cmd.channel);
+    const channel = msg.guild?.channels.cache.get(cmd.channel as Snowflake);
     if (!channel)
       throw new util_functions.BotError('user', "Channel doesn't exist");
     if (cmd.action === 'enable') {
@@ -53,7 +53,7 @@ const slowmodeCommand = {
         `Set slowmode of ${time} for <#${cmd.channel}>`
       );
     } else if (cmd.action === 'disable') {
-      const channel = msg.guild?.channels.cache.get(cmd.channel);
+      const channel = msg.guild?.channels.cache.get(cmd.channel as Snowflake);
       if (!channel)
         throw new util_functions.BotError('user', "Channel doesn't exist");
       if (!(await Types.Slowmode.query().where('channel', cmd.channel)).length)
@@ -62,9 +62,12 @@ const slowmodeCommand = {
         'channel',
         cmd.channel
       ))
-        channel.updateOverwrite(sm_user.user, {
-          SEND_MESSAGES: true,
-        });
+        (channel as Discord.TextChannel).permissionOverwrites.edit(
+          sm_user.user as Snowflake,
+          {
+            SEND_MESSAGES: true,
+          }
+        );
 
       await Types.Slowmode.query().where('channel', cmd.channel).delete();
       await Types.SlowmodedUsers.query().where('channel', cmd.channel).delete();
@@ -97,9 +100,12 @@ exports.commandModule = {
               .has('SEND_MESSAGES')
           ) {
             try {
-              (msg.channel as Discord.TextChannel).updateOverwrite(msg.member, {
-                SEND_MESSAGES: false,
-              });
+              (msg.channel as Discord.TextChannel).permissionOverwrites.edit(
+                msg.member,
+                {
+                  SEND_MESSAGES: false,
+                }
+              );
 
               try {
                 if (

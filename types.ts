@@ -1,4 +1,4 @@
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 import { Model } from 'objection';
 import KeyValueStore from './kvs';
 import * as Types from './util_functions';
@@ -111,7 +111,7 @@ export class LogChannel extends Model {
   }
   public toChannel(guild: Discord.Guild): Discord.TextChannel | undefined {
     try {
-      const foundChannel = guild.channels.cache.get(this.channel);
+      const foundChannel = guild.channels.cache.get(this.channel as Snowflake);
       if (!(foundChannel instanceof Discord.TextChannel)) return undefined;
       return foundChannel;
     } catch (e) {
@@ -140,22 +140,24 @@ export class LogChannel extends Model {
   ): Promise<Discord.Message | undefined> {
     const discordChannel = this.toChannel(guild);
     if (!discordChannel) return undefined;
-    return await discordChannel.send(
-      new Discord.MessageEmbed()
-        .setTitle(
-          action === 'action' || action === undefined ? 'Action' : 'Event'
-        )
-        .setDescription(text)
-        .setColor('#429acc')
-        .setAuthor(
-          author && (action === 'action' || action === undefined)
-            ? author.displayName + ` (@${author.user.tag})`
-            : '',
-          author && (action === 'action' || action === undefined)
-            ? author.user.displayAvatarURL()
-            : undefined
-        )
-    );
+    return await discordChannel.send({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle(
+            action === 'action' || action === undefined ? 'Action' : 'Event'
+          )
+          .setDescription(text)
+          .setColor('#429acc')
+          .setAuthor(
+            author && (action === 'action' || action === undefined)
+              ? author.displayName + ` (@${author.user.tag})`
+              : '',
+            author && (action === 'action' || action === undefined)
+              ? author.user.displayAvatarURL()
+              : undefined
+          ),
+      ],
+    });
   }
   public static async tryToLog(
     msg: Discord.Message | Discord.Guild,

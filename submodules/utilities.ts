@@ -2,7 +2,12 @@
 import * as util_functions from '../util_functions';
 import * as Utils from '../util_functions';
 import moment from 'moment';
-import Discord, { GuildEmoji, MessageReaction, User } from 'discord.js';
+import Discord, {
+  GuildEmoji,
+  MessageReaction,
+  Snowflake,
+  User,
+} from 'discord.js';
 import { EGuild, Prefix, Context } from '../types';
 import * as Types from '../types';
 import { Defer } from '../defer';
@@ -33,38 +38,44 @@ const invite = {
   permissions: () => true,
   version: 2,
   responder: async (ctx: Context) => {
-    await ctx.msg.dbReply(
-      new Discord.MessageEmbed()
-        .setURL(
-          `https://discord.com/api/oauth2/authorize?client_id=${ctx.client.user?.id}&permissions=2146958847&scope=bot`
-        )
-        .setTitle('Click here to invite ModBot to your server')
-        .setDescription('Thank you for using ModBot! <:pOg:759186176094765057>')
-        .setColor('#9168a6')
-        .setFooter(
-          process.env.AUTHOR_NAME
-            ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
-            : 'Made with ❤️'
-        )
-    );
+    await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setURL(
+            `https://discord.com/api/oauth2/authorize?client_id=${ctx.client.user?.id}&permissions=2146958847&scope=bot`
+          )
+          .setTitle('Click here to invite ModBot to your server')
+          .setDescription(
+            'Thank you for using ModBot! <:pOg:759186176094765057>'
+          )
+          .setColor('#9168a6')
+          .setFooter(
+            process.env.AUTHOR_NAME
+              ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
+              : 'Made with ❤️'
+          ),
+      ],
+    });
   },
 };
 // Edit a poll message with an updated image
 async function reRenderPoll(message: Discord.Message | Discord.PartialMessage) {
   try {
     await message.edit({
-      embed: message.embeds[0].setImage(
-        new Types.MediaGen().generatePoll({
-          up:
-            (message.reactions.cache
-              .array()
-              .filter((r) => r.emoji.name == '👍')[0].count || 1) - 1,
-          down:
-            (message.reactions.cache
-              .array()
-              .filter((r) => r.emoji.name == '👎')[0].count || 1) - 1,
-        })
-      ),
+      embeds: [
+        message.embeds[0].setImage(
+          new Types.MediaGen().generatePoll({
+            up:
+              (message.reactions.cache
+                .array()
+                .filter((r) => r.emoji.name == '👍')[0].count || 1) - 1,
+            down:
+              (message.reactions.cache
+                .array()
+                .filter((r) => r.emoji.name == '👎')[0].count || 1) - 1,
+          })
+        ),
+      ],
     });
   } catch (e) {
     console.log(e);
@@ -82,34 +93,39 @@ const poll = {
       await msg.delete();
     } catch (e) {}
     // Show warning
-    const pollMsg = await msg.channel.send(
-      new Discord.MessageEmbed()
-        .setTitle('Photosensitive Epilepsy Warning')
-        .setDescription(
-          'Poll can flash when votes are rapidly submitted. React with ✅ to continue'
-        )
-    );
+    const pollMsg = await msg.channel.send({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('Photosensitive Epilepsy Warning')
+          .setDescription(
+            'Poll can flash when votes are rapidly submitted. React with ✅ to continue'
+          ),
+      ],
+    });
     await pollMsg.react('✅');
     // Wait for confirmation
-    const react = await pollMsg.awaitReactions(
-      (r: Discord.MessageReaction, u: Discord.User) =>
+    const react = await pollMsg.awaitReactions({
+      max: 1,
+      time: 50000,
+      filter: (r: Discord.MessageReaction, u: Discord.User) =>
         u.id === msg.author.id && r.emoji.name === '✅',
-      { max: 1, time: 50000 }
-    );
+    });
     // If confirmation given
     if (react.array().length) {
       // Remove check mark reaction
       await pollMsg.reactions.removeAll();
       // Edit confirmation message into poll
-      await pollMsg.edit(
-        new Discord.MessageEmbed()
-          .setAuthor(
-            msg.member?.displayName || msg.author.username,
-            msg.author.displayAvatarURL()
-          )
-          .setTitle(cmd.text)
-          .setImage(new Types.MediaGen().generatePoll({ up: 0, down: 0 }))
-      );
+      await pollMsg.edit({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setAuthor(
+              msg.member?.displayName || msg.author.username,
+              msg.author.displayAvatarURL()
+            )
+            .setTitle(cmd.text)
+            .setImage(new Types.MediaGen().generatePoll({ up: 0, down: 0 })),
+        ],
+      });
       // Add reactions for voting
       await pollMsg.react('👍');
       await pollMsg.react('👎');
@@ -118,9 +134,11 @@ const poll = {
     } else {
       // If no confirmation given, edit message with error
       await pollMsg.reactions.removeAll();
-      await pollMsg.edit(
-        new Discord.MessageEmbed().setTitle('Epilepsy Warning Not Accepted')
-      );
+      await pollMsg.edit({
+        embeds: [
+          new Discord.MessageEmbed().setTitle('Epilepsy Warning Not Accepted'),
+        ],
+      });
     }
   },
 };
@@ -132,7 +150,7 @@ const spoil = {
   responder: async (msg: util_functions.EMessage, cmd: { text: string }) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-    if (msg.guild !== null && msg.channel.type == 'text') {
+    if (msg.guild !== null && msg.channel.type == 'GUILD_TEXT') {
       const uuser = msg.member;
       if (!uuser) throw new Error('User not found');
       // Create a webhook for sending message
@@ -144,17 +162,17 @@ const spoil = {
         return { ...attachment, name: 'SPOILER_' + attachment.name };
       });
       // Send with a webhook for custom username and profile picture
-      const m = await loghook.send(
-        await util_functions.cleanPings(cmd.text, msg.guild),
-        {
-          files,
-        }
-      );
+      const m = await loghook.send({
+        files,
+        content: await util_functions.cleanPings(cmd.text, msg.guild),
+      });
       // Delete webhook
       await loghook.delete();
       await Types.LogChannel.tryToLog(
         msg,
-        `Re-sent message with spoil command: [Re-sent Message](${m.url})`
+        `Re-sent message with spoil command: [Re-sent Message](${
+          (m as Discord.Message).url
+        })`
       );
     }
     try {
@@ -172,19 +190,21 @@ const pfp = {
     if (!ctx.msg.guild) return;
     let user;
     try {
-      user = await ctx.client.users.fetch(cmd.user);
+      user = await ctx.client.users.fetch(cmd.user as Snowflake);
     } catch (e) {
       throw new util_functions.BotError('user', 'User not found');
     }
-    const member = ctx.msg.guild.members.cache.get(cmd.user);
+    const member = ctx.msg.guild.members.cache.get(cmd.user as Snowflake);
     if (!user) throw new util_functions.BotError('user', 'User not found');
-    await ctx.msg.dbReply(
-      new Discord.MessageEmbed()
-        .setTitle(
-          `${member ? member.displayName : user.username}'s Profile Picture`
-        )
-        .setImage(user.displayAvatarURL() + '?size=256')
-    );
+    await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle(
+            `${member ? member.displayName : user.username}'s Profile Picture`
+          )
+          .setImage(user.displayAvatarURL() + '?size=256'),
+      ],
+    });
   },
 };
 const pick = {
@@ -307,7 +327,8 @@ const datapack = {
     ${anonbans.map(
       (n) =>
         m`* ${
-          ctx.client.guilds.cache.get(n.server) || { name: n.server }.name
+          ctx.client.guilds.cache.get(n.server as Snowflake) ||
+          { name: n.server }.name
         }\n`
     )}
     ${anonbans.length == 0 ? m`*Empty*` : ''}
@@ -326,7 +347,7 @@ const datapack = {
     ${warns.map(
       (n) =>
         m`* *"${n.message}"*, ${
-          ctx.client.guilds.cache.get(n.server) ||
+          ctx.client.guilds.cache.get(n.server as Snowflake) ||
           { name: m`\`${n.server}\`` }.name
         }\n`
     )}
@@ -348,7 +369,7 @@ const datapack = {
     ${slowmodedUsers.map(
       (n) =>
         m`* ${
-          ctx.client.channels.cache.get(n.channel) ||
+          ctx.client.channels.cache.get(n.channel as Snowflake) ||
           { name: m`\`${n.channel}\`` }.name
         }\n`
     )}
@@ -413,9 +434,9 @@ const datapack = {
       });
 
     try {
-      await (await ctx.msg.author.createDM()).send(
-        `https://datapacks.xyz/${fileName}`
-      );
+      await (
+        await ctx.msg.author.createDM()
+      ).send(`https://datapacks.xyz/${fileName}`);
     } catch (e) {
       throw new util_functions.BotError(
         'user',
@@ -561,7 +582,7 @@ const userpic = {
   explanation: 'Get a nice message',
   permissions: () => true,
   responder: async (msg: util_functions.EMessage) => {
-    msg.channel.startTyping();
+    msg.channel.sendTyping();
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
     // Load random background image
@@ -603,8 +624,7 @@ const userpic = {
       canvas.toBuffer(),
       'image.png'
     );
-    msg.dbReply(attachment);
-    msg.channel.stopTyping();
+    msg.dbReply({ files: [attachment] });
   },
 };
 import Color from 'color';
@@ -626,29 +646,31 @@ const color = {
         canvas.toBuffer(),
         'image.png'
       );
-      await msg.dbReply(
-        new Discord.MessageEmbed()
-          .setTitle(cmd.color)
-          .addFields(
-            {
-              name: 'RGB',
-              value: Color(cmd.color).rgb().string(),
-              inline: false,
-            },
-            {
-              name: 'Hex',
-              value: Color(cmd.color).hex(),
-              inline: false,
-            },
-            {
-              name: 'HSL',
-              value: Color(cmd.color).hsl(),
-              inline: false,
-            }
-          )
-          .attachFiles([attachment])
-          .setThumbnail('attachment://image.png')
-      );
+      await msg.dbReply({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle(cmd.color)
+            .addFields(
+              {
+                name: 'RGB',
+                value: Color(cmd.color).rgb().string(),
+                inline: false,
+              },
+              {
+                name: 'Hex',
+                value: Color(cmd.color).hex(),
+                inline: false,
+              },
+              {
+                name: 'HSL',
+                value: Color(cmd.color).hsl().string(),
+                inline: false,
+              }
+            )
+            .setThumbnail('attachment://image.png'),
+        ],
+        files: [attachment],
+      });
       const colors = ['#FFFFFF', '#36393F', '#000000'];
       let i = 0;
       canvas = Canvas.createCanvas(120, colors.length * 40);
@@ -667,12 +689,14 @@ const color = {
         canvas.toBuffer(),
         'image.png'
       );
-      await msg.dbReply(
-        new Discord.MessageEmbed()
-          .attachFiles([attachment])
-          .setImage('attachment://image.png')
-          .setTitle('Role Color Test')
-      );
+      await msg.dbReply({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setImage('attachment://image.png')
+            .setTitle('Role Color Test'),
+        ],
+        files: [attachment],
+      });
     } catch (e) {
       msg.dbReply(e.toString());
     }
@@ -702,7 +726,7 @@ const owo = {
     await new Types.MediaGen().assert();
     // Get the tagged user, or none
     const authee = cmd.user
-      ? ctx.msg.guild?.members.cache.get(cmd.user)?.displayName
+      ? ctx.msg.guild?.members.cache.get(cmd.user as Snowflake)?.displayName
       : undefined;
     // Get a message, image, and metadata from mediagen
     const data = await fetch(
@@ -719,18 +743,20 @@ const owo = {
         'user',
         `Action not found. Run \`${ctx.prefix}help owo\` to see all actions`
       );
-    await ctx.msg.dbReply(
-      new Discord.MessageEmbed()
-        .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
-        .setImage(
-          // Use mediagen to resize and process gif
-          `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURIComponent(
-            dataJson.imageURL
-          )}`
-        )
-        // Set dominant color from mediagen
-        .setColor(dataJson.color)
-    );
+    await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setAuthor(dataJson.authorName, ctx.msg.author.displayAvatarURL())
+          .setImage(
+            // Use mediagen to resize and process gif
+            `${process.env.MEDIAGEN_URL}owoProxy.gif?url=${encodeURIComponent(
+              dataJson.imageURL
+            )}`
+          )
+          // Set dominant color from mediagen
+          .setColor(dataJson.color),
+      ],
+    });
   },
 };
 // TODO: Reimplement
@@ -768,36 +794,38 @@ const about = {
     } catch (e) {
       pj = '?.?.?';
     }
-    await ctx.msg.dbReply(
-      new Discord.MessageEmbed()
-        .setTitle('About ModBot')
-        .setDescription(
-          `ModBot v${pj} is in ${
-            ctx.client.guilds.cache.array().length
-          } servers, with ${
-            ctx.client.channels.cache
-              .array()
-              .filter((channel) => channel.type === 'text').length
-          } channels, and ${ctx.client.users.cache.array().length} users.${
-            (ctx.msg.guild as EGuild).hasPluralKit
-              ? ' ModBot is designed to work well with PluralKit.'
-              : ''
-          } ModBot was last restarted ${moment
-            .duration(process.uptime() * -1000)
-            .humanize(true)}.${
-            ctx.store.get('stats.msgResponseTimes')
-              ? ` The average time it takes ModBot to reply to a command is ${Math.round(
-                  average(ctx.store.get('stats.msgResponseTimes'))
-                )}ms`
-              : ''
-          }`
-        )
-        .setFooter(
-          process.env.AUTHOR_NAME
-            ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
-            : 'Made with ❤️'
-        )
-    );
+    await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('About ModBot')
+          .setDescription(
+            `ModBot v${pj} is in ${
+              ctx.client.guilds.cache.array().length
+            } servers, with ${
+              ctx.client.channels.cache
+                .array()
+                .filter((channel) => channel.type === 'GUILD_TEXT').length
+            } channels, and ${ctx.client.users.cache.array().length} users.${
+              (ctx.msg.guild as EGuild).hasPluralKit
+                ? ' ModBot is designed to work well with PluralKit.'
+                : ''
+            } ModBot was last restarted ${moment
+              .duration(process.uptime() * -1000)
+              .humanize(true)}.${
+              ctx.store.get('stats.msgResponseTimes')
+                ? ` The average time it takes ModBot to reply to a command is ${Math.round(
+                    average(ctx.store.get('stats.msgResponseTimes'))
+                  )}ms`
+                : ''
+            }`
+          )
+          .setFooter(
+            process.env.AUTHOR_NAME
+              ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
+              : 'Made with ❤️'
+          ),
+      ],
+    });
   },
 };
 const url = require('url');
@@ -807,13 +835,13 @@ const addemoji = {
   explanation:
     'Add a new server emoji. Either supply an emoji to steal, a url of an image, or attach an image to the command message',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.permissions.has('MANAGE_EMOJIS'),
+    msg.member?.permissions.has('MANAGE_EMOJIS_AND_STICKERS'),
   responder: async (
     msg: util_functions.EMessage,
     cmd: { emojiData: string | undefined; name: string }
   ) => {
     if (!msg.guild) return;
-    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS_AND_STICKERS']);
     await new Types.MediaGen().assert();
     if (!msg.guild) return;
 
@@ -875,10 +903,10 @@ const removeemoji = {
   syntax: 'removeemoji <name: string>',
   explanation: 'Remove an emoji from a server',
   permissions: (msg: util_functions.EMessage) =>
-    msg.member?.permissions.has('MANAGE_EMOJIS'),
+    msg.member?.permissions.has('MANAGE_EMOJIS_AND_STICKERS'),
   responder: async (msg: util_functions.EMessage, cmd: { name: string }) => {
     if (!msg.guild) return;
-    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS']);
+    util_functions.assertHasPerms(msg.guild, ['MANAGE_EMOJIS_AND_STICKERS']);
     if (!msg.guild) return;
 
     // Find all emojis with the name specified by the user
@@ -903,25 +931,28 @@ const removeemoji = {
     else if (matchingEmojis.length === 1) finalEmoji = matchingEmojis[0];
     else {
       // If there's multiple emoji with that name, send an embed that prompts the user to choose one
-      const selectionMessage = await msg.dbReply(
-        new Discord.MessageEmbed()
-          .setTitle('Choose Emoji')
-          .setDescription(
-            'Multiple emoji were found with that name. Please react with the chosen emoji'
-          )
-      );
+      const selectionMessage = await msg.dbReply({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle('Choose Emoji')
+            .setDescription(
+              'Multiple emoji were found with that name. Please react with the chosen emoji'
+            ),
+        ],
+      });
 
       // Add all emojis with the specified name as reactions to the prompt message, so the user can easily pick one
       for (const e of matchingEmojis) selectionMessage.react(e);
 
       // Wait for the user to select an emoji on the prompt message
       const chosenReactions = (
-        await selectionMessage.awaitReactions(
-          (r: MessageReaction, u: User) =>
+        await selectionMessage.awaitReactions({
+          time: 30000,
+          max: 1,
+          filter: (r: MessageReaction, u: User) =>
             u.id === msg.author.id &&
             !!matchingEmojis.find((e) => e.id === r.emoji.id),
-          { time: 30000, max: 1 }
-        )
+        })
       ).array();
 
       // If they didn't pick one, throw a timed out error
@@ -960,13 +991,19 @@ async function designEmbed(
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      await msg.channel.send('Current Embed:', currEmbed);
+      await msg.channel.send({
+        content: 'Current Embed:',
+        embeds: [currEmbed],
+      });
     } catch (e) {
       // User supplied an invalid option previously, and the embed can't be sent
       msg.channel.send('Invalid data provided, embed reset');
       // Reset the embed
       currEmbed = embed || new Discord.MessageEmbed();
-      await msg.channel.send('Current Embed:', currEmbed);
+      await msg.channel.send({
+        content: 'Current Embed:',
+        embeds: [currEmbed],
+      });
     }
     await msg.channel.send('Options:');
     const change = await util_functions.embed_options(
@@ -1003,7 +1040,11 @@ async function designEmbed(
       );
     if (change === 3)
       currEmbed.setColor(
-        await util_functions.ask('What should the color be?', 60000, msg)
+        (await util_functions.ask(
+          'What should the color be?',
+          60000,
+          msg
+        )) as Discord.ColorResolvable
       );
     if (change === 4)
       currEmbed.setFooter(
@@ -1151,11 +1192,13 @@ const embed = {
     if (cmd.action == 'create') {
       const channel = await util_functions.ask('What channel?', 40000, msg);
       const dChannel = msg.guild.channels.cache.get(
-        channel.replace('<#', '').replace('>', '')
+        channel.replace('<#', '').replace('>', '') as Snowflake
       );
-      if (!dChannel || dChannel.type !== 'text')
+      if (!dChannel || dChannel.type !== 'GUILD_TEXT')
         throw new util_functions.BotError('user', 'Failed to get channel');
-      await (dChannel as Discord.TextChannel).send(await designEmbed(msg));
+      await (dChannel as Discord.TextChannel).send({
+        embeds: [await designEmbed(msg)],
+      });
       await msg.channel.send('Sent!');
       await Types.LogChannel.tryToLog(
         msg,
@@ -1165,17 +1208,19 @@ const embed = {
     if (cmd.action == 'edit') {
       const channel = await util_functions.ask('What channel?', 40000, msg);
       const dChannel = msg.guild.channels.cache.get(
-        channel.replace('<#', '').replace('>', '')
+        channel.replace('<#', '').replace('>', '') as Snowflake
       );
-      if (!dChannel || dChannel.type !== 'text')
+      if (!dChannel || dChannel.type !== 'GUILD_TEXT')
         throw new util_functions.BotError('user', 'Failed to get channel');
       const m = await util_functions.ask('What messsage ID?', 40000, msg);
       const dMessage = await (dChannel as Discord.TextChannel).messages.fetch(
-        m
+        m as Snowflake
       );
       if (!dMessage)
         throw new util_functions.BotError('user', 'Failed to get channel');
-      await dMessage.edit(await designEmbed(msg, dMessage.embeds[0]));
+      await dMessage.edit({
+        embeds: [await designEmbed(msg, dMessage.embeds[0])],
+      });
       await msg.channel.send('Edited!');
       await Types.LogChannel.tryToLog(
         msg,
@@ -1213,7 +1258,7 @@ const cat = {
         canvas.toBuffer(),
         'image.png'
       );
-      await msg.dbReply(attachment);
+      await msg.dbReply({ files: [attachment] });
     } catch (e) {
       throw new util_functions.BotError(
         'user',
@@ -1237,12 +1282,14 @@ const waitforupdate = {
       channel: msg.channel.id,
       content: {
         content: msg.author.toString(),
-        embed: new Discord.MessageEmbed()
-          .setTitle('Bot Restarted')
-          .setDescription(
-            `ModBot is now on release \`${git.short()}\`\n> ${git.message()}`
-          )
-          .setColor('#24a7ff'),
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle('Bot Restarted')
+            .setDescription(
+              `ModBot is now on release \`${git.short()}\`\n> ${git.message()}`
+            )
+            .setColor('#24a7ff'),
+        ],
       },
     });
   },

@@ -1,7 +1,7 @@
 import * as Types from './types';
 import { v4 as uuidv4 } from 'uuid';
 import express from 'express';
-import { Client } from 'discord.js';
+import { Client, Snowflake } from 'discord.js';
 import moment from 'moment';
 import parse from 'parse-duration';
 import nanoid from 'nanoid';
@@ -94,7 +94,7 @@ export async function serve(client: Client): Promise<void> {
         'reminders'
       );
       if (!capability) return;
-      const uo = await client.users.fetch(req.params.user);
+      const uo = await client.users.fetch(req.params.user as Snowflake);
       res.send({
         id: uo.id,
         tag: uo.tag,

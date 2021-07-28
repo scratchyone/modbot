@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 import * as util_functions from '../util_functions';
 import * as Types from '../types';
 const automod = {
@@ -47,12 +47,12 @@ const automod = {
           )
         )
           .replace('<@&', '')
-          .replace('>', '')
+          .replace('>', '') as Snowflake
       );
       if (!channelViewRole)
         throw new util_functions.BotError('user', "That role doesn't exist");
       const channel = await msg.guild.channels.create(channelname, {
-        type: 'text',
+        type: 'GUILD_TEXT',
         permissionOverwrites: [
           {
             id: msg.guild.id,
@@ -232,28 +232,30 @@ const automod = {
       });
       if (!trigger)
         throw new util_functions.BotError('user', 'Trigger not found');
-      await msg.channel.send(
-        new Discord.MessageEmbed()
-          .setTitle(triggerName)
-          .addField('Regex', trigger.regex)
-          .addField('Role that setup trigger', `<@&${trigger.setuprole}>`)
-          .addField(
-            'Punishments',
-            JSON.parse(trigger.punishments)
-              .map((p: any) => {
-                if (p.action === 'delete') {
-                  return 'Delete message';
-                }
-                if (p.action === 'reply') {
-                  return `Reply to message saying "${p.message}"`;
-                }
-                if (p.action === 'mute') {
-                  return `Mute user for ${p.time}`;
-                }
-              })
-              .join(', ')
-          )
-      );
+      await msg.channel.send({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle(triggerName)
+            .addField('Regex', trigger.regex)
+            .addField('Role that setup trigger', `<@&${trigger.setuprole}>`)
+            .addField(
+              'Punishments',
+              JSON.parse(trigger.punishments)
+                .map((p: any) => {
+                  if (p.action === 'delete') {
+                    return 'Delete message';
+                  }
+                  if (p.action === 'reply') {
+                    return `Reply to message saying "${p.message}"`;
+                  }
+                  if (p.action === 'mute') {
+                    return `Mute user for ${p.time}`;
+                  }
+                })
+                .join(', ')
+            ),
+        ],
+      });
     }
   },
 };
@@ -277,7 +279,7 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
         ? new RegExp(match[1], match[2])
         : new RegExp(trigger.regex);
       if (re.test(msg.content)) {
-        const role = msg.guild.roles.cache.get(trigger.setuprole);
+        const role = msg.guild.roles.cache.get(trigger.setuprole as Snowflake);
         if (!role) {
           msg.channel.send(
             util_functions.desc_embed(
@@ -318,7 +320,7 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
 
                 if (mute_role_db) {
                   const mute_role = msg.guild.roles.cache.get(
-                    mute_role_db.role
+                    mute_role_db.role as Snowflake
                   );
                   if (!mute_role) return;
                   const mutee = msg.member;
@@ -348,9 +350,9 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
                 }
               }
           }
-          const channel = msg.guild.channels.cache.get(am.channel) as
-            | Discord.TextChannel
-            | undefined;
+          const channel = msg.guild.channels.cache.get(
+            am.channel as Snowflake
+          ) as Discord.TextChannel | undefined;
           if (!channel) {
             msg.channel.send(
               util_functions.desc_embed("Error: Log channel doesn't exist")
@@ -363,29 +365,27 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
               avatar: msg.author.displayAvatarURL(),
             }
           );
-          await loghook.send(
-            await util_functions.cleanPings(msg.content, msg.guild),
-            {
-              embeds: [
-                new Discord.MessageEmbed().setTitle('Punished').setDescription(
-                  `Author: ${msg.author}\n` +
-                    JSON.parse(trigger.punishments)
-                      .map((p: any) => {
-                        if (p.action === 'delete') {
-                          return 'Deleted message';
-                        }
-                        if (p.action === 'reply') {
-                          return `Replied to message saying "${p.message}"`;
-                        }
-                        if (p.action === 'mute') {
-                          return `Muted user for ${p.time}`;
-                        }
-                      })
-                      .join(', ')
-                ),
-              ],
-            }
-          );
+          await loghook.send({
+            content: await util_functions.cleanPings(msg.content, msg.guild),
+            embeds: [
+              new Discord.MessageEmbed().setTitle('Punished').setDescription(
+                `Author: ${msg.author}\n` +
+                  JSON.parse(trigger.punishments)
+                    .map((p: any) => {
+                      if (p.action === 'delete') {
+                        return 'Deleted message';
+                      }
+                      if (p.action === 'reply') {
+                        return `Replied to message saying "${p.message}"`;
+                      }
+                      if (p.action === 'mute') {
+                        return `Muted user for ${p.time}`;
+                      }
+                    })
+                    .join(', ')
+              ),
+            ],
+          });
           await loghook.delete();
         }
       }

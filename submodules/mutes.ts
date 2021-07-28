@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import Discord from 'discord.js';
+import Discord, { Snowflake, TextChannel } from 'discord.js';
 import * as util_functions from '../util_functions';
 import * as Types from '../types';
 const setupmute = {
@@ -28,13 +28,11 @@ const setupmute = {
           'MANAGE_CHANNELS',
         ]);
         await msg.channel.send('What should the mute role be named?');
-        const rolename = await msg.channel.awaitMessages(
-          (m) => m.author.id == msg.author.id,
-          {
-            max: 1,
-            time: 20000,
-          }
-        );
+        const rolename = await msg.channel.awaitMessages({
+          max: 1,
+          time: 20000,
+          filter: (m) => m.author.id == msg.author.id,
+        });
         if (!rolename.array().length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
@@ -57,10 +55,13 @@ const setupmute = {
         const guild_channels = msg.guild.channels.cache.array();
         for (const channel of guild_channels) {
           try {
-            await channel.updateOverwrite(mute_role, {
-              SEND_MESSAGES: false,
-              ADD_REACTIONS: false,
-            });
+            await (channel as TextChannel).permissionOverwrites.edit(
+              mute_role,
+              {
+                SEND_MESSAGES: false,
+                ADD_REACTIONS: false,
+              }
+            );
           } catch (e) {
             await msg.channel.send(
               util_functions.desc_embed(
@@ -96,7 +97,9 @@ const setupmute = {
               server: msg.guild.id,
             },
           });
-          const mute_role = msg.guild.roles.cache.get(mute_role_db!.role);
+          const mute_role = msg.guild.roles.cache.get(
+            mute_role_db!.role as Snowflake
+          );
           try {
             if (mute_role) await mute_role.delete();
           } catch (e) {}
@@ -120,11 +123,18 @@ const setupmute = {
             server: msg.guild.id,
           },
         });
-        const mute_role = msg.guild.roles.cache.get(mute_role_db!.role);
+        const mute_role = msg.guild.roles.cache.get(
+          mute_role_db!.role as Snowflake
+        );
         const guild_channels = msg.guild.channels.cache.array();
         for (const channel of guild_channels) {
           try {
-            await channel.updateOverwrite(mute_role!, { SEND_MESSAGES: false });
+            await (channel as Discord.TextChannel).permissionOverwrites.edit(
+              mute_role!,
+              {
+                SEND_MESSAGES: false,
+              }
+            );
           } catch (e) {
             await msg.channel.send(
               util_functions.desc_embed(
@@ -161,7 +171,9 @@ function checkChannelsThingCanTalkInAlways(
   thing: Discord.GuildMember | Discord.Role
 ) {
   return guild.channels.cache.array().filter((channel) => {
-    const po = channel.permissionOverwrites.get(thing.id);
+    const po = (channel as Discord.TextChannel).permissionOverwrites.cache.get(
+      thing.id
+    );
     return po ? po.allow.has('SEND_MESSAGES') : false;
   });
 }
@@ -201,8 +213,10 @@ const mute = {
           server: msg.guild.id,
         },
       });
-      const mute_role = msg.guild.roles.cache.get(mute_role_db!.role);
-      const mutee = msg.guild.members.cache.get(cmd.user);
+      const mute_role = msg.guild.roles.cache.get(
+        mute_role_db!.role as Snowflake
+      );
+      const mutee = msg.guild.members.cache.get(cmd.user as Snowflake);
       if (mutee!.roles.highest.position >= msg.member!.roles.highest.position) {
         await msg.channel.send(
           util_functions.desc_embed(
@@ -282,19 +296,21 @@ const mute = {
                   ' and '
                 )}, ${mutee} has a permission override. You can fix this in the channel settings\n`;
               }
-              await (msg.guild.channels.cache.get(
-                (await prisma.alert_channels.findFirst({
-                  where: {
-                    server: msg.guild.id,
-                  },
-                }))!.channel
-              )! as Discord.TextChannel).send({
+              await (
+                msg.guild.channels.cache.get(
+                  (await prisma.alert_channels.findFirst({
+                    where: {
+                      server: msg.guild.id,
+                    },
+                  }))!.channel as Snowflake
+                )! as Discord.TextChannel
+              ).send({
                 content: `${msg.author}`,
-                embed: util_functions.desc_embed(
+                embeds: util_functions.desc_embed(
                   `Warning: Muted user ${mutee} can still talk in ${userCanTalkIn.join(
                     ' and '
                   )}.\nReasons:\n${reason}`
-                ),
+                ).embeds,
               });
             } catch (e) {
               console.log(e);
@@ -340,8 +356,10 @@ const unmute = {
       });
       if (!mute_role_db)
         throw new util_functions.BotError('user', "Couldn't find mute role");
-      const mute_role = msg.guild.roles.cache.get(mute_role_db.role);
-      const mutee = msg.guild.members.cache.get(cmd.user);
+      const mute_role = msg.guild.roles.cache.get(
+        mute_role_db.role as Snowflake
+      );
+      const mutee = msg.guild.members.cache.get(cmd.user as Snowflake);
       if (!mutee)
         throw new util_functions.BotError('user', "Couldn't find mutee");
       if (mutee.roles.highest.position >= msg.member.roles.highest.position) {
@@ -372,8 +390,8 @@ exports.onChannelCreate = async (channel: Discord.TextChannel) => {
   });
 
   if (mr) {
-    const mute_role = channel.guild.roles.cache.get(mr.role);
-    channel.updateOverwrite(mute_role!, {
+    const mute_role = channel.guild.roles.cache.get(mr.role as Snowflake);
+    channel.permissionOverwrites.edit(mute_role!, {
       SEND_MESSAGES: false,
       ADD_REACTIONS: false,
     });

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Client, Message, TextChannel } from 'discord.js';
+import { Client, Message, Snowflake, TextChannel } from 'discord.js';
 const prisma = new PrismaClient();
 const util_functions = require('../util_functions');
 import * as Types from '../types';
@@ -41,13 +41,11 @@ const alertchannel = {
         );
       } else {
         msg.channel.send('What should the channel be named?');
-        const channel_name = await msg.channel.awaitMessages(
-          (m) => m.author.id == msg.author.id,
-          {
-            max: 1,
-            time: 20000,
-          }
-        );
+        const channel_name = await msg.channel.awaitMessages({
+          max: 1,
+          time: 20000,
+          filter: (m) => m.author.id == msg.author.id,
+        });
         if (!channel_name.array().length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
@@ -55,19 +53,20 @@ const alertchannel = {
         msg.channel.send(
           'What role should be allowed to view it? (Probably your moderator role)'
         );
-        const role = await msg.channel.awaitMessages(
-          (m) => m.author.id == msg.author.id,
-          {
-            max: 1,
-            time: 10000,
-          }
-        );
+        const role = await msg.channel.awaitMessages({
+          max: 1,
+          time: 10000,
+          filter: (m) => m.author.id == msg.author.id,
+        });
         if (!role.array().length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
         const drole = msg.guild.roles.cache.get(
-          role.array()[0].content.replace('<@&', '').replace('>', '')
+          role
+            .array()[0]
+            .content.replace('<@&', '')
+            .replace('>', '') as Snowflake
         );
         if (!drole) {
           await msg.channel.send(
@@ -78,7 +77,7 @@ const alertchannel = {
         const channel = await msg.guild.channels.create(
           channel_name.array()[0].content,
           {
-            type: 'text',
+            type: 'GUILD_TEXT',
             permissionOverwrites: [
               {
                 id: msg.guild.id,
@@ -101,15 +100,15 @@ const alertchannel = {
             server: msg.guild.id,
           },
         });
-        await (client.channels.cache.get(
-          (await prisma.alert_channels.findFirst({
-            where: {
-              server: msg.guild.id,
-            },
-          }))!.channel
-        ) as TextChannel).send(
-          util_functions.desc_embed('Alert channel enabled!')
-        );
+        await (
+          client.channels.cache.get(
+            (await prisma.alert_channels.findFirst({
+              where: {
+                server: msg.guild.id,
+              },
+            }))!.channel as Snowflake
+          ) as TextChannel
+        ).send(util_functions.desc_embed('Alert channel enabled!'));
         await msg.channel.send(
           util_functions.desc_embed(`Created alert channel ${channel}`)
         );
@@ -129,15 +128,15 @@ const alertchannel = {
         msg.channel.send("An alert channel doesn't exist in this server!");
       } else {
         try {
-          await (client.channels.cache.get(
-            (await prisma.alert_channels.findFirst({
-              where: {
-                server: msg.guild.id,
-              },
-            }))!.channel
-          )! as TextChannel).send(
-            util_functions.desc_embed('Alert channel disabled!')
-          );
+          await (
+            client.channels.cache.get(
+              (await prisma.alert_channels.findFirst({
+                where: {
+                  server: msg.guild.id,
+                },
+              }))!.channel as Snowflake
+            )! as TextChannel
+          ).send(util_functions.desc_embed('Alert channel disabled!'));
         } catch (e) {}
         await prisma.alert_channels.deleteMany({
           where: {

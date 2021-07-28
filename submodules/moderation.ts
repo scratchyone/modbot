@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as util_functions from '../util_functions';
-import Discord from 'discord.js';
+import Discord, { Snowflake } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { Context, DisabledCommand } from '../types';
@@ -16,7 +16,7 @@ const lockdown = {
     cmd: { time: string },
     client: Discord.Client
   ) => {
-    if (msg.channel.type !== 'text') return;
+    if (msg.channel.type !== 'GUILD_TEXT') return;
     if (!msg.guild) return;
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
@@ -45,24 +45,26 @@ const lockdown = {
         permissions: JSON.stringify(msg.channel.permissionOverwrites),
       },
     });
-    msg.channel.startTyping();
+    msg.channel.sendTyping();
     try {
-      for (const perm of msg.channel.permissionOverwrites) {
-        await msg.channel.updateOverwrite(perm[0], { SEND_MESSAGES: false });
+      for (const perm of msg.channel.permissionOverwrites.cache) {
+        await msg.channel.permissionOverwrites.edit(perm[0], {
+          SEND_MESSAGES: false,
+        });
       }
-      await msg.channel.updateOverwrite(msg.guild.id, { SEND_MESSAGES: false });
-      await msg.channel.updateOverwrite(client.user.id, {
+      await msg.channel.permissionOverwrites.edit(msg.guild.id, {
+        SEND_MESSAGES: false,
+      });
+      await msg.channel.permissionOverwrites.edit(client.user.id, {
         SEND_MESSAGES: true,
       });
     } catch (e) {
       await msg.dbReply(
         'Warning: An error has occured. Channel permissions might be messed up!'
       );
-      msg.channel.stopTyping();
       throw e;
     }
     await msg.dbReply('Locked!');
-    msg.channel.stopTyping();
     if (cmd.time)
       await Types.LogChannel.tryToLog(
         msg,
@@ -85,8 +87,8 @@ const unlockdown = {
     if (!msg.guild) return;
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
-    const channel = msg.guild.channels.cache.get(cmd.channel);
-    if (!channel || channel.type !== 'text') {
+    const channel = msg.guild.channels.cache.get(cmd.channel as Snowflake);
+    if (!channel || channel.type !== 'GUILD_TEXT') {
       await msg.dbReply("Channel doesn't exist!");
       return;
     }
@@ -97,7 +99,7 @@ const unlockdown = {
       await msg.dbReply("Channel isn't locked!");
       return;
     }
-    await channel.overwritePermissions(JSON.parse(perm.permissions));
+    await channel.permissionOverwrites.set(JSON.parse(perm.permissions));
     await (channel as Discord.TextChannel).send('Unlocked!');
     if (channel.id !== msg.channel.id) await msg.dbReply('Unlocked!');
     await Types.LogChannel.tryToLog(msg, `Unlocked ${channel}`);
@@ -134,13 +136,13 @@ const logging = {
       )
         .replace('<@&', '')
         .replace('>', '');
-      if (!ctx.msg.guild.roles.cache.get(viewRole))
+      if (!ctx.msg.guild.roles.cache.get(viewRole as Snowflake))
         throw new util_functions.BotError('user', 'Role not found');
       const createdLogChannel = await ctx.msg.guild.channels.create(
         channelName,
         {
           permissionOverwrites: [
-            { id: viewRole, allow: ['VIEW_CHANNEL'] },
+            { id: viewRole as Snowflake, allow: ['VIEW_CHANNEL'] },
             {
               id: ctx.msg.guild.id,
               deny: ['VIEW_CHANNEL', 'SEND_MESSAGES', 'MANAGE_MESSAGES'],
