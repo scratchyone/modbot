@@ -100,6 +100,58 @@ export async function awaitMessageComponent(
     return undefined;
   }
 }
+export async function awaitMessageComponentByAuthor(
+  msg: Discord.Message,
+  options: {
+    time?: number;
+    filter?: (m: Discord.MessageComponentInteraction) => boolean;
+    author: Snowflake;
+  }
+): Promise<Discord.MessageComponentInteraction | undefined> {
+  return new Promise((resolve, reject) => {
+    (async () => {
+      const f = (i: Discord.Interaction) => {
+        const b = i as Discord.MessageComponentInteraction;
+        if (
+          i.user.id === options.author &&
+          (options?.filter == null || options.filter(b))
+        ) {
+          msg.client.removeListener('interaction', f);
+          resolve(b);
+        } else if (i.user.id !== options.author) {
+          b.reply({
+            embeds: [
+              new Discord.MessageEmbed()
+                .setTitle('Interaction Failed')
+                .setDescription(
+                  'This interaction can only be used by the person who triggered it'
+                )
+                .setColor(COLORS.error),
+            ],
+            ephemeral: true,
+          });
+        } else {
+          b.reply({
+            embeds: [
+              new Discord.MessageEmbed()
+                .setTitle('Interaction Failed')
+                .setDescription(
+                  'This interaction failed the bot-enforced filter'
+                )
+                .setColor(COLORS.error),
+            ],
+            ephemeral: true,
+          });
+        }
+      };
+      msg.client.on('interaction', f);
+      if (options?.time)
+        setTimeout(() => {
+          resolve(undefined);
+        }, options.time);
+    })();
+  });
+}
 export async function confirm(message: Discord.Message): Promise<boolean> {
   const deferred = await Defer.add({
     type: 'SendCancelledMessage',
@@ -131,9 +183,9 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
       components: [row],
     });
   }, 3000);
-  const interaction = await awaitMessageComponent(msg, {
+  const interaction = await awaitMessageComponentByAuthor(msg, {
     time: 10000,
-    filter: (int) => int.user.id === message.author.id,
+    author: message.author.id,
   });
   if (interaction) interaction.deferUpdate();
   if (interaction?.customId == 'confirm') {
@@ -205,9 +257,9 @@ export async function embed_options(
       ),
     ],
   });
-  const interaction = await awaitMessageComponent(msg, {
+  const interaction = await awaitMessageComponentByAuthor(msg, {
     time: time || 15000,
-    filter: (i) => i.user.id == message.author.id,
+    author: message.author.id,
   });
   if (interaction?.isSelectMenu() && interaction.values.length > 0) {
     interaction.deferUpdate();
@@ -354,9 +406,9 @@ export async function askOrNone(
           ),
         ],
       });
-      awaitMessageComponent(repm, {
+      awaitMessageComponentByAuthor(repm, {
         time: time,
-        filter: (r) => r.user.id === msg.author.id,
+        author: msg.author.id,
       }).then((reactions) => {
         console.log(reactions);
         if (reactions) {

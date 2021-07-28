@@ -112,9 +112,9 @@ const poll = {
       ],
     });
     // Wait for confirmation
-    const react = await util_functions.awaitMessageComponent(pollMsg, {
+    const react = await util_functions.awaitMessageComponentByAuthor(pollMsg, {
       time: 50000,
-      filter: (r) => r.user.id === msg.author.id,
+      author: msg.author.id,
     });
     // If confirmation given
     if (react) {
