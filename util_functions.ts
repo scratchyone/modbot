@@ -98,26 +98,25 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
     new MessageButton()
       .setLabel('Cancel')
       .setStyle('SUCCESS')
-      .setCustomId('cancel')
+      .setCustomId('cancel'),
+    new MessageButton()
+      .setLabel('Confirm')
+      .setStyle('DANGER')
+      .setCustomId('confirm')
+      .setDisabled(true)
   );
   const msg = await message.channel.send({
     embeds: [
       new Discord.MessageEmbed().setTitle(
-        'Click Confirm when it appears to confirm'
+        'Click Confirm when it is enabled to confirm'
       ),
     ],
     components: [row],
   });
   setTimeout(async () => {
+    row.components[1].setDisabled(false);
     msg.edit({
-      components: [
-        row.addComponents(
-          new MessageButton()
-            .setLabel('Confirm')
-            .setStyle('DANGER')
-            .setCustomId('confirm')
-        ),
-      ],
+      components: [row],
     });
   }, 3000);
   const interaction = await awaitMessageComponent(msg, {
