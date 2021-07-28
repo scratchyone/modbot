@@ -309,21 +309,29 @@ export async function askOrNone(
   return new Promise((resolve, reject) => {
     (async () => {
       let addedEmoji = false;
-      const repm = await msg.dbReply(question);
-      await repm.react('🚫');
-      repm
-        .awaitReactions({
-          max: 1,
-          time: time,
-          filter: (r, u) => r.emoji.name === '🚫' && u.id === msg.author.id,
-        })
-        .then((reactions) => {
-          if (reactions.array().length) {
-            addedEmoji = true;
-            deferred.cancel();
-            resolve('');
-          }
-        });
+      const repm = await msg.dbReply({
+        content: question,
+        components: [
+          new MessageActionRow().addComponents(
+            new MessageButton()
+              .setLabel('Cancel')
+              .setStyle('DANGER')
+              .setCustomId('cancel')
+          ),
+        ],
+      });
+      awaitMessageComponent(repm, {
+        time: time,
+        filter: (r) => r.user.id === msg.author.id,
+      }).then((reactions) => {
+        console.log(reactions);
+        if (reactions) {
+          reactions.deferUpdate();
+          addedEmoji = true;
+          deferred.cancel();
+          resolve('');
+        }
+      });
       const sb_name = await msg.channel.awaitMessages({
         max: 1,
         time: time,

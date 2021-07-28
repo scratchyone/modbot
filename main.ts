@@ -2995,10 +2995,7 @@ async function processAutoresponders(msg: Discord.Message) {
         message.dbReply({
           embeds: [
             new Discord.MessageEmbed()
-              .setTitle(
-                ar.embed_title ||
-                  'FAILED TO PROCESS AUTORESPONDER, SOMETHING IS VERY WRONG'
-              )
+              .setTitle(ar.embed_title || '')
               .setDescription(
                 await arTextFill(
                   ar.embed_description ||
