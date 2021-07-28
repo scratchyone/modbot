@@ -150,13 +150,29 @@ const spoil = {
   responder: async (msg: util_functions.EMessage, cmd: { text: string }) => {
     if (!msg.guild) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
-    if (msg.guild !== null && msg.channel.type == 'GUILD_TEXT') {
+    if (
+      msg.guild !== null &&
+      (msg.channel.type == 'GUILD_TEXT' ||
+        msg.channel.type == 'GUILD_PUBLIC_THREAD' ||
+        msg.channel.type == 'GUILD_PRIVATE_THREAD')
+    ) {
       const uuser = msg.member;
       if (!uuser) throw new Error('User not found');
       // Create a webhook for sending message
-      const loghook = await msg.channel.createWebhook(uuser.displayName, {
-        avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
-      });
+      let loghook;
+      if (
+        (msg.channel.type == 'GUILD_PUBLIC_THREAD' ||
+          msg.channel.type == 'GUILD_PRIVATE_THREAD') &&
+        msg.channel.parent
+      )
+        loghook = await msg.channel.parent.createWebhook(uuser.displayName, {
+          avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
+        });
+      else if (msg.channel.type == 'GUILD_TEXT')
+        loghook = await msg.channel.createWebhook(uuser.displayName, {
+          avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
+        });
+      else throw new util_functions.BotError('bot', 'Internal error');
       // Add SPOILER_ to all message attachments to make them be spoiled
       const files = msg.attachments.array().map((attachment) => {
         return { ...attachment, name: 'SPOILER_' + attachment.name };
@@ -165,6 +181,7 @@ const spoil = {
       const m = await loghook.send({
         files,
         content: await util_functions.cleanPings(cmd.text, msg.guild),
+        ...(msg.channel.isThread() ? { threadId: msg.channel.id } : {}),
       });
       // Delete webhook
       await loghook.delete();

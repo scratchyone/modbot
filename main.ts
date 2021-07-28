@@ -1,6 +1,6 @@
 /* eslint-disable no-empty */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import Discord, { Snowflake } from 'discord.js';
+import Discord, { Snowflake, TextChannel } from 'discord.js';
 import moment from 'moment';
 import { Types as ParserTypes } from './parser_types';
 const Sentry = require('@sentry/node');
@@ -134,18 +134,14 @@ const main_commands = {
         try {
           // Define a function for cloning users that can be called from inside eval-ed code
           const cloneUser = async (user: string, text: string) => {
-            if (
-              ctx.msg.guild !== null &&
-              ctx.msg.channel.type == 'GUILD_TEXT'
-            ) {
+            if (ctx.msg.guild !== null) {
               const uuser = ctx.msg.guild.members.cache.get(user as Snowflake);
               if (!uuser) throw new Error('User not found');
-              const loghook = await ctx.msg.channel.createWebhook(
-                uuser.displayName,
-                {
-                  avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
-                }
-              );
+              const loghook = await (
+                ctx.msg.channel as TextChannel
+              ).createWebhook(uuser.displayName, {
+                avatar: uuser.user.displayAvatarURL().replace('webp', 'png'),
+              });
               await loghook.send(text);
               await loghook.delete();
               await ctx.msg.delete();
@@ -204,7 +200,11 @@ const main_commands = {
         }
       ) => {
         // If channel isn't a text channel, we can't send messages there, so throw an error
-        if ((cmd.channel || ctx.msg.channel).type !== 'GUILD_TEXT')
+        if (
+          (cmd.channel || ctx.msg.channel).type !== 'GUILD_TEXT' &&
+          (cmd.channel || ctx.msg.channel).type !== 'GUILD_PRIVATE_THREAD' &&
+          (cmd.channel || ctx.msg.channel).type !== 'GUILD_PUBLIC_THREAD'
+        )
           throw new util_functions.BotError(
             'user',
             "Channel isn't a text channel!"
@@ -1910,7 +1910,9 @@ const main_commands = {
       explanation: 'Purge messages',
       permissions: (msg: Discord.Message) =>
         msg.member &&
-        msg.channel.type == 'GUILD_TEXT' &&
+        (msg.channel.type == 'GUILD_TEXT' ||
+          msg.channel.type == 'GUILD_PRIVATE_THREAD' ||
+          msg.channel.type == 'GUILD_PUBLIC_THREAD') &&
         msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
       responder: async (
         msg: util_functions.EMessage,

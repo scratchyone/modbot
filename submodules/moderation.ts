@@ -16,7 +16,11 @@ const lockdown = {
     cmd: { time: string },
     client: Discord.Client
   ) => {
-    if (msg.channel.type !== 'GUILD_TEXT') return;
+    if (msg.channel.type !== 'GUILD_TEXT')
+      throw new util_functions.BotError(
+        'user',
+        'Cannot lockdown a non-text channel'
+      );
     if (!msg.guild) return;
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
@@ -88,10 +92,15 @@ const unlockdown = {
     if (!client.user) return;
     util_functions.assertHasPerms(msg.guild, ['MANAGE_CHANNELS']);
     const channel = msg.guild.channels.cache.get(cmd.channel as Snowflake);
-    if (!channel || channel.type !== 'GUILD_TEXT') {
+    if (!channel) {
       await msg.dbReply("Channel doesn't exist!");
       return;
     }
+    if (channel.type !== 'GUILD_TEXT')
+      throw new util_functions.BotError(
+        'user',
+        'Cannot lockdown a non-text channel'
+      );
     const perm = await prisma.locked_channels.findFirst({
       where: { channel: channel.id },
     });
