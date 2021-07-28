@@ -1308,16 +1308,13 @@ const main_commands = {
       syntax: 'support',
       explanation: 'Get an invite to the support server',
       permissions: () => true,
-      responder: async (
-        msg: util_functions.EMessage,
-        cmd: Record<string, never>
-      ) => {
-        if (cmd.command !== 'support') return;
+      responder: async (msg: util_functions.EMessage) => {
         msg.dbReply({
           embeds: [
             new Discord.MessageEmbed()
               .setURL('https://discord.gg/wJ2TCpx')
-              .setTitle('Click here to join the support server'),
+              .setTitle('Click here to join the support server')
+              .setColor(util_functions.COLORS.decorate),
           ],
         });
       },
@@ -2042,6 +2039,7 @@ const main_commands = {
             new Discord.MessageEmbed()
               .setAuthor(mm_nick, mentioned_user.displayAvatarURL())
               .setDescription(desc.join(' '))
+              .setColor(util_functions.COLORS.decorate)
               .addFields([
                 {
                   name: 'Notes',
@@ -2139,7 +2137,8 @@ const main_commands = {
               new Discord.MessageEmbed()
                 .setTitle(`You have been warned in ${msg.guild.name}`)
                 .setDescription(`**Warn Message:**\n> ${cmd.text}`)
-                .setFooter(`Warning ID: ${id}`),
+                .setFooter(`Warning ID: ${id}`)
+                .setColor(util_functions.COLORS.error),
             ],
           });
         } catch (e) {
@@ -2236,6 +2235,7 @@ const main_commands = {
                     .setTitle(
                       util_functions.fillStringVars('Help for __botName__')
                     )
+                    .setColor(util_functions.COLORS.decorate)
                     .setDescription(
                       '*<> means required, [] means optional.*\n' +
                         valid_commands
@@ -2269,6 +2269,7 @@ const main_commands = {
             embeds: [
               new Discord.MessageEmbed()
                 .setTitle(util_functions.fillStringVars('Help for __botName__'))
+                .setColor(util_functions.COLORS.decorate)
                 .setDescription(
                   '**' +
                     chosen_module.title +
@@ -2346,6 +2347,7 @@ const main_commands = {
             embeds: [
               new Discord.MessageEmbed()
                 .setTitle(util_functions.fillStringVars('Help for __botName__'))
+                .setColor(util_functions.COLORS.decorate)
                 .setDescription(
                   '<> means required, [] means optional. Type `' +
                     ctx.prefix +
@@ -3112,7 +3114,7 @@ async function showSyntaxError(
       embeds: [
         new Discord.MessageEmbed()
           .setTitle('Syntax Error')
-          .setColor('#e74d4d')
+          .setColor(util_functions.COLORS.error)
           .setDescription(
             `${registered_commands
               .map(
@@ -3284,7 +3286,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                 await message.dbReply({
                   embeds: [
                     new Discord.MessageEmbed()
-                      .setColor('#e74d4d')
+                      .setColor(util_functions.COLORS.error)
                       .setTitle('Error')
                       .setDescription(e.message)
                       .setFooter(
@@ -3345,7 +3347,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                   await message.dbReply({
                     embeds: [
                       new Discord.MessageEmbed()
-                        .setColor('#e74d4d')
+                        .setColor(util_functions.COLORS.error)
                         .setTitle('Something went wrong')
                         .setDescription(
                           'An internal bot error has occurred. This has been reported to the development team.'

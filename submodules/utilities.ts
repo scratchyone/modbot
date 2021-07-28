@@ -136,7 +136,9 @@ const poll = {
       await pollMsg.reactions.removeAll();
       await pollMsg.edit({
         embeds: [
-          new Discord.MessageEmbed().setTitle('Epilepsy Warning Not Accepted'),
+          new Discord.MessageEmbed()
+            .setTitle('Epilepsy Warning Not Accepted')
+            .setColor(util_functions.COLORS.error),
         ],
       });
     }
@@ -219,7 +221,8 @@ const pfp = {
           .setTitle(
             `${member ? member.displayName : user.username}'s Profile Picture`
           )
-          .setImage(user.displayAvatarURL() + '?size=256'),
+          .setImage(user.displayAvatarURL() + '?size=256')
+          .setColor(util_functions.COLORS.decorate),
       ],
     });
   },
@@ -840,7 +843,8 @@ const about = {
             process.env.AUTHOR_NAME
               ? 'Made with ❤️ by ' + process.env.AUTHOR_NAME
               : 'Made with ❤️'
-          ),
+          )
+          .setColor(util_functions.COLORS.decorate),
       ],
     });
   },
@@ -954,7 +958,8 @@ const removeemoji = {
             .setTitle('Choose Emoji')
             .setDescription(
               'Multiple emoji were found with that name. Please react with the chosen emoji'
-            ),
+            )
+            .setColor(util_functions.COLORS.decorate),
         ],
       });
 

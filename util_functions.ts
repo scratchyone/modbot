@@ -1,4 +1,5 @@
 import Discord, {
+  ColorResolvable,
   MessageActionRow,
   MessageButton,
   MessageSelectMenu,
@@ -21,8 +22,19 @@ export function randomIntFromInterval(min: number, max: number): number {
  * Convert string to simple embed
  */
 export function desc_embed(text: string): { embeds: Discord.MessageEmbed[] } {
-  return { embeds: [new Discord.MessageEmbed().setDescription(text)] };
+  return {
+    embeds: [
+      new Discord.MessageEmbed().setDescription(text).setColor(COLORS.decorate),
+    ],
+  };
 }
+export const COLORS = {
+  success: '#1dbb4f' as ColorResolvable,
+  warning: '#d8ae2b' as ColorResolvable,
+  tip: '#397cd1' as ColorResolvable,
+  error: '#e74d4d' as ColorResolvable,
+  decorate: '#ff5894' as ColorResolvable,
+};
 /**
  * Create an embed showing various message types
  * @param {string} text - The embed's description
@@ -107,9 +119,9 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
   );
   const msg = await message.channel.send({
     embeds: [
-      new Discord.MessageEmbed().setTitle(
-        'Click Confirm when it is enabled to confirm'
-      ),
+      new Discord.MessageEmbed()
+        .setTitle('Click Confirm when it is enabled to confirm')
+        .setColor(COLORS.warning),
     ],
     components: [row],
   });
@@ -126,14 +138,22 @@ export async function confirm(message: Discord.Message): Promise<boolean> {
   if (interaction) interaction.deferUpdate();
   if (interaction?.customId == 'confirm') {
     msg.edit({
-      embeds: [new Discord.MessageEmbed().setTitle('Confirmed')],
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('Confirmed')
+          .setColor(COLORS.success),
+      ],
       components: [],
     });
     await deferred.cancel();
     return true;
   } else {
     msg.edit({
-      embeds: [new Discord.MessageEmbed().setTitle('Confirmation Failed')],
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('Confirmation Failed')
+          .setColor(COLORS.error),
+      ],
       components: [],
     });
     await deferred.cancel();
@@ -173,7 +193,7 @@ export async function embed_options(
 
   const msg = await message.dbReply({
     embeds: [
-      new Discord.MessageEmbed().setTitle(title),
+      new Discord.MessageEmbed().setTitle(title).setColor(COLORS.decorate),
       //.setDescription(n_options.join('\n')),
     ],
     components: [
@@ -195,7 +215,8 @@ export async function embed_options(
       embeds: [
         new Discord.MessageEmbed()
           .setTitle(title)
-          .setDescription(n_options[set.indexOf(interaction.values[0])].md),
+          .setDescription(n_options[set.indexOf(interaction.values[0])].md)
+          .setColor(COLORS.success),
       ],
       components: [],
     });
@@ -207,7 +228,9 @@ export async function embed_options(
     }
   } else {
     msg.edit({
-      embeds: [new Discord.MessageEmbed().setTitle('Cancelled')],
+      embeds: [
+        new Discord.MessageEmbed().setTitle('Cancelled').setColor(COLORS.error),
+      ],
       components: [],
     });
     await deferred.cancel();

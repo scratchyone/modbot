@@ -253,7 +253,8 @@ const automod = {
                   }
                 })
                 .join(', ')
-            ),
+            )
+            .setColor(util_functions.COLORS.decorate),
         ],
       });
     }
@@ -368,22 +369,25 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
           await loghook.send({
             content: await util_functions.cleanPings(msg.content, msg.guild),
             embeds: [
-              new Discord.MessageEmbed().setTitle('Punished').setDescription(
-                `Author: ${msg.author}\n` +
-                  JSON.parse(trigger.punishments)
-                    .map((p: any) => {
-                      if (p.action === 'delete') {
-                        return 'Deleted message';
-                      }
-                      if (p.action === 'reply') {
-                        return `Replied to message saying "${p.message}"`;
-                      }
-                      if (p.action === 'mute') {
-                        return `Muted user for ${p.time}`;
-                      }
-                    })
-                    .join(', ')
-              ),
+              new Discord.MessageEmbed()
+                .setTitle('Punished')
+                .setDescription(
+                  `Author: ${msg.author}\n` +
+                    JSON.parse(trigger.punishments)
+                      .map((p: any) => {
+                        if (p.action === 'delete') {
+                          return 'Deleted message';
+                        }
+                        if (p.action === 'reply') {
+                          return `Replied to message saying "${p.message}"`;
+                        }
+                        if (p.action === 'mute') {
+                          return `Muted user for ${p.time}`;
+                        }
+                      })
+                      .join(', ')
+                )
+                .setColor(util_functions.COLORS.error),
             ],
           });
           await loghook.delete();

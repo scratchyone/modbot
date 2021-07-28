@@ -32,7 +32,8 @@ const announce = {
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('Announcement')
-            .setDescription(an_text),
+            .setDescription(an_text)
+            .setColor(util_functions.COLORS.decorate),
         ],
       });
     }
@@ -56,7 +57,8 @@ const admin = {
               msg.author.id,
               'admin'
             )}`
-          ),
+          )
+          .setColor(util_functions.COLORS.decorate),
       ],
     });
     try {
