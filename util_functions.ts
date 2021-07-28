@@ -1,4 +1,8 @@
-import Discord, { Snowflake } from 'discord.js';
+import Discord, {
+  MessageActionRow,
+  MessageButton,
+  Snowflake,
+} from 'discord.js';
 import parse_duration from 'parse-duration';
 import node_fetch from 'node-fetch';
 import * as Types from './types';
@@ -71,38 +75,66 @@ export function shuffle<T>(a: Array<T>): Array<T> {
   }
   return a;
 }
+export async function awaitMessageComponent(
+  msg: Discord.Message,
+  options:
+    | Discord.AwaitMessageComponentOptions<Discord.MessageComponentInteraction>
+    | undefined
+): Promise<Discord.MessageComponentInteraction | undefined> {
+  try {
+    return await msg.awaitMessageComponent(options);
+  } catch (err) {
+    return undefined;
+  }
+}
 export async function confirm(message: Discord.Message): Promise<boolean> {
   const deferred = await Defer.add({
     type: 'SendCancelledMessage',
     channel: message.channel.id,
   });
   deferred.cancelIn(20000);
+  const row = new MessageActionRow().addComponents(
+    new MessageButton()
+      .setLabel('Cancel')
+      .setStyle('SUCCESS')
+      .setCustomId('cancel')
+  );
   const msg = await message.channel.send({
     embeds: [
       new Discord.MessageEmbed().setTitle(
-        'Click the ✅ when it appears to confirm'
+        'Click Confirm when it appears to confirm'
       ),
     ],
+    components: [row],
   });
-  await msg.react('🔄');
   setTimeout(async () => {
-    await msg.reactions.removeAll();
-    await msg.react('✅');
+    msg.edit({
+      components: [
+        row.addComponents(
+          new MessageButton()
+            .setLabel('Confirm')
+            .setStyle('DANGER')
+            .setCustomId('confirm')
+        ),
+      ],
+    });
   }, 3000);
-  const reactions = await msg.awaitReactions({
+  const interaction = await awaitMessageComponent(msg, {
     time: 10000,
-    max: 1,
-    filter: (reaction, user) =>
-      reaction.emoji.name == '✅' && user.id == message.author.id,
+    filter: (int) => int.user.id === message.author.id,
   });
-  msg.reactions.removeAll();
-  if (reactions.array().length > 0) {
-    msg.edit({ embeds: [new Discord.MessageEmbed().setTitle('Confirmed')] });
+  if (interaction) interaction.deferUpdate();
+  if (interaction?.customId == 'confirm') {
+    msg.edit({
+      embeds: [new Discord.MessageEmbed().setTitle('Confirmed')],
+      components: [],
+    });
     await deferred.cancel();
     return true;
   } else {
     msg.edit({
       embeds: [new Discord.MessageEmbed().setTitle('Confirmation Failed')],
+      components: [],
     });
     await deferred.cancel();
     return false;
