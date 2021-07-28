@@ -991,19 +991,38 @@ async function designEmbed(
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
+      const tmpEmbed =
+        currEmbed.description == null &&
+        currEmbed.fields.length === 0 &&
+        currEmbed.footer == null &&
+        currEmbed.image == null &&
+        currEmbed.title == null &&
+        currEmbed.author == null
+          ? new Discord.MessageEmbed().setDescription('*Empty Embed*')
+          : currEmbed;
       await msg.channel.send({
         content: 'Current Embed:',
-        embeds: [currEmbed],
+        embeds: [tmpEmbed],
       });
     } catch (e) {
       // User supplied an invalid option previously, and the embed can't be sent
       msg.channel.send('Invalid data provided, embed reset');
       // Reset the embed
       currEmbed = embed || new Discord.MessageEmbed();
+      const tmpEmbed =
+        currEmbed.description == null &&
+        currEmbed.fields.length === 0 &&
+        currEmbed.footer == null &&
+        currEmbed.image == null &&
+        currEmbed.title == null &&
+        currEmbed.author == null
+          ? new Discord.MessageEmbed().setDescription('*Empty Embed*')
+          : currEmbed;
       await msg.channel.send({
         content: 'Current Embed:',
-        embeds: [currEmbed],
+        embeds: [tmpEmbed],
       });
+      console.error(e);
     }
     await msg.channel.send('Options:');
     const change = await util_functions.embed_options(

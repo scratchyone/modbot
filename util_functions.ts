@@ -1,6 +1,7 @@
 import Discord, {
   MessageActionRow,
   MessageButton,
+  MessageSelectMenu,
   Snowflake,
 } from 'discord.js';
 import parse_duration from 'parse-duration';
@@ -154,51 +155,62 @@ export async function embed_options(
   deferred.cancelIn(time || 15000);
   const n_options = [];
   for (let i = 0; i < options.length; i++) {
-    if (isNaN(parseInt(set[i]))) n_options.push(set[i] + ' ' + options[i]);
-    else n_options.push('<:emoji:' + set[i] + '>' + ' ' + options[i]);
+    if (isNaN(parseInt(set[i]))) {
+      n_options.push({
+        label: options[i],
+        value: set[i],
+        emoji: set[i],
+        md: set[i] + ' ' + options[i],
+      });
+    } else {
+      n_options.push({
+        label: options[i],
+        value: set[i],
+        emoji: message.client.emojis.cache.get(set[i] as Snowflake),
+        md: '<:emoji:' + set[i] + '>' + ' ' + options[i],
+      });
+    }
   }
 
   const msg = await message.dbReply({
     embeds: [
-      new Discord.MessageEmbed()
-        .setTitle(title)
-        .setDescription(n_options.join('\n')),
+      new Discord.MessageEmbed().setTitle(title),
+      //.setDescription(n_options.join('\n')),
+    ],
+    components: [
+      new MessageActionRow().addComponents(
+        new MessageSelectMenu()
+          .setPlaceholder('Nothing selected...')
+          .setCustomId('menu')
+          .addOptions(n_options)
+      ),
     ],
   });
-  for (let i = 0; i < options.length; i++) msg.react(set[i]);
-  const reactions = await msg.awaitReactions({
+  const interaction = await awaitMessageComponent(msg, {
     time: time || 15000,
-    max: 1,
-    filter: (reaction, user) =>
-      set.indexOf(reaction.emoji.name || '') != -1 &&
-      user.id == message.author.id,
+    filter: (i) => i.user.id == message.author.id,
   });
-  try {
-    await msg.reactions.removeAll();
-  } catch (e) {
-    await message.channel.send(
-      desc_embed(
-        "Warning: Failed to remove reactions. This likely means ModBot's permissions are setup incorrectly"
-      )
-    );
-  }
-  try {
-    await msg.react(reactions.array()[0].emoji.name || '');
-  } catch (e) {}
-  if (reactions.array().length > 0) {
+  if (interaction?.isSelectMenu() && interaction.values.length > 0) {
+    interaction.deferUpdate();
     msg.edit({
       embeds: [
         new Discord.MessageEmbed()
           .setTitle(title)
-          .setDescription(
-            n_options[set.indexOf(reactions.array()[0].emoji.name || '')]
-          ),
+          .setDescription(n_options[set.indexOf(interaction.values[0])].md),
       ],
+      components: [],
     });
     await deferred.cancel();
-    return set.indexOf(reactions.array()[0].emoji.name || '');
+    if (interaction.isSelectMenu()) {
+      return set.indexOf(interaction.values[0]);
+    } else {
+      throw new BotError('bot', 'Invalid component type');
+    }
   } else {
-    msg.edit({ embeds: [new Discord.MessageEmbed().setTitle('Cancelled')] });
+    msg.edit({
+      embeds: [new Discord.MessageEmbed().setTitle('Cancelled')],
+      components: [],
+    });
     await deferred.cancel();
     return null;
   }
