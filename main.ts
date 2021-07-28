@@ -3150,53 +3150,6 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
       'Sorry, that command has been disabled by a server moderator'
     );
 }
-interface ParseObject {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-function processObjects(
-  parseRes: ParseObject,
-  version: number,
-  msg: Discord.Message
-): ParseObject {
-  if (!msg.guild) return {};
-  const outputObj: ParseObject = {};
-  for (const key in parseRes) {
-    const value = parseRes[key];
-    if (value?.type === 'channel_id')
-      if (version <= 2) outputObj[key] = value.id;
-      else {
-        const m = msg.guild.channels.cache.get(value.id);
-        if (!m) throw new util_functions.BotError('user', 'Channel not found');
-        outputObj[key] = m;
-      }
-    else if (value?.type === 'channel_name') {
-      const m = msg.guild.channels.cache.find(
-        (c) => c.name === value.name && c.type === 'GUILD_TEXT'
-      );
-      if (!m) throw new util_functions.BotError('user', 'Channel not found');
-      if (version <= 2) outputObj[key] = m.id;
-      else {
-        outputObj[key] = m;
-      }
-    } else if (value?.type === 'role_name') {
-      const m = msg.guild.roles.cache.find((c) => c.name === value.name);
-      if (!m) throw new util_functions.BotError('user', 'Role not found');
-      if (version <= 2) outputObj[key] = m.id;
-      else {
-        outputObj[key] = m;
-      }
-    } else if (value?.type === 'role_id')
-      if (version <= 2) outputObj[key] = value.id;
-      else {
-        const m = msg.guild.roles.cache.get(value.id);
-        if (!m) throw new util_functions.BotError('user', 'Role not found');
-        outputObj[key] = m;
-      }
-    else outputObj[key] = value;
-  }
-  return outputObj;
-}
 import Humanize, { toFixed } from 'humanize-plus';
 import { Defer, processDeferredOnStart } from './defer';
 client.on('message', async (msg: Discord.Message) => {
