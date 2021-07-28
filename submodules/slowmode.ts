@@ -84,7 +84,7 @@ exports.commandModule = {
   description: "Commands for managing ModBot's slowmode system",
   commands: [slowmodeCommand],
   cog: async (client: Discord.Client) => {
-    client.on('message', async (msg) => {
+    client.on('messageCreate', async (msg) => {
       const slowmodeRes = await Types.Slowmode.query()
         .where('channel', msg.channel.id)
         .first();

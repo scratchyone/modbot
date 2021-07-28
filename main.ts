@@ -3152,7 +3152,7 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
 }
 import Humanize, { toFixed } from 'humanize-plus';
 import { Defer, processDeferredOnStart } from './defer';
-client.on('message', async (msg: Discord.Message) => {
+client.on('messageCreate', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;
   try {
