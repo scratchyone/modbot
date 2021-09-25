@@ -3,6 +3,7 @@
   "version": "2.6.0",
   "description": "",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "test": "npm run clear && npm run eslint && npm run tsc && npm run clear",
     "tsc": "copyfiles package.json build && tsc",
