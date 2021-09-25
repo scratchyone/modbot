@@ -3,7 +3,6 @@
   "version": "2.6.0",
   "description": "",
   "main": "main.js",
-  "type": "module",
   "scripts": {
     "test": "npm run clear && npm run eslint && npm run tsc && npm run clear",
     "tsc": "copyfiles package.json build && tsc",
@@ -44,7 +43,7 @@
     "objection": "^2.2.11",
     "parse-duration": "^0.4.4",
     "prettier": "^2.1.2",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "4.2.0",
     "typescript": "^4.0.3",
     "uuid": "^8.3.1"
   },
