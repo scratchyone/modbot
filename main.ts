@@ -1909,44 +1909,87 @@ const main_commands = {
         msg.member &&
         (msg.channel.type == 'GUILD_TEXT' ||
           msg.channel.type == 'GUILD_PRIVATE_THREAD' ||
-          msg.channel.type == 'GUILD_PUBLIC_THREAD') &&
-        msg.channel.permissionsFor(msg.member)?.has('MANAGE_MESSAGES'),
+          msg.channel.type == 'GUILD_PUBLIC_THREAD'),
       responder: async (
         msg: util_functions.EMessage,
         cmd: { count: string }
       ) => {
-        if (!msg.guild) return;
+        if (!msg.guild || !msg.member) return;
         util_functions.assertHasPerms(msg.guild, ['MANAGE_MESSAGES']);
         const count = parseInt(cmd.count);
-        if (count > 100) {
-          throw new util_functions.BotError(
-            'user',
-            'Must be less than or equal to 100 messages'
-          );
-        }
-        if (count > 50) {
-          if (!(await util_functions.confirm(msg)))
+        if (
+          (msg.channel as Discord.TextChannel)
+            .permissionsFor(msg.member)
+            ?.has('MANAGE_MESSAGES')
+        ) {
+          if (count > 100) {
             throw new util_functions.BotError(
               'user',
-              'Confirmation needed to delete more than 50 messages'
+              'Must be less than or equal to 100 messages'
             );
-        }
-        try {
-          const purged_msg_num = await (
-            msg.channel as Discord.TextChannel
-          ).bulkDelete(count + 1);
-          const purged_info_msg = await msg.channel.send(
-            `Purged ${purged_msg_num.array().length - 1} messages`
+          }
+          if (count > 50) {
+            if (!(await util_functions.confirm(msg)))
+              throw new util_functions.BotError(
+                'user',
+                'Confirmation needed to delete more than 50 messages'
+              );
+          }
+          try {
+            const purged_msg_num = await (
+              msg.channel as Discord.TextChannel
+            ).bulkDelete(count + 1);
+            const purged_info_msg = await msg.channel.send(
+              `Purged ${purged_msg_num.array().length - 1} messages`
+            );
+            setTimeout(() => {
+              purged_info_msg.delete();
+            }, 2000);
+            await Types.LogChannel.tryToLog(
+              msg,
+              `Purged ${count} message${count === 1 ? '' : 's'} in ${
+                msg.channel
+              }`
+            );
+          } catch (e) {
+            throw new util_functions.BotError('user', (e as any).toString());
+          }
+        } else {
+          if (count > 20) {
+            throw new util_functions.BotError(
+              'user',
+              'Must be less than or equal to 20 messages'
+            );
+          }
+          const warningMessage = await msg.dbReply(
+            util_functions.embed(
+              `Deleting the last ${count} messages from <@${msg.member.id}>`,
+              'warning'
+            )
           );
-          setTimeout(() => {
-            purged_info_msg.delete();
-          }, 2000);
-          await Types.LogChannel.tryToLog(
-            msg,
-            `Purged ${count} message${count === 1 ? '' : 's'} in ${msg.channel}`
-          );
-        } catch (e) {
-          throw new util_functions.BotError('user', e);
+
+          try {
+            const messagesToBePurged = (
+              await msg.channel.messages.fetch({
+                limit: 100,
+              })
+            )
+              .filter((m) => m.author.id === msg.author.id)
+              .first(count + 1);
+            // Delete all messages in messagesToBePurged
+            const purged_msg_num = await (
+              msg.channel as Discord.TextChannel
+            ).bulkDelete(messagesToBePurged);
+            const purged_info_msg = await msg.channel.send(
+              `Deleted ${purged_msg_num.array().length - 1} messages`
+            );
+            setTimeout(() => {
+              purged_info_msg.delete();
+              warningMessage.delete();
+            }, 2000);
+          } catch (e) {
+            throw new util_functions.BotError('user', (e as any).toString());
+          }
         }
       },
     },
