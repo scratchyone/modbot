@@ -508,9 +508,9 @@ export class EMessage extends Discord.Message {
       if (!this.guild) return undefined;
       return this.guild.members.cache.get(
         (
-          await (
+          (await (
             await node_fetch('https://api.pluralkit.me/v1/msg/' + this.id)
-          ).json()
+          ).json()) as any
         ).sender
       );
     } catch (e) {

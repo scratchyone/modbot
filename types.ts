@@ -203,11 +203,13 @@ export class MediaGen {
     return this.url + 'poll?up=' + votes.up + '&down=' + votes.down;
   }
   public async owoActions(): Promise<Array<string>> {
-    return await (await fetch(this.url + 'owoActions')).json();
+    return (await (await fetch(this.url + 'owoActions')).json()) as any;
   }
   public async assert(): Promise<void> {
     try {
-      const working = await fetch(this.url + 'online', { timeout: 1000 });
+      const working = await fetch(this.url + 'online', {
+        timeout: 1000,
+      } as any);
       if (working.status !== 200) throw Error('');
     } catch (e) {
       throw new Types.BotError(

@@ -3,6 +3,7 @@ import * as util_functions from '../util_functions';
 import * as Utils from '../util_functions';
 import moment from 'moment';
 import Discord, {
+  ColorResolvable,
   GuildEmoji,
   MessageReaction,
   Snowflake,
@@ -350,7 +351,7 @@ const datapack = {
     ModBot stores this information when your account is banned from an anonymous channel, to enforce the ban. ModBot stores your user ID and the ID of the server you have been anonbanned from. They are presented here as a list of server names.
 
     ${anonbans.map(
-      (n) =>
+      (n: any) =>
         m`* ${
           ctx.client.guilds.cache.get(n.server as Snowflake) ||
           { name: n.server }.name
@@ -363,14 +364,14 @@ const datapack = {
     
     ## Capabilities
     ModBot stores various randomly generated tokens, along with your user ID, the permission given by the token, and when the token expires. These are used to generate one-time links to ModBot websites, such as the reminder dashboard.
-    ${capabilities.map((n) => m`* \`${n.token}\`: ${n.type}\n`)}
+    ${capabilities.map((n: any) => m`* \`${n.token}\`: ${n.type}\n`)}
     ${capabilities.length == 0 ? m`*Empty*` : ''}
 
     ## Notes and Warns
     When your account recieves a note or a warn from moderators, the message is stored along with your user ID and the ID of the server the note was sent in. Notes are private to server moderators, and cannot be shared here. You have recieved ${notesCount} total notes. Warns are presented here as a message and a server name.
     
     ${warns.map(
-      (n) =>
+      (n: any) =>
         m`* *"${n.message}"*, ${
           ctx.client.guilds.cache.get(n.server as Snowflake) ||
           { name: m`\`${n.server}\`` }.name
@@ -380,19 +381,19 @@ const datapack = {
 
     ## Reminder Subscribers
     When you choose to copy a reminder, ModBot stores you as a "subscriber" to that reminder. ModBot stores your user ID along with the ID of the reminder you have subscribed to. They are presented here as a list of reminder IDs.
-    ${reminderSubscribers.map((n) => m`* \`${n.id}\`\n`)}
+    ${reminderSubscribers.map((n: any) => m`* \`${n.id}\`\n`)}
     ${reminderSubscribers.length == 0 ? m`*Empty*` : ''}
 
     # Reminders
     When you create a reminder, ModBot stores your user ID, the reminder ID, the reminder text, and when the reminder is due.
-    ${reminders.map((n) => m`* \`${n.id}\`: *"${n.text}"*\n`)}
+    ${reminders.map((n: any) => m`* \`${n.id}\`: *"${n.text}"*\n`)}
     ${reminders.length == 0 ? m`*Empty*` : ''}
 
     ## Slowmodes
     When you send a message in a channel that has a bot enforced slowmode enabled, the bot stores your user ID and the channel ID, so the bot can give back your message permissions once the slowmode expires.
     
     ${slowmodedUsers.map(
-      (n) =>
+      (n: any) =>
         m`* ${
           ctx.client.channels.cache.get(n.channel as Snowflake) ||
           { name: m`\`${n.channel}\`` }.name
@@ -491,11 +492,11 @@ const suggestion = {
       const realAPIURL = process.env.SUGGESTIONMANAGER_URL.endsWith('/')
         ? process.env.SUGGESTIONMANAGER_URL
         : `${process.env.SUGGESTIONMANAGER_URL}/`;
-      const token: { projectId: string } = await (
+      const token: { projectId: string } = (await (
         await fetch(
           `${realAPIURL}tokens/${process.env.SUGGESTIONMANAGER_TOKEN}`
         )
-      ).json();
+      ).json()) as { projectId: string };
       const res = await fetch(
         `${realAPIURL}projects/${token.projectId}/suggestions`,
         {
@@ -761,7 +762,11 @@ const owo = {
         authee ? '&authee=' + encodeURIComponent(authee) : ''
       }`
     );
-    const dataJson = await data.json();
+    const dataJson = (await data.json()) as {
+      authorName: string;
+      imageURL: string;
+      color: ColorResolvable;
+    };
     if (data.status === 404)
       // 404 is returned on invalid actions
       throw new util_functions.BotError(
@@ -1292,8 +1297,11 @@ const cat = {
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       // Add cat fact
-      const message = (await (await fetch('https://catfact.ninja/fact')).json())
-        .fact;
+      const message = (
+        (await (await fetch('https://catfact.ninja/fact')).json()) as {
+          fact: string;
+        }
+      ).fact;
       ctx.font = '20pt Consolas';
       ctx.fillText(
         getLines(ctx, message, 600).join('\n'),
