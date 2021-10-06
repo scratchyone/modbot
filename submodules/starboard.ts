@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, starboard_messages } from '@prisma/client';
 const prisma = new PrismaClient();
 import * as util_functions from '../util_functions';
 import Discord, { MessageReaction, Snowflake } from 'discord.js';
 import LogBit from 'logbit';
 const log = new LogBit('Starboard');
-async function genSBMessage(message: Discord.Message) {
+async function genSBMessage(message: Discord.Message, count: number) {
   let msg_username = message.author.username;
   try {
     msg_username = (await message.guild!.members.cache.get(message.author.id))!
@@ -41,9 +41,7 @@ async function genSBMessage(message: Discord.Message) {
     );
   if (spoiler)
     return {
-      content: `${message.reactions.cache.get('⭐')!.count} ⭐\n${
-        message.channel
-      }`,
+      content: `${count} ⭐\n${message.channel}`,
       files: [
         new Discord.MessageAttachment(
           image as string,
@@ -61,9 +59,7 @@ async function genSBMessage(message: Discord.Message) {
     };
   else if (!isImage && image)
     return {
-      content: `${message.reactions.cache.get('⭐')!.count} ⭐\n${
-        message.channel
-      }`,
+      content: `${count} ⭐\n${message.channel}`,
       files: [
         new Discord.MessageAttachment(
           image,
@@ -78,9 +74,7 @@ async function genSBMessage(message: Discord.Message) {
     };
   else
     return {
-      content: `${message.reactions.cache.get('⭐')!.count} ⭐\n${
-        message.channel
-      }`,
+      content: `${count} ⭐\n${message.channel}`,
       embeds: [
         new Discord.MessageEmbed()
           .setAuthor(msg_username, await message.author.displayAvatarURL())
@@ -95,11 +89,11 @@ async function handleReactionCountChange(
 ) {
   if (reaction.emoji.name === '⭐') {
     log.trace('Handling star reaction count change');
-    const existingStarboardMessage = await prisma.starboard_messages.findFirst({
-      where: {
-        message: reaction.message.id,
-      },
-    });
+    const { existingStarboardMessage, count, rootMessage } =
+      await getStarboardMessageData(
+        reaction.message as Discord.Message,
+        client
+      );
     const starboard = await prisma.starboards.findFirst({
       where: {
         server: reaction.message.guild?.id,
@@ -111,7 +105,7 @@ async function handleReactionCountChange(
     }
     if (!existingStarboardMessage)
       log.trace('Message is not already on starboard');
-    if (existingStarboardMessage && reaction.count < starboard.stars) {
+    if (existingStarboardMessage && count < starboard.stars) {
       log.debug('Removing starboard message');
       // Message (probably) exists on starboard but shouldn't
       // Get the actual discord message that is tied to the database entry
@@ -124,10 +118,10 @@ async function handleReactionCountChange(
       // Delete the database entry too
       await prisma.starboard_messages.delete({
         where: {
-          message: reaction.message.id,
+          message: rootMessage.id,
         },
       });
-    } else if (!existingStarboardMessage && reaction.count >= starboard.stars) {
+    } else if (!existingStarboardMessage && count >= starboard.stars) {
       log.debug('Creating new starboard message');
       // There is no message on the starboard, but there should be
       // Generate a post a starboard embed to the starboard channel
@@ -135,14 +129,14 @@ async function handleReactionCountChange(
         starboard.channel as `${bigint}`
       ) as Discord.TextChannel;
       const starboardMessage = await starboardChannel.send(
-        await genSBMessage(reaction.message as Discord.Message)
+        await genSBMessage(rootMessage, count)
       );
       if (!reaction.message.guild) return;
       // Add the starboard message to the database
       await prisma.starboard_messages.create({
         data: {
-          message: reaction.message.id,
-          message_channel: reaction.message.channel.id,
+          message: rootMessage.id,
+          message_channel: rootMessage.channel.id,
           server: reaction.message.guild.id,
           starboard_message: starboardMessage.id,
           starboard_message_channel: starboardChannel.id,
@@ -156,7 +150,7 @@ async function handleReactionCountChange(
         await starboardMessageToRealSBMsg(existingStarboardMessage, client);
       // Update the starboard message
       await discordMessageInStarboardChannel.edit(
-        await genSBMessage(reaction.message as Discord.Message)
+        await genSBMessage(rootMessage as Discord.Message, count)
       );
     }
   }
@@ -173,11 +167,73 @@ const onStarReactAdd = async (
 ) => {
   await handleReactionCountChange(reaction, client);
 };
+async function getStarboardMessageData(
+  message: Discord.Message,
+  client: Discord.Client<boolean>
+) {
+  let existingStarboardMessage = await prisma.starboard_messages.findFirst({
+    where: {
+      message: message.id,
+    },
+  });
+
+  // If you're starring a message that itself is on the starboard, treat it like you're starring the source message
+  const messageOnStarboard = await prisma.starboard_messages.findFirst({
+    where: {
+      starboard_message: message.id,
+    },
+  });
+  let count = message.reactions.cache.get('⭐')?.count || 0;
+  if (messageOnStarboard) {
+    existingStarboardMessage = messageOnStarboard;
+  }
+  if (existingStarboardMessage) {
+    count = await countStarsOnMessage(existingStarboardMessage, client, count);
+  }
+  let rootMessage = message;
+  if (messageOnStarboard) {
+    rootMessage = await starboardMessageToRealSourceMsg(
+      messageOnStarboard,
+      client
+    );
+  }
+  return { existingStarboardMessage, count, rootMessage };
+}
+
+async function countStarsOnMessage(
+  existingStarboardMessage: starboard_messages,
+  client: Discord.Client<boolean>,
+  count: number
+) {
+  const sourceMessage = await starboardMessageToRealSourceMsg(
+    existingStarboardMessage,
+    client
+  );
+  const sbMessage = await starboardMessageToRealSBMsg(
+    existingStarboardMessage,
+    client
+  );
+  const origCount = (
+    (await sourceMessage.reactions.cache.get('⭐')) || { count: 0 }
+  ).count;
+  const sbCount = ((await sbMessage.reactions.cache.get('⭐')) || { count: 0 })
+    .count;
+  count = origCount + sbCount;
+  return count;
+}
+
 async function starboardMessageToRealSBMsg(s: any, client: Discord.Client) {
   const sb_chan = client.channels.cache.get(s.starboard_message_channel) as
     | Discord.TextChannel
     | undefined;
   const sb_disc_msg = await sb_chan!.messages.fetch(s.starboard_message);
+  return sb_disc_msg;
+}
+async function starboardMessageToRealSourceMsg(s: any, client: Discord.Client) {
+  const sb_chan = client.channels.cache.get(s.message_channel) as
+    | Discord.TextChannel
+    | undefined;
+  const sb_disc_msg = await sb_chan!.messages.fetch(s.message);
   return sb_disc_msg;
 }
 const onMessageEdit = async (
@@ -197,8 +253,15 @@ const onMessageEdit = async (
         message: newm.id,
       },
     });
-    const real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
-    await real_msg.edit(await genSBMessage(newm));
+    const { count, existingStarboardMessage } = await getStarboardMessageData(
+      newm,
+      client
+    );
+    const real_msg = await starboardMessageToRealSBMsg(
+      existingStarboardMessage,
+      client
+    );
+    await real_msg.edit(await genSBMessage(newm, count));
   }
 };
 const onMessageDelete = async (
