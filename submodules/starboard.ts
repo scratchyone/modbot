@@ -213,12 +213,14 @@ async function countStarsOnMessage(
     existingStarboardMessage,
     client
   );
-  const origCount = (
-    (await sourceMessage.reactions.cache.get('⭐')) || { count: 0 }
-  ).count;
-  const sbCount = ((await sbMessage.reactions.cache.get('⭐')) || { count: 0 })
-    .count;
-  count = origCount + sbCount;
+  const origUsers =
+    (await sourceMessage.reactions.cache.get('⭐')?.users.cache.array()) || [];
+  const sbUsers =
+    (await sbMessage.reactions.cache.get('⭐')?.users.cache.array()) || [];
+  const deDuped = [
+    ...new Set([...origUsers.map((n) => n.id), ...sbUsers.map((n) => n.id)]),
+  ];
+  count = deDuped.length;
   return count;
 }
 
