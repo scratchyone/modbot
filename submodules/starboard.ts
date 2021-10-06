@@ -214,12 +214,14 @@ async function countStarsOnMessage(
     client
   );
   const origUsers =
-    (await sourceMessage.reactions.cache.get('⭐')?.users.cache.array()) || [];
+    (await sourceMessage.reactions.cache.get('⭐')?.users.fetch())?.array() ||
+    [];
   const sbUsers =
-    (await sbMessage.reactions.cache.get('⭐')?.users.cache.array()) || [];
+    (await sbMessage.reactions.cache.get('⭐')?.users.fetch())?.array() || [];
   const deDuped = [
     ...new Set([...origUsers.map((n) => n.id), ...sbUsers.map((n) => n.id)]),
   ];
+  log.debug(deDuped);
   count = deDuped.length;
   return count;
 }
