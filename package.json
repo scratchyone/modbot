@@ -35,6 +35,7 @@
     "git-rev-sync": "^3.0.1",
     "humanize-plus": "^1.8.2",
     "knex": "^0.21.16",
+    "logbit": "^1.3.2",
     "markdown-it": "^12.1.0",
     "mdtt": "^1.2.1",
     "moment": "^2.29.1",

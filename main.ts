@@ -12,6 +12,13 @@ import Knex from 'knex';
 import KeyValueStore from './kvs';
 import * as AutoResponders from './autoresponders';
 import vm from 'vm';
+import LogBit, { setLogLevel } from 'logbit';
+setLogLevel(
+  ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'].indexOf(
+    (process.env.LOG_LEVEL || 'INFO').toUpperCase()
+  )
+);
+const log = new LogBit('Main');
 const adminServerPermissionOverwrites: Array<{
   guild: string;
   timestamp: number;
@@ -1192,7 +1199,7 @@ const main_commands = {
             );
           } catch (e) {
             if (e instanceof util_functions.BotError) throw e;
-            console.log(e);
+            log.error(e);
             await msg.dbReply(
               util_functions.desc_embed('Failed to create AutoResponder')
             );
@@ -2428,10 +2435,10 @@ function reminderEmbed(
 }
 client.on('ready', async () => {
   if (!client.user) {
-    console.error('No client user!');
+    log.error('No client user!');
     return;
   }
-  console.log(`Logged in as ${client.user.tag}!`);
+  log.info(`Logged in as ${client.user.tag}!`);
   processDeferredOnStart(client);
   //
   //
@@ -2509,7 +2516,7 @@ client.on('ready', async () => {
                     );
                   }
                 } catch (e) {
-                  console.log(e);
+                  log.error(e);
                 }
               }
             }
@@ -2560,7 +2567,7 @@ client.on('ready', async () => {
             },
           });
         } catch (e) {
-          console.log(e);
+          log.error(e);
         }
       }
       if (event.type == 'deletechannel') {
@@ -2614,7 +2621,7 @@ client.on('ready', async () => {
             );
           }
         } catch (e) {
-          console.log(e);
+          log.error(e);
         }
       }
       if (event.type == 'unmute') {
@@ -2632,7 +2639,7 @@ client.on('ready', async () => {
             'event'
           );
         } catch (e) {
-          console.log(e);
+          log.error(e);
         }
       }
       if (event.type == 'unlockdown') {
@@ -2658,7 +2665,7 @@ client.on('ready', async () => {
             'event'
           );
         } catch (e) {
-          console.log(e);
+          log.error(e);
         }
       }
     }
@@ -2681,7 +2688,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
       try {
         await reaction.fetch();
       } catch (error) {
-        console.log('Something went wrong when fetching the message: ', error);
+        log.error('Something went wrong when fetching the message: ', error);
         // Return as `reaction.message.author` may be undefined/null
         return;
       }
@@ -2790,7 +2797,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
       await reaction.remove();
     }
   } catch (e) {
-    console.log(e);
+    log.error(e);
     Sentry.configureScope(function (scope: SentryTypes.Scope) {
       scope.setUser({
         id: user.id.toString(),
@@ -2816,7 +2823,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
       try {
         await reaction.fetch();
       } catch (error) {
-        console.log('Something went wrong when fetching the message: ', error);
+        log.error('Something went wrong when fetching the message: ', error);
         // Return as `reaction.message.author` may be undefined/null
         return;
       }
@@ -2956,7 +2963,7 @@ client.on(
     ) {
       try {
         for (const m of bm) {
-          console.log(m);
+          log.info('Deleting message', m);
           await (
             await msg.channel.messages.fetch(m.botMessage as Snowflake)
           ).delete();
