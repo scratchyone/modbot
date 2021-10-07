@@ -9,3 +9,4 @@ package.json
 package-lock.json
 .ignore
 .gitignore
+prisma/migrations
