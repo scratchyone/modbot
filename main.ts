@@ -399,6 +399,11 @@ const main_commands = {
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
         const id = nanoid.nanoid(5);
+        if (cmd.duration > 1000 * 60 * 60 * 24 * 365 * 50)
+          throw new util_functions.BotError(
+            'user',
+            'Cannot set reminders more than 50 years in the future'
+          );
         await Types.Reminder.query().insert({
           author: ctx.msg.author.id,
           id,
