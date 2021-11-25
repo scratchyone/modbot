@@ -465,6 +465,17 @@ const main_commands = {
         const orig = await Types.Reminder.query().where('id', cmd.id);
         if (!orig.length)
           throw new util_functions.BotError('user', 'Reminder not found');
+        if (
+          (
+            await Types.ReminderSubscriber.query()
+              .where('user', ctx.msg.author.id)
+              .where('id', cmd.id)
+          ).length > 0
+        )
+          throw new util_functions.BotError(
+            'user',
+            "You can't subscribe to a reminder more than once."
+          );
         await Types.ReminderSubscriber.query().insert({
           user: ctx.msg.author.id,
           id: cmd.id,
