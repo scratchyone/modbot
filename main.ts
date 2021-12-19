@@ -1835,7 +1835,7 @@ const main_commands = {
     {
       name: 'tmprole',
       syntax:
-        'tmprole <action: "add" | "remove"> <user: user_id> <role: role_id> <duration: string>',
+        'tmprole <action: "add" | "remove"> <role: role_id> <user: user_id> <duration: string>',
       explanation: "Temporarily change a user's role",
       permissions: (msg: Discord.Message) =>
         msg.member && msg.member.permissions.has('MANAGE_ROLES'),
