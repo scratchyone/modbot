@@ -1436,7 +1436,7 @@ exports.commandModule = {
         if (!reaction.message.guild) return;
         if (
           (reaction.emoji.name == '👍' || reaction.emoji.name == '👎') &&
-          message.isPoll
+          (await message.isPoll())
         ) {
           // A user removed a poll react
           // Ensure the emoji wasn't removed by ModBot because it was a duplicate

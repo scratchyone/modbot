@@ -481,7 +481,7 @@ export class EMessage extends Discord.Message {
     super(client, message, channel);
   }
   async isPoll(): Promise<boolean> {
-    return !!(await Types.Poll.query().where('message', this.id));
+    return !!(await Types.Poll.query().where('message', this.id)).length;
   }
   ask(question: string, time: number): Promise<string> {
     return ask(question, time, this);
