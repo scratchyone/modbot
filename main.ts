@@ -178,7 +178,13 @@ const main_commands = {
           // Define arrow function with eval
           const func = eval(wrappedCode);
           // Run created arrow function
-          const funcResult = await func();
+          let funcResult;
+          try {
+            funcResult = await func();
+          } catch (e) {
+            ctx.msg.channel.send(util_functions.embed(e.toString(), 'warning'));
+            return;
+          }
           if (funcResult)
             await ctx.msg.channel.send(
               util_functions.embed(funcResult, 'success', '')
