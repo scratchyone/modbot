@@ -132,8 +132,7 @@ const main_commands = {
       version: 2,
       permissions: (msg: Discord.Message) =>
         msg.author.id === '234020040830091265' &&
-        msg.member &&
-        msg.member.permissions.has('MANAGE_MESSAGES'),
+        msg.member,
       responder: async (ctx: Types.Context, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
