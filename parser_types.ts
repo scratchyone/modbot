@@ -42,8 +42,11 @@ export const Types = {
       ctx,
       /<#(?<id>\d+)>/,
       'channel',
-      ctx.msg.guild?.channels.cache.array(),
-      ctx.msg.guild?.channels.cache.array().map((c) => [c.name, c.id]) || []
+      [...(ctx.msg.guild?.channels.cache.values() || [])],
+      [...(ctx.msg.guild?.channels.cache.values() || [])].map((c) => [
+        c.name,
+        c.id,
+      ]) || []
     );
   },
   user_id: (
@@ -56,7 +59,10 @@ export const Types = {
       /<@!?(?<id>\d+)>/,
       'user',
       undefined,
-      ctx.msg.guild?.members.cache.array().map((c) => [c.user.tag, c.id]) || []
+      [...(ctx.msg.guild?.members.cache.values() || [])].map((c) => [
+        c.user.tag,
+        c.id,
+      ]) || []
     );
   },
   role_id: (
@@ -68,8 +74,11 @@ export const Types = {
       ctx,
       /<@&(?<id>\d+)>/,
       'role',
-      ctx.msg.guild?.roles.cache.array(),
-      ctx.msg.guild?.roles.cache.array().map((c) => [c.name, c.id]) || []
+      [...(ctx.msg.guild?.roles.cache.values() || [])],
+      [...(ctx.msg.guild?.roles.cache.values() || [])].map((c) => [
+        c.name,
+        c.id,
+      ]) || []
     );
   },
   channel: (

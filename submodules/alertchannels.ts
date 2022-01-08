@@ -46,7 +46,7 @@ const alertchannel = {
           time: 20000,
           filter: (m) => m.author.id == msg.author.id,
         });
-        if (!channel_name.array().length) {
+        if (![...channel_name.values()].length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
@@ -58,14 +58,13 @@ const alertchannel = {
           time: 10000,
           filter: (m) => m.author.id == msg.author.id,
         });
-        if (!role.array().length) {
+        if (![...role.values()].length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
         const drole = msg.guild.roles.cache.get(
-          role
-            .array()[0]
-            .content.replace('<@&', '')
+          [...role.values()][0].content
+            .replace('<@&', '')
             .replace('>', '') as Snowflake
         );
         if (!drole) {
@@ -75,7 +74,7 @@ const alertchannel = {
           return;
         }
         const channel = await msg.guild.channels.create(
-          channel_name.array()[0].content,
+          [...channel_name.values()][0].content,
           {
             type: 'GUILD_TEXT',
             permissionOverwrites: [

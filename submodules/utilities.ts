@@ -67,13 +67,13 @@ async function reRenderPoll(message: Discord.Message | Discord.PartialMessage) {
         message.embeds[0].setImage(
           new Types.MediaGen().generatePoll({
             up:
-              (message.reactions.cache
-                .array()
-                .filter((r) => r.emoji.name == '👍')[0].count || 1) - 1,
+              ([...message.reactions.cache.values()].filter(
+                (r) => r.emoji.name == '👍'
+              )[0].count || 1) - 1,
             down:
-              (message.reactions.cache
-                .array()
-                .filter((r) => r.emoji.name == '👎')[0].count || 1) - 1,
+              ([...message.reactions.cache.values()].filter(
+                (r) => r.emoji.name == '👎'
+              )[0].count || 1) - 1,
           })
         ),
       ],
@@ -182,8 +182,8 @@ const spoil = {
         });
       else throw new util_functions.BotError('bot', 'Internal error');
       // Add SPOILER_ to all message attachments to make them be spoiled
-      const files = msg.attachments.array().map((attachment) => {
-        return { ...attachment, name: 'SPOILER_' + attachment.name };
+      const files = [...msg.attachments.values()].map((attachment) => {
+        return attachment.setName('SPOILER_' + attachment.name);
       });
       // Send with a webhook for custom username and profile picture
       const m = await loghook.send({
@@ -830,12 +830,14 @@ const about = {
           .setTitle('About ModBot')
           .setDescription(
             `ModBot v${pj} is in ${
-              ctx.client.guilds.cache.array().length
+              [...ctx.client.guilds.cache.values()].length
             } servers, with ${
-              ctx.client.channels.cache
-                .array()
-                .filter((channel) => channel.type === 'GUILD_TEXT').length
-            } channels, and ${ctx.client.users.cache.array().length} users.${
+              [...ctx.client.channels.cache.values()].filter(
+                (channel) => channel.type === 'GUILD_TEXT'
+              ).length
+            } channels, and ${
+              [...ctx.client.users.cache.values()].length
+            } users.${
               (ctx.msg.guild as EGuild).hasPluralKit
                 ? ' ModBot is designed to work well with PluralKit.'
                 : ''
@@ -889,16 +891,17 @@ const addemoji = {
         'https://cdn.discordapp.com/emojis/' +
         (cmd.emojiData || '').match(/<a:.*:(\d+)>/)?.[1] +
         '.gif';
-    } else if (msg.attachments.array().length)
+    } else if ([...msg.attachments.values()].length)
       // If an attachment is supplied, use that
       emojiUrl =
         process.env.MEDIAGEN_URL &&
-        path.extname(url.parse(msg.attachments.array()[0].url).pathname) !==
-          '.gif'
+        path.extname(
+          url.parse([...msg.attachments.values()][0].url).pathname
+        ) !== '.gif'
           ? process.env.MEDIAGEN_URL +
             'emojiResize.png?url=' +
-            encodeURIComponent(msg.attachments.array()[0].url)
-          : msg.attachments.array()[0].url;
+            encodeURIComponent([...msg.attachments.values()][0].url)
+          : [...msg.attachments.values()][0].url;
     // Otherwise use whatever data was given (Probably an image URL)
     else if (cmd.emojiData)
       emojiUrl =
@@ -941,13 +944,11 @@ const removeemoji = {
     if (!msg.guild) return;
 
     // Find all emojis with the name specified by the user
-    const matchingEmojis = msg.guild.emojis.cache
-      .array()
-      .filter(
-        (e) =>
-          e.name === cmd.name ||
-          (cmd.name.match(/<a?:[^:]+:(\d+)>/) || [])[1] == e.id
-      );
+    const matchingEmojis = [...msg.guild.emojis.cache.values()].filter(
+      (e) =>
+        e.name === cmd.name ||
+        (cmd.name.match(/<a?:[^:]+:(\d+)>/) || [])[1] == e.id
+    );
 
     // Create a variable for storing the final emoji that will be deleted
     let finalEmoji: GuildEmoji | undefined;
@@ -977,15 +978,17 @@ const removeemoji = {
       for (const e of matchingEmojis) selectionMessage.react(e);
 
       // Wait for the user to select an emoji on the prompt message
-      const chosenReactions = (
-        await selectionMessage.awaitReactions({
-          time: 30000,
-          max: 1,
-          filter: (r: MessageReaction, u: User) =>
-            u.id === msg.author.id &&
-            !!matchingEmojis.find((e) => e.id === r.emoji.id),
-        })
-      ).array();
+      const chosenReactions = [
+        ...(
+          await selectionMessage.awaitReactions({
+            time: 30000,
+            max: 1,
+            filter: (r: MessageReaction, u: User) =>
+              u.id === msg.author.id &&
+              !!matchingEmojis.find((e) => e.id === r.emoji.id),
+          })
+        ).values(),
+      ];
 
       // If they didn't pick one, throw a timed out error
       if (chosenReactions.length === 0)
@@ -1401,14 +1404,13 @@ exports.commandModule = {
         ) {
           // This is a poll and somebody reacted with poll emojis
           // Get other poll emojis on this message by user
-          const t = reaction.message.reactions.cache
-            .array()
-            .filter(
-              (r) =>
-                (r.emoji.name == '👍' || r.emoji.name == '👎') &&
-                r.users.cache.array().filter((u) => u.id == user.id).length &&
-                r.emoji.name != reaction.emoji.name
-            );
+          const t = [...reaction.message.reactions.cache.values()].filter(
+            (r) =>
+              (r.emoji.name == '👍' || r.emoji.name == '👎') &&
+              [...r.users.cache.values()].filter((u) => u.id == user.id)
+                .length &&
+              r.emoji.name != reaction.emoji.name
+          );
           // If the user has already voted, don't let them add another
           if (t.length) reaction.users.remove(user as Discord.User);
           else await reRenderPoll(reaction.message);
@@ -1440,14 +1442,13 @@ exports.commandModule = {
         ) {
           // A user removed a poll react
           // Ensure the emoji wasn't removed by ModBot because it was a duplicate
-          const t = reaction.message.reactions.cache
-            .array()
-            .filter(
-              (r) =>
-                (r.emoji.name == '👍' || r.emoji.name == '👎') &&
-                r.users.cache.array().filter((u) => u.id == user.id).length &&
-                r.emoji.name != reaction.emoji.name
-            );
+          const t = [...reaction.message.reactions.cache.values()].filter(
+            (r) =>
+              (r.emoji.name == '👍' || r.emoji.name == '👎') &&
+              [...r.users.cache.values()].filter((u) => u.id == user.id)
+                .length &&
+              r.emoji.name != reaction.emoji.name
+          );
           if (!t.length) await reRenderPoll(reaction.message);
         }
       } catch (e) {}

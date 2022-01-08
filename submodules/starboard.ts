@@ -7,10 +7,25 @@ const log = new LogBit('Starboard');
 async function genSBMessage(message: Discord.Message, count: number) {
   let msg_username = message.author.username;
   try {
-    msg_username = (await message.guild!.members.cache.get(message.author.id))!
-      .displayName;
+    const m = await message.channel.messages.fetch(message.id, {
+      force: true,
+      cache: false,
+    });
+    msg_username = m.author.username;
+    log.info(
+      `Found message ${message.id} in channel ${message.channel.id} with username ${m.author.username}`
+    );
   } catch (e) {
-    //
+    log.error(e);
+  }
+  try {
+    if (!message.webhookId) {
+      msg_username = (await message.guild!.members.cache.get(
+        message.author.id
+      ))!.displayName;
+    }
+  } catch (e) {
+    log.warn('Failed to fetch starboard message author');
   }
   let desc = message.content;
   if (message.embeds.length) {
@@ -26,9 +41,9 @@ async function genSBMessage(message: Discord.Message, count: number) {
   }
   let image;
   let spoiler = false;
-  if (message.attachments.array().length) {
-    image = message.attachments.array().map((n) => n.url)[0];
-    if (message.attachments.array()[0].name!.startsWith('SPOILER_'))
+  if ([...message.attachments.values()].length) {
+    image = [...message.attachments.values()].map((n) => n.url)[0];
+    if ([...message.attachments.values()][0].name!.startsWith('SPOILER_'))
       spoiler = true;
   } else if (message.embeds.length > 0 && message.embeds[0].type === 'image') {
     image = message.embeds[0].url;
@@ -213,11 +228,15 @@ async function countStarsOnMessage(
     existingStarboardMessage,
     client
   );
-  const origUsers =
-    (await sourceMessage.reactions.cache.get('⭐')?.users.fetch())?.array() ||
-    [];
-  const sbUsers =
-    (await sbMessage.reactions.cache.get('⭐')?.users.fetch())?.array() || [];
+  const origUsers = [
+    ...((
+      await sourceMessage.reactions.cache.get('⭐')?.users.fetch()
+    )?.values() || []),
+  ];
+  const sbUsers = [
+    ...((await sbMessage.reactions.cache.get('⭐')?.users.fetch())?.values() ||
+      []),
+  ];
   const deDuped = [
     ...new Set([...origUsers.map((n) => n.id), ...sbUsers.map((n) => n.id)]),
   ];
@@ -327,12 +346,12 @@ const starboardCommand = {
           time: 10000,
           filter: (m) => m.author.id == msg.author.id,
         });
-        if (!sb_name.array().length) {
+        if (![...sb_name.values()].length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
         const channel = await msg.guild.channels.create(
-          sb_name.array()[0].content,
+          [...sb_name.values()][0].content,
           {
             type: 'GUILD_TEXT',
             permissionOverwrites: [
@@ -454,11 +473,11 @@ const starboardCommand = {
             time: 10000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!stars_req.array().length) {
+          if (![...stars_req.values()].length) {
             await msg.channel.send(util_functions.desc_embed('Timed out'));
             return;
           }
-          if (parseInt(stars_req.array()[0].content) < 1) {
+          if (parseInt([...stars_req.values()][0].content) < 1) {
             await msg.channel.send(
               util_functions.desc_embed("Can't be less than one star")
             );
@@ -466,7 +485,7 @@ const starboardCommand = {
           } else {
             await prisma.starboards.update({
               data: {
-                stars: parseInt(stars_req.array()[0].content),
+                stars: parseInt([...stars_req.values()][0].content),
               },
               where: {
                 server: msg.guild.id,
@@ -476,7 +495,7 @@ const starboardCommand = {
             await Types.LogChannel.tryToLog(
               msg,
               `Changed required stars for starboard to ${
-                stars_req.array()[0].content
+                [...stars_req.values()][0].content
               }`
             );
           }
@@ -621,7 +640,7 @@ exports.commandModule = {
       await onMessageDelete(msg as util_functions.EMessage, client);
     });
     client.on('messageDeleteBulk', async (msgs) => {
-      for (const msg of msgs.array()) {
+      for (const msg of [...msgs.values()]) {
         await onMessageDelete(msg as util_functions.EMessage, client);
       }
     });

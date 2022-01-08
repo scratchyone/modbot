@@ -108,8 +108,8 @@ export async function serve(client: Client): Promise<void> {
       res.send({
         version,
         uptime: startTime,
-        guilds: client.guilds.cache.array().length,
-        users: client.users.cache.array().length,
+        guilds: [...client.guilds.cache.values()].length,
+        users: [...client.users.cache.values()].length,
         commit_short: git.short(),
         commit_msg: git_msg,
       });

@@ -624,7 +624,7 @@ const main_commands = {
           await new_channel.setPosition(msg.channel.position);
           await new_channel.setTopic(msg.channel.topic || '');
           await new_channel.send(util_functions.desc_embed('CLONING PINS'));
-          const pins = (await msg.channel.messages.fetchPinned()).array();
+          const pins = [...(await msg.channel.messages.fetchPinned()).values()];
           pins.reverse();
           const anonhook = await new_channel.createWebhook('ClonePurgeHook');
           try {
@@ -637,7 +637,7 @@ const main_commands = {
                 (await anonhook.send({
                   content: pin.content,
                   embeds: pin.embeds,
-                  files: pin.attachments.array().map((n) => n.url),
+                  files: [...pin.attachments.values()].map((n) => n.url),
                   username: msg_username,
                   avatarURL: pin.author.displayAvatarURL(),
                 })) as Discord.Message
@@ -1373,13 +1373,12 @@ const main_commands = {
             time: 20000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!role.array().length) {
+          if (![...role.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          const rrole = role
-            .array()[0]
-            .content.replace('<@&', '')
+          const rrole = [...role.values()][0].content
+            .replace('<@&', '')
             .replace('>', '');
           const disc_role = msg.guild.roles.cache.get(rrole as Snowflake);
           if (!disc_role) {
@@ -1443,13 +1442,12 @@ const main_commands = {
             time: 40000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!chan.array().length) {
+          if (![...chan.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          const cchan = chan
-            .array()[0]
-            .content.replace('<#', '')
+          const cchan = [...chan.values()][0].content
+            .replace('<#', '')
             .replace('>', '');
           const removable = await util_functions.embed_options(
             'Should the role be removable by un-reacting?',
@@ -1469,7 +1467,7 @@ const main_commands = {
             time: 90000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!embed_description.array().length) {
+          if (![...embed_description.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
@@ -1481,7 +1479,7 @@ const main_commands = {
             time: 90000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!reacts.array().length) {
+          if (![...reacts.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
@@ -1498,7 +1496,7 @@ const main_commands = {
               embeds: [
                 new Discord.MessageEmbed()
                   .setTitle(embed_title || '')
-                  .setDescription(embed_description.array()[0].content),
+                  .setDescription([...embed_description.values()][0].content),
               ],
             });
           } catch (e) {
@@ -1508,9 +1506,8 @@ const main_commands = {
             return;
           }
           const hp = msg.member.roles.highest.position;
-          const reacts_formatted = reacts
-            .array()[0]
-            .content.split('\n')
+          const reacts_formatted = [...reacts.values()][0].content
+            .split('\n')
             .map((n) => {
               return {
                 emoji: n.split(' ').filter((n) => n)[0],
@@ -1589,13 +1586,12 @@ const main_commands = {
             time: 20000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!chan.array().length) {
+          if (![...chan.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
-          const cchan = chan
-            .array()[0]
-            .content.replace('<#', '')
+          const cchan = [...chan.values()][0].content
+            .replace('<#', '')
             .replace('>', '');
           if (!cchan)
             throw new util_functions.BotError('user', 'No channel found');
@@ -1608,14 +1604,14 @@ const main_commands = {
             time: 20000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!mid.array().length) {
+          if (![...mid.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           let rr_mes;
           try {
             rr_mes = await (real_chan as Discord.TextChannel).messages.fetch(
-              mid.array()[0].content as Snowflake
+              [...mid.values()][0].content as Snowflake
             );
           } catch (e) {
             await msg.dbReply(
@@ -1641,7 +1637,7 @@ const main_commands = {
             time: 70000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!embed_description.array().length) {
+          if (![...embed_description.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
@@ -1649,7 +1645,7 @@ const main_commands = {
             embeds: [
               new Discord.MessageEmbed()
                 .setTitle(embed_title || '')
-                .setDescription(embed_description.array()[0].content),
+                .setDescription([...embed_description.values()][0].content),
             ],
           });
           await msg.dbReply(
@@ -1660,14 +1656,13 @@ const main_commands = {
             time: 70000,
             filter: (m) => m.author.id == msg.author.id,
           });
-          if (!reacts.array().length) {
+          if (![...reacts.values()].length) {
             await msg.dbReply(util_functions.desc_embed('Timed out'));
             return;
           }
           const hp = msg.member.roles.highest.position;
-          const reacts_formatted = reacts
-            .array()[0]
-            .content.split('\n')
+          const reacts_formatted = [...reacts.values()][0].content
+            .split('\n')
             .map((n) => {
               return {
                 emoji: n.split(' ').filter((n) => n)[0],
@@ -1963,7 +1958,7 @@ const main_commands = {
               msg.channel as Discord.TextChannel
             ).bulkDelete(count + 1);
             const purged_info_msg = await msg.channel.send(
-              `Purged ${purged_msg_num.array().length - 1} messages`
+              `Purged ${[...purged_msg_num.values()].length - 1} messages`
             );
             setTimeout(() => {
               purged_info_msg.delete();
@@ -2004,7 +1999,7 @@ const main_commands = {
               msg.channel as Discord.TextChannel
             ).bulkDelete(messagesToBePurged);
             const purged_info_msg = await msg.channel.send(
-              `Deleted ${purged_msg_num.array().length - 1} messages`
+              `Deleted ${[...purged_msg_num.values()].length - 1} messages`
             );
             setTimeout(() => {
               purged_info_msg.delete();
@@ -3321,7 +3316,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                     filter: (m) =>
                       m.author.id === msg.author.id && m.content === 'cancel',
                   });
-                  if (cancelMsg.array().length) {
+                  if ([...cancelMsg.values()].length) {
                     if (typeof result === 'object' && result.length > 0) {
                       for (const func of result) {
                         await func();
@@ -3378,8 +3373,8 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                   scope.setContext('Info', {
                     'Message Text': msg.content,
                     'Parse Result': parseRes,
-                    Feedback: feedback.array()[0]
-                      ? feedback.array()[0].content
+                    Feedback: [...feedback.values()][0]
+                      ? [...feedback.values()][0].content
                       : null,
                   });
                 });

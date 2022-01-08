@@ -24,9 +24,6 @@ const similars = combine_recur('', [
 ]);
 async function handle_anon_message(msg: Discord.Message) {
   if (!msg.guild || !msg.channel.id) return;
-  /*if (msg.attachments.array()) {
-    let attachments = msg.attachments.array();
-  }*/
   let last = lasts.get(msg.channel.id);
   if (!last)
     last = {
@@ -42,7 +39,7 @@ async function handle_anon_message(msg: Discord.Message) {
   if (msg.content.startsWith('\\')) return;
   let nd = true;
   if (
-    (!msg.attachments || msg.attachments.array().length == 0) &&
+    (!msg.attachments || [...msg.attachments.values()].length == 0) &&
     !msg.system
   ) {
     try {
@@ -56,15 +53,15 @@ async function handle_anon_message(msg: Discord.Message) {
   //if (!anonhook) {
   //  console.log('Making webhook!');
   const anonhook =
-    (await (msg.channel as Discord.TextChannel).fetchWebhooks())
-      .array()
-      .find((webhook) => webhook.name == 'Anon') ||
+    [
+      ...(await (msg.channel as Discord.TextChannel).fetchWebhooks()).values(),
+    ].find((webhook) => webhook.name == 'Anon') ||
     (await (msg.channel as Discord.TextChannel).createWebhook('Anon'));
   //}
   const am = await anonhook.send({
     content: await util_functions.cleanPings(msg.content, msg.guild),
     embeds: msg.embeds,
-    files: msg.attachments.array().map((n) => n.url),
+    files: [...msg.attachments.values()].map((n) => n.url),
     username: similars[last.count % similars.length],
   });
   await prisma.anonmessages.create({

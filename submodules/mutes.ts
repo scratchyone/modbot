@@ -33,14 +33,14 @@ const setupmute = {
           time: 20000,
           filter: (m) => m.author.id == msg.author.id,
         });
-        if (!rolename.array().length) {
+        if (![...rolename.values()].length) {
           await msg.channel.send(util_functions.desc_embed('Timed out'));
           return;
         }
         let mute_role;
         try {
           mute_role = await msg.guild.roles.create({
-            name: rolename.array()[0].content,
+            name: [...rolename.values()][0].content,
             reason: 'Created mute role',
           });
         } catch (e) {
@@ -52,7 +52,7 @@ const setupmute = {
         await msg.channel.send(
           util_functions.desc_embed('Setting channel overrides')
         );
-        const guild_channels = msg.guild.channels.cache.array();
+        const guild_channels = [...msg.guild.channels.cache.values()];
         for (const channel of guild_channels) {
           try {
             await (channel as TextChannel).permissionOverwrites.edit(
@@ -126,7 +126,7 @@ const setupmute = {
         const mute_role = msg.guild.roles.cache.get(
           mute_role_db!.role as Snowflake
         );
-        const guild_channels = msg.guild.channels.cache.array();
+        const guild_channels = [...msg.guild.channels.cache.values()];
         for (const channel of guild_channels) {
           try {
             await (channel as Discord.TextChannel).permissionOverwrites.edit(
@@ -158,19 +158,17 @@ function checkChannelsThingCanTalkIn(
   guild: Discord.Guild,
   member: Discord.GuildMember | Discord.Role
 ) {
-  return guild.channels.cache
-    .array()
-    .filter(
-      (channel) =>
-        channel.permissionsFor(member).has('SEND_MESSAGES') &&
-        channel.permissionsFor(member).has('VIEW_CHANNEL')
-    );
+  return [...guild.channels.cache.values()].filter(
+    (channel) =>
+      channel.permissionsFor(member).has('SEND_MESSAGES') &&
+      channel.permissionsFor(member).has('VIEW_CHANNEL')
+  );
 }
 function checkChannelsThingCanTalkInAlways(
   guild: Discord.Guild,
   thing: Discord.GuildMember | Discord.Role
 ) {
-  return guild.channels.cache.array().filter((channel) => {
+  return [...guild.channels.cache.values()].filter((channel) => {
     const po = (channel as Discord.TextChannel).permissionOverwrites.cache.get(
       thing.id
     );
@@ -270,7 +268,7 @@ const mute = {
                 )}, the mute role isn't setup. To fix this, run the command \`m: setupmute\` and select the "Fix Mute Role Channel Overrides" option.\n`;
               }
               const role_allows = [];
-              for (const role of mutee!.roles.cache.array()) {
+              for (const role of [...mutee!.roles.cache.values()]) {
                 if (
                   checkChannelsThingCanTalkInAlways(msg.guild, role).length &&
                   role.id !== msg.guild.id

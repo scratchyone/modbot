@@ -10,6 +10,7 @@ import node_fetch from 'node-fetch';
 import * as Types from './types';
 import { Defer } from './defer';
 import { PrismaClient } from '@prisma/client';
+import { RawGuildData, RawMessageData } from 'discord.js/typings/rawDataTypes';
 const prisma = new PrismaClient();
 
 /**
@@ -374,13 +375,14 @@ export async function ask(
     filter: (m) => m.author.id == msg.author.id,
   });
   await deferred.cancel();
-  if (!sb_name.array().length) throw new exports.BotError('user', 'Timed out');
-  if (sb_name.array()[0].attachments.array().length)
+  if (![...sb_name.values()].length)
+    throw new exports.BotError('user', 'Timed out');
+  if ([...[...sb_name.values()][0].attachments.values()].length)
     throw new exports.BotError(
       'user',
       'Attachments are not supported. If you want to add an image, use a link to it'
     );
-  return sb_name.array()[0].content;
+  return [...sb_name.values()][0].content;
 }
 export async function askOrNone(
   question: string,
@@ -424,11 +426,11 @@ export async function askOrNone(
         filter: (m) => m.author.id == msg.author.id,
       });
       await deferred.cancel();
-      if (!sb_name.array().length && !addedEmoji) {
+      if (![...sb_name.values()].length && !addedEmoji) {
         reject(new exports.BotError('user', 'Timed out'));
         return;
       }
-      if (!addedEmoji) resolve(sb_name.array()[0].content);
+      if (!addedEmoji) resolve([...sb_name.values()][0].content);
     })();
   });
 }
@@ -450,7 +452,7 @@ export function fillStringVars(text: string): string {
 }
 const { Structures } = require('discord.js');
 export class EGuild extends Discord.Guild {
-  constructor(client: Discord.Client, guild: Discord.Guild) {
+  constructor(client: Discord.Client, guild: RawGuildData) {
     super(client, guild);
   }
   get starboard(): Promise<{
@@ -473,12 +475,8 @@ Structures.extend('Guild', () => {
 });
 
 export class EMessage extends Discord.Message {
-  constructor(
-    client: Discord.Client,
-    message: Discord.Message,
-    channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel
-  ) {
-    super(client, message, channel);
+  constructor(client: Discord.Client, message: RawMessageData) {
+    super(client, message);
   }
   async isPoll(): Promise<boolean> {
     return !!(await Types.Poll.query().where('message', this.id)).length;
