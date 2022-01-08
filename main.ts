@@ -132,8 +132,7 @@ const main_commands = {
       version: 2,
       permissions: (msg: Discord.Message) =>
         msg.author.id === '234020040830091265' &&
-        msg.member &&
-        msg.member.permissions.has('MANAGE_MESSAGES'),
+        msg.member,
       responder: async (ctx: Types.Context, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
@@ -179,7 +178,13 @@ const main_commands = {
           // Define arrow function with eval
           const func = eval(wrappedCode);
           // Run created arrow function
-          const funcResult = await func();
+          let funcResult;
+          try {
+            funcResult = await func();
+          } catch (e) {
+            ctx.msg.channel.send(util_functions.embed(e.toString(), 'warning'));
+            return;
+          }
           if (funcResult)
             await ctx.msg.channel.send(
               util_functions.embed(funcResult, 'success', '')
