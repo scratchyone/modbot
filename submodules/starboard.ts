@@ -12,7 +12,7 @@ async function genSBMessage(message: Discord.Message, count: number) {
       cache: false,
     });
     msg_username = m.author.username;
-    log.info(
+    log.debug(
       `Found message ${message.id} in channel ${message.channel.id} with username ${m.author.username}`
     );
   } catch (e) {
@@ -139,13 +139,20 @@ async function handleReactionCountChange(
     } else if (!existingStarboardMessage && count >= starboard.stars) {
       log.debug('Creating new starboard message');
       // There is no message on the starboard, but there should be
-      // Generate a post a starboard embed to the starboard channel
+      // Generate and post a starboard embed to the starboard channel
       const starboardChannel = client.channels.cache.get(
         starboard.channel as `${bigint}`
       ) as Discord.TextChannel;
       const starboardMessage = await starboardChannel.send(
         await genSBMessage(rootMessage, count)
       );
+      // Add a star reaction to the starboard message
+      // This way people will know that they can star it from the starboard
+      try {
+        await starboardMessage.react('⭐');
+      } catch (e) {
+        log.error('Failed to add ⭐️ to starboard message', e);
+      }
       if (!reaction.message.guild) return;
       // Add the starboard message to the database
       await prisma.starboard_messages.create({
@@ -218,6 +225,9 @@ async function getStarboardMessageData(
 async function countStarsOnMessage(
   existingStarboardMessage: starboard_messages,
   client: Discord.Client<boolean>,
+  // It's unclear to me why this function accepts this value
+  // It doesn't seem to be used, and the entire point of the function is to find this value?
+  // I'm not removing it until I look at every place this function is used and confirm that it's not needed
   count: number
 ) {
   const sourceMessage = await starboardMessageToRealSourceMsg(
@@ -228,20 +238,28 @@ async function countStarsOnMessage(
     existingStarboardMessage,
     client
   );
+  // Get all users who starred the source message
   const origUsers = [
     ...((
       await sourceMessage.reactions.cache.get('⭐')?.users.fetch()
     )?.values() || []),
   ];
+  // Get all users who starred the message on the starboard
   const sbUsers = [
     ...((await sbMessage.reactions.cache.get('⭐')?.users.fetch())?.values() ||
       []),
   ];
+  // Remove duplicates, so people can't star a message more than once
   const deDuped = [
     ...new Set([...origUsers.map((n) => n.id), ...sbUsers.map((n) => n.id)]),
   ];
-  log.debug(deDuped);
-  count = deDuped.length;
+  // Remove the bot from the list of users who have starred the message
+  // This is because modbot will star the message as soon as it's put
+  // on the starboard, but we don't want to count that.
+  const botId = client.user?.id;
+  const cleanedDeDuped = deDuped.filter((n) => n !== botId);
+  log.debug('Users who have starred ' + sourceMessage.id, cleanedDeDuped);
+  count = cleanedDeDuped.length;
   return count;
 }
 
@@ -305,6 +323,9 @@ const onMessageDelete = async (
     });
     const real_msg = await starboardMessageToRealSBMsg(sb_msg, client);
     await real_msg.delete();
+    log.debug(
+      'Deleted starboard message because the original message was deleted'
+    );
     await prisma.starboard_messages.deleteMany({
       where: {
         message: msg.id,
