@@ -411,7 +411,26 @@ const main_commands = {
       ): Promise<Array<() => void> | undefined> => {
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
-        const id = nanoid.nanoid(5);
+        let id = nanoid.nanoid(5);
+        if (ctx.msg.author.id === '671486892457590846') {
+          for (const morb in [
+            'M0RB1N-T1M3',
+            'MORBIUS',
+            'MORB1US',
+            'M0RB',
+            'M0RBIUS',
+            'MR0B',
+            'M0RB1US',
+          ]) {
+            if (
+              (await prisma.reminders.findUnique({ where: { id: morb } })) ==
+              null
+            ) {
+              id = morb;
+              break;
+            }
+          }
+        }
         if (cmd.duration > 1000 * 60 * 60 * 24 * 365 * 50)
           throw new util_functions.BotError(
             'user',
