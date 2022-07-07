@@ -131,8 +131,7 @@ const main_commands = {
       explanation: 'Run code',
       version: 2,
       permissions: (msg: Discord.Message) =>
-        msg.author.id === '234020040830091265' &&
-        msg.member,
+        msg.author.id === '234020040830091265' && msg.member,
       responder: async (ctx: Types.Context, cmd: { code: string }) => {
         // This is done to allow accessing discord even in compiled TS where it will be renamed
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
@@ -452,10 +451,12 @@ const main_commands = {
       ): Promise<Array<() => void> | undefined> => {
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
-        await Types.Reminder.query()
+        const deleted = await Types.Reminder.query()
           .delete()
           .where('author', ctx.msg.author.id)
           .where('id', cmd.id);
+        if (deleted === 0)
+          throw new util_functions.BotError('user', 'No reminder found');
         await ctx.msg.dbReply(util_functions.embed('Cancelled!', 'success'));
         return undoStack;
       },

@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/storage": "^5.8.5",
-    "@prisma/client": "^2.18.0",
+    "@prisma/client": "^4.0.0",
     "@scratchyone/command_parser": "^2.4.0",
     "@sentry/node": "^6.0.2",
     "@sentry/types": "^6.0.2",
@@ -58,7 +58,7 @@
     "eslint": "^7.18.0",
     "eslint-plugin-prettier": "^3.3.1",
     "jest": "^26.6.3",
-    "prisma": "^2.18.0",
+    "prisma": "^4.0.0",
     "ts-node-dev": "^1.0.0"
   }
 }
