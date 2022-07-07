@@ -169,7 +169,7 @@ model reminders {
   author String
   id     String  @unique
   text   String?
-  time   Int?
+  time   BigInt?
 }
 
 model slowmoded_users {
