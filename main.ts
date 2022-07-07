@@ -174,6 +174,7 @@ const main_commands = {
             // If it fails, set the final code to be run with braces
             wrappedCode = `(async () => {${code}})`;
           }
+          log.debug(`Wrapped code: ${wrappedCode}`);
           // Define arrow function with eval
           const func = eval(wrappedCode);
           // Run created arrow function
@@ -186,13 +187,17 @@ const main_commands = {
             );
             return;
           }
+          log.debug(`Function result: ${JSON.stringify(funcResult, null, 2)}`);
           if (funcResult)
             await ctx.msg.channel.send(
-              util_functions.embed(truncate(funcResult, 4096), 'success', '')
+              util_functions.embed(
+                truncate(JSON.stringify(funcResult, null, 2), 4096),
+                'success'
+              )
             );
           else await ctx.msg.channel.send(util_functions.embed('', 'success'));
         } catch (e) {
-          throw new util_functions.BotError('user', e);
+          throw new util_functions.BotError('user', e.toString());
         }
       },
     },
@@ -3223,6 +3228,7 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
 }
 import Humanize, { toFixed, truncate } from 'humanize-plus';
 import { Defer, processDeferredOnStart } from './defer';
+import { validateLocaleAndSetLanguage } from 'typescript';
 client.on('messageCreate', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;

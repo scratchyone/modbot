@@ -36,6 +36,9 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.substring(0, length - 3) + '...';
 }
+/**
+ * Stringify an object into a string
+ */
 export const COLORS = {
   success: '#1dbb4f' as ColorResolvable,
   warning: '#d8ae2b' as ColorResolvable,
