@@ -191,7 +191,9 @@ const main_commands = {
           if (funcResult)
             await ctx.msg.channel.send(
               util_functions.embed(
-                truncate(JSON.stringify(funcResult, null, 2), 4096),
+                '```json\n' +
+                  truncate(JSON.stringify(funcResult, null, 2), 4096 - 11) +
+                  '```',
                 'success'
               )
             );
