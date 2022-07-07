@@ -181,16 +181,18 @@ const main_commands = {
           try {
             funcResult = await func();
           } catch (e) {
-            ctx.msg.channel.send(util_functions.embed(e.toString(), 'warning'));
+            ctx.msg.channel.send(
+              util_functions.embed(truncate(e.toString(), 4096), 'warning')
+            );
             return;
           }
           if (funcResult)
             await ctx.msg.channel.send(
-              util_functions.embed(funcResult, 'success', '')
+              util_functions.embed(truncate(funcResult, 4096), 'success', '')
             );
           else await ctx.msg.channel.send(util_functions.embed('', 'success'));
         } catch (e) {
-          throw new util_functions.BotError('user', e);
+          throw new util_functions.BotEfrror('user', e);
         }
       },
     },
@@ -3219,7 +3221,7 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
       'Sorry, that command has been disabled by a server moderator'
     );
 }
-import Humanize, { toFixed } from 'humanize-plus';
+import Humanize, { toFixed, truncate } from 'humanize-plus';
 import { Defer, processDeferredOnStart } from './defer';
 client.on('messageCreate', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
@@ -3355,7 +3357,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                     new Discord.MessageEmbed()
                       .setColor(util_functions.COLORS.error)
                       .setTitle('Error')
-                      .setDescription(e.message)
+                      .setDescription(truncate(e.message, 4096))
                       .setFooter(
                         `Use ${matchingPrefix}support to get an invite to the support server`
                       ),
