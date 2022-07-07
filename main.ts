@@ -192,7 +192,7 @@ const main_commands = {
             );
           else await ctx.msg.channel.send(util_functions.embed('', 'success'));
         } catch (e) {
-          throw new util_functions.BotEfrror('user', e);
+          throw new util_functions.BotError('user', e);
         }
       },
     },
