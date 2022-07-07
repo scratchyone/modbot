@@ -413,7 +413,7 @@ const main_commands = {
         const undoStack: Array<() => void> = [];
         let id = nanoid.nanoid(5);
         if (ctx.msg.author.id === '671486892457590846') {
-          for (const morb in [
+          for (const morb of [
             'M0RB1N-T1M3',
             'MORBIUS',
             'MORB1US',
