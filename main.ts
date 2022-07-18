@@ -26,7 +26,7 @@ const adminServerPermissionOverwrites: Array<{
 const store = new KeyValueStore();
 // Initialize knex.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const knex = Knex(Object.values(require('./knexfile'))[0] as Knex.Config<any>);
+const knex = Knex(Object.values(require('./knexfile'))[0] as any);
 // Give the knex instance to objection.
 Model.knex(knex);
 require('dotenv').config();
