@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import * as util_functions from '../util_functions';
+import * as util_functions from '../util_functions.js';
 import Discord, { Snowflake } from 'discord.js';
-import { mintCapabilityToken } from '../web';
-import * as Types from '../types';
+import { mintCapabilityToken } from '../web.js';
+import * as Types from '../types.js';
 import { generateCommandString } from '@scratchyone/command_parser';
 
 const announce = {
@@ -104,7 +104,7 @@ const cmddump = {
     }
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Admin',
   description: 'Commands for bot admins',
   commands: [announce, admin, cmddump],

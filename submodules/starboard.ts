@@ -1,8 +1,8 @@
 import { PrismaClient, starboard_messages } from '@prisma/client';
 const prisma = new PrismaClient();
-import * as util_functions from '../util_functions';
+import * as util_functions from '../util_functions.js';
 import Discord, { MessageReaction, Snowflake } from 'discord.js';
-import LogBit from 'logbit';
+import { LogBit } from 'logbit';
 const log = new LogBit('Starboard');
 async function genSBMessage(message: Discord.Message, count: number) {
   let msg_username = message.author.username;
@@ -333,7 +333,7 @@ const onMessageDelete = async (
     });
   }
 };
-import * as Types from '../types';
+import * as Types from '../types.js';
 const starboardCommand = {
   name: 'starboard',
   syntax: 'starboard <action: "enable" | "disable" | "configure" | "fixperms">',
@@ -585,7 +585,7 @@ const starGetCommand = {
     }
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Starboard',
   description:
     'Commands related to creating, deleting, and configuring the starboard',

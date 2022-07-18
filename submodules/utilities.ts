@@ -1,6 +1,6 @@
 /* eslint-disable no-empty */
-import * as util_functions from '../util_functions';
-import * as Utils from '../util_functions';
+import * as util_functions from '../util_functions.js';
+import * as Utils from '../util_functions.js';
 import moment from 'moment';
 import Discord, {
   ColorResolvable,
@@ -9,9 +9,9 @@ import Discord, {
   Snowflake,
   User,
 } from 'discord.js';
-import { EGuild, Prefix, Context } from '../types';
-import * as Types from '../types';
-import { Defer } from '../defer';
+import { EGuild, Prefix, Context } from '../types.js';
+import * as Types from '../types.js';
+import { Defer } from '../defer.js';
 import Canvas from 'canvas';
 import fetch from 'node-fetch';
 import { PrismaClient } from '@prisma/client';
@@ -19,6 +19,12 @@ const prisma = new PrismaClient();
 import mi from 'markdown-it';
 import MDTT from 'mdtt';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const serviceKey = path.join(__dirname, './keys.json');
 import { Storage } from '@google-cloud/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -809,7 +815,7 @@ if (Types.MediaGen.enabled)
       );
     } catch (e) {}
   })();*/
-const average = require('average');
+import average from 'average';
 const about = {
   name: 'about',
   syntax: 'about',
@@ -820,7 +826,8 @@ const about = {
     let pj;
     // Get version, or unknown if package.json doesn't exist (Might not exist during rebuilds)
     try {
-      pj = require('../package.json').version;
+      pj = (await import('../package.json', { assert: { type: 'json' } }))
+        .version;
     } catch (e) {
       pj = '?.?.?';
     }
@@ -846,7 +853,7 @@ const about = {
               .humanize(true)}.${
               ctx.store.get('stats.msgResponseTimes')
                 ? ` The average time it takes ModBot to reply to a command is ${Math.round(
-                    average(ctx.store.get('stats.msgResponseTimes'))
+                    average(ctx.store.get('stats.msgResponseTimes') as number[])
                   )}ms`
                 : ''
             }`
@@ -861,7 +868,7 @@ const about = {
     });
   },
 };
-const url = require('url');
+import url from 'url';
 const addemoji = {
   name: 'addemoji',
   syntax: 'addemoji <name: word> [emojiData: string]',
@@ -896,7 +903,7 @@ const addemoji = {
       emojiUrl =
         process.env.MEDIAGEN_URL &&
         path.extname(
-          url.parse([...msg.attachments.values()][0].url).pathname
+          url.parse([...msg.attachments.values()][0].url).pathname || ''
         ) !== '.gif'
           ? process.env.MEDIAGEN_URL +
             'emojiResize.png?url=' +
@@ -906,7 +913,7 @@ const addemoji = {
     else if (cmd.emojiData)
       emojiUrl =
         process.env.MEDIAGEN_URL &&
-        path.extname(url.parse(cmd.emojiData).pathname) !== '.gif'
+        path.extname(url.parse(cmd.emojiData).pathname || '') !== '.gif'
           ? process.env.MEDIAGEN_URL +
             'emojiResize.png?url=' +
             encodeURIComponent(cmd.emojiData)
@@ -1324,7 +1331,7 @@ const cat = {
     }
   },
 };
-const git = require('git-rev-sync');
+import git from 'git-rev-sync';
 const waitforupdate = {
   name: 'waitforupdate',
   syntax: 'waitforupdate',
@@ -1351,7 +1358,7 @@ const waitforupdate = {
     });
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
   commands: [

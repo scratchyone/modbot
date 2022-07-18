@@ -1,20 +1,21 @@
-import * as Types from './types';
+import * as Types from './types.js';
 import { v4 as uuidv4 } from 'uuid';
 import express from 'express';
 import { Client, Snowflake } from 'discord.js';
 import moment from 'moment';
 import parse from 'parse-duration';
-import nanoid from 'nanoid';
-import { schedule_event } from './util_functions';
-const git = require('git-rev-sync');
-const version = require('./package.json').version;
+import { nanoid } from 'nanoid';
+import { schedule_event } from './util_functions.js';
+import git from 'git-rev-sync';
+const version = (await import('./package.json', { assert: { type: 'json' } }))
+  .version;
 const git_msg = git.message();
 const startTime = Date.now() / 1000;
 export async function serve(client: Client): Promise<void> {
   if (process.env.PORT) {
-    const cors = require('cors');
+    const cors = await import('cors');
     const app = express();
-    app.use(cors());
+    app.use(cors.default());
     app.use(express.json());
     const port = process.env.PORT;
     app.get('/capabilities/:token', async (req, res) => {
@@ -66,7 +67,7 @@ export async function serve(client: Client): Promise<void> {
         'reminders'
       );
       if (!capability) return;
-      const id = nanoid.nanoid(5);
+      const id = nanoid(5);
       res.send(
         await Types.Reminder.query().insertAndFetch({
           text: req.body.text.replace('@', '@ '),

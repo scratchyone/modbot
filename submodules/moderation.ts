@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import * as util_functions from '../util_functions';
+import * as util_functions from '../util_functions.js';
 import Discord, { Snowflake } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import { Context, DisabledCommand } from '../types';
-import * as Types from '../types';
+import { Context, DisabledCommand } from '../types.js';
+import * as Types from '../types.js';
 const lockdown = {
   name: 'lockdown',
   syntax: 'lockdown [time: string]',
@@ -277,7 +277,7 @@ const enablecommand = {
     );
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Moderation',
   description: 'Helpful uncatergorized moderation commands',
   commands: [lockdown, unlockdown, disablecommand, enablecommand, logging],

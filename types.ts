@@ -1,7 +1,7 @@
 import Discord, { Snowflake } from 'discord.js';
 import { Model } from 'objection';
-import KeyValueStore from './kvs';
-import * as Types from './util_functions';
+import KeyValueStore from './kvs.js';
+import * as Types from './util_functions.js';
 import commandParser from '@scratchyone/command_parser';
 export interface EGuild extends Discord.Guild {
   hasPluralKit: boolean;

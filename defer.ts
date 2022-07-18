@@ -2,7 +2,7 @@ import { Client, MessageEmbed, Snowflake } from 'discord.js';
 import { Model } from 'objection';
 import { v4 as uuidv4 } from 'uuid';
 import Discord from 'discord.js';
-import * as Utils from './util_functions';
+import * as Utils from './util_functions.js';
 
 interface SendCancelledMessage {
   type: 'SendCancelledMessage';

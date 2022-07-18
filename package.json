@@ -3,9 +3,10 @@
   "version": "2.6.0",
   "description": "",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "test": "npm run clear && npm run eslint && npm run tsc && npm run clear",
-    "tsc": "copyfiles package.json build && tsc",
+    "tsc": "copyfiles package.json knexfile.js build && tsc",
     "eslint": "eslint . --ext .js,.ts",
     "build": "npm run clear && npm run tsc",
     "dev": "ts-node-dev --respawn --exit-child ./main.ts",
@@ -51,6 +52,8 @@
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.3",
+    "@types/cors": "^2.8.12",
+    "@types/git-rev-sync": "^2.0.0",
     "@types/markdown-it": "^12.2.3",
     "@typescript-eslint/eslint-plugin": "^5.30.6",
     "@typescript-eslint/parser": "^5.30.6",

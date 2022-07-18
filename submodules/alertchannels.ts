@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { Client, Message, Snowflake, TextChannel } from 'discord.js';
 const prisma = new PrismaClient();
-const util_functions = require('../util_functions');
-import * as Types from '../types';
+import * as util_functions from '../util_functions.js';
+import * as Types from '../types.js';
 const alertchannel = {
   name: 'alertchannel',
   syntax: 'alertchannel <action: "enable" | "ignore" | "disable">',
@@ -148,7 +148,7 @@ const alertchannel = {
     }
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Alert Channel',
   description: 'Commands to configure your alert channel',
   commands: [alertchannel],

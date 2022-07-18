@@ -1,7 +1,7 @@
-import * as util_functions from '../util_functions';
+import * as util_functions from '../util_functions.js';
 import Discord, { Snowflake } from 'discord.js';
-const parse_duration = require('parse-duration');
-import * as Types from '../types';
+import parse_duration from 'parse-duration';
+import * as Types from '../types.js';
 const slowmodeCommand = {
   name: 'slowmode',
   syntax: 'slowmode <action: "enable" | "disable"> <channel: channel_id>',
@@ -79,7 +79,7 @@ const slowmodeCommand = {
     }
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Slowmode',
   description: "Commands for managing ModBot's slowmode system",
   commands: [slowmodeCommand],

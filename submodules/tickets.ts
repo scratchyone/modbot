@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import * as util_functions from '../util_functions';
+import * as util_functions from '../util_functions.js';
 import Discord, { Snowflake } from 'discord.js';
 import { nanoid } from 'nanoid';
-import * as Types from '../types';
+import * as Types from '../types.js';
 const ticketcreate = {
   name: 'ticket',
   syntax: 'ticket create <moderator_role: role_id> <user: user_id>',
@@ -104,7 +104,7 @@ const ticketdelete = {
     }
   },
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Tickets',
   description: 'Commands for creating tickets',
   commands: [ticketcreate, ticketdelete],

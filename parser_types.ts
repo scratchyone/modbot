@@ -1,6 +1,6 @@
 import { ParserStream, ParseError } from '@scratchyone/command_parser';
 import parse from 'parse-duration';
-import { Context } from './types';
+import { Context } from './types.js';
 
 export const Types = {
   string: (

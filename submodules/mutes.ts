@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import Discord, { Snowflake, TextChannel } from 'discord.js';
-import * as util_functions from '../util_functions';
-import * as Types from '../types';
+import * as util_functions from '../util_functions.js';
+import * as Types from '../types.js';
 const setupmute = {
   name: 'setupmute',
   syntax: 'setupmute',
@@ -382,7 +382,7 @@ const unmute = {
     }
   },
 };
-exports.onChannelCreate = async (channel: Discord.TextChannel) => {
+export const onChannelCreate = async (channel: Discord.TextChannel) => {
   const mr = await prisma.mute_roles.findFirst({
     where: { server: channel.guild.id },
   });
@@ -395,7 +395,7 @@ exports.onChannelCreate = async (channel: Discord.TextChannel) => {
     });
   }
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'Mutes',
   description:
     'Commands related to muting people and configuring the mute role',

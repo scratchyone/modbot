@@ -7,8 +7,8 @@ import Discord, {
 } from 'discord.js';
 import parse_duration from 'parse-duration';
 import node_fetch from 'node-fetch';
-import * as Types from './types';
-import { Defer } from './defer';
+import * as Types from './types.js';
+import { Defer } from './defer.js';
 import { PrismaClient } from '@prisma/client';
 import { RawGuildData, RawMessageData } from 'discord.js/typings/rawDataTypes';
 const prisma = new PrismaClient();
@@ -385,10 +385,9 @@ export async function ask(
     filter: (m) => m.author.id == msg.author.id,
   });
   await deferred.cancel();
-  if (![...sb_name.values()].length)
-    throw new exports.BotError('user', 'Timed out');
+  if (![...sb_name.values()].length) throw new BotError('user', 'Timed out');
   if ([...[...sb_name.values()][0].attachments.values()].length)
-    throw new exports.BotError(
+    throw new BotError(
       'user',
       'Attachments are not supported. If you want to add an image, use a link to it'
     );
@@ -437,7 +436,7 @@ export async function askOrNone(
       });
       await deferred.cancel();
       if (![...sb_name.values()].length && !addedEmoji) {
-        reject(new exports.BotError('user', 'Timed out'));
+        reject(new BotError('user', 'Timed out'));
         return;
       }
       if (!addedEmoji) resolve([...sb_name.values()][0].content);
@@ -460,7 +459,8 @@ export function fillStringVars(text: string): string {
     }
   return text;
 }
-const { Structures } = require('discord.js');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { Structures } = (await import('discord.js')) as any;
 export class EGuild extends Discord.Guild {
   constructor(client: Discord.Client, guild: RawGuildData) {
     super(client, guild);
@@ -565,7 +565,7 @@ export class EMessage extends Discord.Message {
   }
 }
 Structures.extend('Message', () => {
-  return exports.EMessage;
+  return EMessage;
 });
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

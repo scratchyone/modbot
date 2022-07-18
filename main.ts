@@ -2,23 +2,28 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import Discord, { Snowflake, TextChannel } from 'discord.js';
 import moment from 'moment';
-import { Types as ParserTypes } from './parser_types';
-const Sentry = require('@sentry/node');
+import { Types as ParserTypes } from './parser_types.js';
+import Sentry from '@sentry/node';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import SentryTypes from '@sentry/types';
 import { Model } from 'objection';
 import Knex from 'knex';
-import KeyValueStore from './kvs';
-import * as AutoResponders from './autoresponders';
+import KeyValueStore from './kvs.js';
+import * as AutoResponders from './autoresponders.js';
 import vm from 'vm';
-import LogBit, { setLogLevel } from 'logbit';
+import { setLogLevel, LogBit } from 'logbit';
 setLogLevel(
   ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'].indexOf(
     (process.env.LOG_LEVEL || 'INFO').toUpperCase()
   )
 );
 const log = new LogBit('Main');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const adminServerPermissionOverwrites: Array<{
   guild: string;
   timestamp: number;
@@ -26,11 +31,13 @@ const adminServerPermissionOverwrites: Array<{
 const store = new KeyValueStore();
 // Initialize knex.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const knex = Knex(Object.values(require('./knexfile'))[0] as any);
+const knex = Knex(
+  Object.values((await import('./knexfile.cjs')).default)[0] as any
+);
 // Give the knex instance to objection.
 Model.knex(knex);
-require('dotenv').config();
-import * as Web from './web';
+(await import('dotenv')).config();
+import * as Web from './web.js';
 Sentry.init({
   dsn: process.env.SENTRY_TOKEN,
   beforeSend: (event: SentryTypes.Event) => {
@@ -42,37 +49,37 @@ Sentry.init({
   },
 });
 moment.relativeTimeThreshold('ss', 15);
-const parse_duration = require('parse-duration');
+import parse_duration from 'parse-duration';
 
-const nodefetch = require('node-fetch');
-const mutes = (() => {
+import nodefetch from 'node-fetch';
+const mutes = await (async () => {
   try {
-    return require('./submodules/mutes.js');
+    return await import('./submodules/mutes.js');
   } catch (e) {
     return undefined;
   }
 })();
-const alertchannels = (() => {
+const alertchannels = await (async () => {
   try {
-    return require('./submodules/alertchannels.js');
+    return await import('./submodules/alertchannels.js');
   } catch (e) {
     return undefined;
   }
 })();
-const automod = (() => {
+const automod = await (async () => {
   try {
-    return require('./submodules/automod.js');
+    return await import('./submodules/automod.js');
   } catch (e) {
     return undefined;
   }
 })();
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 //const numbers = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-const anonchannels = require('./anonchannels');
-import * as util_functions from './util_functions';
+import * as anonchannels from './anonchannels.js';
+import * as util_functions from './util_functions.js';
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
   intents: [
@@ -88,8 +95,8 @@ const client = new Discord.Client({
 interface MatcherCommand {
   command: string;
 }
-import { Prefix } from './types';
-import * as Types from './types';
+import { Prefix } from './types.js';
+import * as Types from './types.js';
 import parse from 'parse-duration';
 const main_commands = {
   title: 'Main Commands',
@@ -183,7 +190,10 @@ const main_commands = {
             funcResult = await func();
           } catch (e) {
             ctx.msg.channel.send(
-              util_functions.embed(truncate(e.toString(), 4096), 'warning')
+              util_functions.embed(
+                util_functions.truncate(e.toString(), 4096),
+                'warning'
+              )
             );
             return;
           }
@@ -192,7 +202,10 @@ const main_commands = {
             await ctx.msg.channel.send(
               util_functions.embed(
                 '```json\n' +
-                  truncate(JSON.stringify(funcResult, null, 2), 4096 - 11) +
+                  util_functions.truncate(
+                    JSON.stringify(funcResult, null, 2),
+                    4096 - 11
+                  ) +
                   '```',
                 'success'
               )
@@ -411,7 +424,7 @@ const main_commands = {
       ): Promise<Array<() => void> | undefined> => {
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
-        let id = nanoid.nanoid(5);
+        let id = nanoid(5);
         if (
           ctx.msg.author.id === '671486892457590846' ||
           ctx.msg.author.id === '991227059089190932'
@@ -1387,7 +1400,7 @@ const main_commands = {
         )
           throw new util_functions.BotError(
             'user',
-            `Sorry, please wait **${+toFixed(
+            `Sorry, please wait **${+Humanize.toFixed(
               (ctx.store.timeLeft(`rateLimits.alpha.${ctx.msg.author.id}`) ||
                 0) / 1000
             )}s** before trying again`
@@ -2251,7 +2264,7 @@ const main_commands = {
         cmd: { user: string; text: string }
       ) => {
         if (!msg.guild) return;
-        const id = nanoid.nanoid(5);
+        const id = nanoid(5);
         await prisma.notes.create({
           data: {
             type: 'note',
@@ -2283,7 +2296,7 @@ const main_commands = {
         cmd: { user: string; text: string }
       ) => {
         if (!msg.guild) return;
-        const id = nanoid.nanoid(5);
+        const id = nanoid(5);
         await prisma.notes.create({
           data: {
             type: 'warn',
@@ -2931,7 +2944,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 client.on('channelCreate', async (channel) => {
   try {
-    await mutes.onChannelCreate(channel);
+    if (channel instanceof Discord.TextChannel) {
+      await mutes?.onChannelCreate(channel);
+    }
   } catch (e) {
     //
   }
@@ -3036,9 +3051,16 @@ import {
 import fs from 'fs';
 let all_command_modules = [
   main_commands,
-  ...fs
-    .readdirSync(__dirname + '/submodules')
-    .map((mod) => require(__dirname + '/submodules/' + mod).commandModule),
+  ...(await Promise.all(
+    fs
+      .readdirSync(__dirname + '/submodules')
+      .map(
+        async (mod) =>
+          (
+            await import(__dirname + '/submodules/' + mod)
+          ).commandModule
+      )
+  )),
 ];
 all_command_modules = all_command_modules.map((module) => {
   const c = module.commands;
@@ -3324,8 +3346,8 @@ async function checkDisabledCommand(msg: Discord.Message, command: string) {
       'Sorry, that command has been disabled by a server moderator'
     );
 }
-import Humanize, { toFixed, truncate } from 'humanize-plus';
-import { Defer, processDeferredOnStart } from './defer';
+import Humanize from 'humanize-plus';
+import { Defer, processDeferredOnStart } from './defer.js';
 import { validateLocaleAndSetLanguage } from 'typescript';
 client.on('messageCreate', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
@@ -3341,7 +3363,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
     addReactOnMention(msg);
     if (msg.author.id === client.user.id) return;
     // Message author is not ModBot
-    if (automod) automod.checkForTriggers(msg);
+    if (automod) automod.checkForTriggers(msg as util_functions.EMessage);
     if (msg.author.bot && msg.author.id !== '757021641040724070') return; // Overseer exemption
     // Message author is not a bot
     anonchannels.onNewMessage(msg);
@@ -3461,7 +3483,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
                     new Discord.MessageEmbed()
                       .setColor(util_functions.COLORS.error)
                       .setTitle('Error')
-                      .setDescription(truncate(e.message, 4096))
+                      .setDescription(util_functions.truncate(e.message, 4096))
                       .setFooter(
                         `Use ${matchingPrefix}support to get an invite to the support server`
                       ),

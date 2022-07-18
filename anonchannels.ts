@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-const util_functions = require('./util_functions');
+import * as util_functions from './util_functions.js';
 import Discord from 'discord.js';
 const lasts: Map<string, { author: string; count: number }> = new Map();
 function combine_recur(w: string, l: Array<Array<string>>): string[] {
@@ -22,7 +22,7 @@ const similars = combine_recur('', [
   chars['o'],
   chars['n'],
 ]);
-async function handle_anon_message(msg: Discord.Message) {
+export async function handle_anon_message(msg: Discord.Message) {
   if (!msg.guild || !msg.channel.id) return;
   let last = lasts.get(msg.channel.id);
   if (!last)
@@ -76,8 +76,7 @@ async function handle_anon_message(msg: Discord.Message) {
       await msg.delete();
     } catch (e) {}
 }
-exports.handle_anon_message = handle_anon_message;
-exports.onNewMessage = async (msg: Discord.Message) => {
+export const onNewMessage = async (msg: Discord.Message) => {
   if (
     msg.guild &&
     (await prisma.anonchannels.findFirst({
@@ -95,7 +94,7 @@ exports.onNewMessage = async (msg: Discord.Message) => {
         },
       }))
     )
-      await exports.handle_anon_message(msg);
+      await handle_anon_message(msg);
     else {
       await msg.delete();
       const bm = await msg.channel.send(

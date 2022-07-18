@@ -3,8 +3,8 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import Discord, { Snowflake } from 'discord.js';
-import * as util_functions from '../util_functions';
-import * as Types from '../types';
+import * as util_functions from '../util_functions.js';
+import * as Types from '../types.js';
 const automod = {
   name: 'automod',
   syntax: 'automod <action: "enable" | "disable" | "add" | "remove" | "list">',
@@ -260,7 +260,7 @@ const automod = {
     }
   },
 };
-exports.checkForTriggers = async (msg: util_functions.EMessage) => {
+export const checkForTriggers = async (msg: util_functions.EMessage) => {
   if (!msg.guild) return;
   const am = await prisma.automods.findFirst({
     where: {
@@ -396,7 +396,7 @@ exports.checkForTriggers = async (msg: util_functions.EMessage) => {
     }
   }
 };
-exports.commandModule = {
+export const commandModule = {
   title: 'AutoMod',
   description: 'Commands related to configuring the AutoModerator',
   commands: [automod],
