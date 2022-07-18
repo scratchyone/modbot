@@ -1407,7 +1407,7 @@ const main_commands = {
           );
         ctx.msg.channel.sendTyping();
         try {
-          const res = await (
+          const res = (await (
             await nodefetch(
               'http://api.wolframalpha.com/v2/query?appid=' +
                 process.env.WOLFRAMALPHA_KEY +
@@ -1415,7 +1415,7 @@ const main_commands = {
                 encodeURIComponent(cmd.text) +
                 '&format=plaintext&output=json'
             )
-          ).json();
+          ).json()) as any;
           ctx.store.set(
             `alpha.${cmd.text}`,
             res.queryresult.pods[1].subpods[0].plaintext
