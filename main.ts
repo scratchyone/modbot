@@ -412,7 +412,10 @@ const main_commands = {
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
         let id = nanoid.nanoid(5);
-        if (ctx.msg.author.id === '671486892457590846') {
+        if (
+          ctx.msg.author.id === '671486892457590846' ||
+          ctx.msg.author.id === '991227059089190932'
+        ) {
           for (const morb of util_functions.shuffle([
             'M0RB1N-T1M3',
             'MORBIUS',
