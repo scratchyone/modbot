@@ -414,7 +414,8 @@ const main_commands = {
     },
     {
       name: 'reminder',
-      syntax: 'reminder/rm add <duration: duration> <text: string>',
+      syntax:
+        'reminder/rm/remind/remindme [action: "add"] <duration: duration> <text: string>',
       explanation: 'Set a reminder',
       version: 2,
       permissions: () => true,

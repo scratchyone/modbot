@@ -17,7 +17,7 @@
   "dependencies": {
     "@google-cloud/storage": "^6.2.3",
     "@prisma/client": "^4.0.0",
-    "@scratchyone/command_parser": "^2.4.0",
+    "@scratchyone/command_parser": "^3.0.0",
     "@sentry/node": "^7.7.0",
     "@sentry/tracing": "^7.7.0",
     "@sentry/types": "^7.7.0",
