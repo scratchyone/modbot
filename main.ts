@@ -2393,11 +2393,9 @@ const main_commands = {
         ctx: Types.Context,
         cmd: { topic: string | undefined }
       ) => {
-        if (cmd.topic) {
+        if (typeof cmd.topic === 'string') {
           const chosen_module = all_command_modules.find(
-            (mod) =>
-              mod.title.toLowerCase() ==
-              ctx.msg.content.replace(`${ctx.prefix}help `, '').toLowerCase()
+            (mod) => mod.title.toLowerCase() == cmd.topic?.toLowerCase()
           );
           if (!chosen_module) {
             const valid_commands = [];
@@ -2406,13 +2404,30 @@ const main_commands = {
                 try {
                   if (
                     registered_command.name.toLowerCase() ==
-                    ctx.msg.content
-                      .replace(`${ctx.prefix}help `, '')
-                      .toLowerCase()
+                    cmd.topic.toLowerCase()
                   ) {
                     valid_commands.push(registered_command);
                   }
                 } catch (e) {}
+            }
+            if (valid_commands.length === 0) {
+              // Try another method
+              for (const module of all_command_modules) {
+                for (const registered_command of module.commands)
+                  try {
+                    const grammar = (
+                      registered_command.grammar as ParsedCommandDef
+                    )[0];
+                    if (
+                      grammar.type == 'string_literal' &&
+                      grammar.values
+                        .map((n) => n.toLowerCase())
+                        .includes(cmd.topic.toLowerCase())
+                    ) {
+                      valid_commands.push(registered_command);
+                    }
+                  } catch (e) {}
+              }
             }
             if (valid_commands.length) {
               ctx.msg.dbReply({
