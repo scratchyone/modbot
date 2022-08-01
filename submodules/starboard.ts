@@ -364,7 +364,7 @@ const starboardCommand = {
         await msg.channel.send('What should I name the channel?');
         const sb_name = await msg.channel.awaitMessages({
           max: 1,
-          time: 10000,
+          time: 30000,
           filter: (m) => m.author.id == msg.author.id,
         });
         if (![...sb_name.values()].length) {
@@ -491,7 +491,7 @@ const starboardCommand = {
           await msg.channel.send('How many stars should be required?');
           const stars_req = await msg.channel.awaitMessages({
             max: 1,
-            time: 10000,
+            time: 20000,
             filter: (m) => m.author.id == msg.author.id,
           });
           if (![...stars_req.values()].length) {
