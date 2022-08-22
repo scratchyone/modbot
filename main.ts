@@ -2635,7 +2635,11 @@ client.on('ready', async () => {
           // My hope is this should stop it.
           // This keeps a log of all delivered reminders by their ID, and then cancels the delivery if a reminder has already been delivered.
           try {
-            if (already_delivered_reminders.includes(event.uniqueId)) continue;
+            if (
+              already_delivered_reminders.includes(event.uniqueId) &&
+              event.uniqueId
+            )
+              continue;
             already_delivered_reminders.push(event.uniqueId);
           } catch (e) {
             // Some reminders won't have a uniqueId if they were created before 2022-08-22
