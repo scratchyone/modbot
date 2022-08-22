@@ -527,11 +527,13 @@ const main_commands = {
             'user',
             'Cannot set reminders more than 50 years in the future'
           );
-        await Types.Reminder.query().insert({
-          author: ctx.msg.author.id,
-          id,
-          text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
-          time: moment().add(cmd.duration, 'ms').unix(),
+        const createdReminder = await prisma.reminders.create({
+          data: {
+            author: ctx.msg.author.id,
+            id,
+            text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
+            time: moment().add(cmd.duration, 'ms').unix(),
+          },
         });
         await util_functions.schedule_event(
           {
@@ -541,6 +543,7 @@ const main_commands = {
             user: ctx.msg.author.id,
             message: ctx.msg.url,
             id,
+            uniqueId: createdReminder.uniqueId,
           },
           cmd.duration + 'ms'
         );
@@ -2631,8 +2634,12 @@ client.on('ready', async () => {
           // But somehow they rarely are. I have no clue why.
           // My hope is this should stop it.
           // This keeps a log of all delivered reminders by their ID, and then cancels the delivery if a reminder has already been delivered.
-          if (already_delivered_reminders.includes(event.id)) continue;
-          already_delivered_reminders.push(event.id);
+          try {
+            if (already_delivered_reminders.includes(event.uniqueId)) continue;
+            already_delivered_reminders.push(event.uniqueId);
+          } catch (e) {
+            // Some reminders won't have a uniqueId if they were created before 2022-08-22
+          }
 
           const res = await Types.Reminder.query()
             .where('author', event.user)

@@ -166,10 +166,11 @@ model reminderSubscribers {
 }
 
 model reminders {
-  author String
-  id     String  @unique
-  text   String?
-  time   BigInt?
+  uniqueId String? @unique @default(uuid())
+  author   String
+  id       String  @unique
+  text     String?
+  time     BigInt?
 }
 
 model slowmoded_users {
