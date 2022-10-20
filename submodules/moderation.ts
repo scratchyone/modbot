@@ -10,7 +10,7 @@ const lockdown = {
   syntax: 'lockdown [time: string]',
   explanation: 'Prevent everyone for sending messages in this channel',
   permissions: (msg: Discord.Message) =>
-    msg.member?.permissions.has('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS') && false, // Command destroys channel perms unrecoverably
   responder: async (
     msg: util_functions.EMessage,
     cmd: { time: string },
@@ -82,7 +82,7 @@ const unlockdown = {
   syntax: 'unlockdown <channel: channel_id>',
   explanation: 'Unlockdown a channel',
   permissions: (msg: Discord.Message) =>
-    msg.member?.permissions.has('MANAGE_CHANNELS'),
+    msg.member?.permissions.has('MANAGE_CHANNELS') && false, // Command destroys channel perms unrecoverably
   responder: async (
     msg: util_functions.EMessage,
     cmd: { channel: string },

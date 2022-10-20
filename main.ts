@@ -512,6 +512,10 @@ const main_commands = {
             'AM0NG-US',
             'AM0NG-U5',
             '4MONG-U5',
+            "Accordingtoallknownlawsofaviation,thereisnowaythatabeeshouldbeabletofly.Itswingsaretoosmalltogetitsfatlittlebodyofftheground.Thebee,ofcourse,fliesanywaybecausebeesdon'tcarewhathumansthinkisimpossible.CuttoBarry'sroom,wherehe'spickingoutwhattowear.BarryYellow,black.Yellow,black.Yellow,black.Yellow,black.Ooh,blackandyellow!Yeah,let'sshakeitupalittle.",
+            'shutjdjsisjsk',
+            'jadsfhjklafhdshiulfadnfangiulfuginlfugilcngiluasguilncaglnucagnucangkacgnCgnacfsuginacsguinaacsyugacgncdfgyncfgniuafcnggancagniucfsaniguafgncdsaiucadsafnuaiscdnifucbdstnoinucfbgnosiadugniufnycgoiuasndcoifugnadsiucfhnosiaudghfnoidusaghnocfugdsanocfiugdoanuicwegoiucfndiougfludsghafinulesdyufhlughincyehwpufinvlughlehnacsfhnashnacshnacshnhnashnfclhunlhewlhuasflhjghlgjfahvnmvcxnjfsglhadsfhwehliouyweuisghjdfjhgnjvcnjdsflhidsafluiywluewfhjadsjsadfhuafdsgknysfgkuynuhewngysdufyiasbkyugihfsnduacgkhweygrdfilnsiuxygahlefudangykhxiefusdnygkjhdfiugkahisugykfhjxanxhudfniuagykwesdf',
+            'vriska',
           ])) {
             if (
               (await prisma.reminders.findUnique({ where: { id: morb } })) ==
