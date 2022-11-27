@@ -1416,6 +1416,7 @@ const main_commands = {
                 '&format=plaintext&output=json'
             )
           ).json()) as any;
+          log.debug("Wolfram Alpha's response:", res);
           ctx.store.set(
             `alpha.${cmd.text}`,
             res.queryresult.pods[1].subpods[0].plaintext
