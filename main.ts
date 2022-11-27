@@ -82,15 +82,7 @@ import * as anonchannels from './anonchannels.js';
 import * as util_functions from './util_functions.js';
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
-  intents: [
-    'GUILD_MEMBERS',
-    'GUILD_PRESENCES',
-    'DIRECT_MESSAGES',
-    'GUILDS',
-    'GUILD_MESSAGES',
-    'GUILD_MESSAGE_REACTIONS',
-    'DIRECT_MESSAGES',
-  ],
+  intents: 65407,
 });
 interface MatcherCommand {
   command: string;
@@ -1455,6 +1447,7 @@ const main_commands = {
                 .setColor('#cc4d42'),
             ],
           });
+          log.error("Couldn't get Wolfram Alpha result", e);
         }
       },
     },
