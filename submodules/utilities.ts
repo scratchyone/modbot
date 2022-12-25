@@ -1349,9 +1349,7 @@ const waitforupdate = {
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('Bot Restarted')
-            .setDescription(
-              `ModBot is now on release \`${git.short()}\`\n> ${git.message()}`
-            )
+            .setDescription('ModBot has restarted.')
             .setColor('#24a7ff'),
         ],
       },
