@@ -3238,13 +3238,15 @@ async function getPrefix(msg: Discord.Message): Promise<string | null> {
   prefixes.push(
     Prefix.newPrefix(msg.guild.id, process.env.BOT_PREFIX || 'm: ')
   );
-  const matchingPrefixes = prefixes.filter((p: Prefix) =>
-    msg.content.startsWith(p.prefix)
-  );
+  const matchingPrefixes = prefixes
+    .filter((p: Prefix) =>
+      msg.content.toLowerCase().startsWith(p.prefix.toLowerCase())
+    )
+    .map((p: Prefix) => msg.content.slice(0, p.prefix.length));
   if (!matchingPrefixes.length) return null;
   return matchingPrefixes.reduce(function (a, b) {
-    return a.prefix.length > b.prefix.length ? a : b;
-  })?.prefix;
+    return a.length > b.length ? a : b;
+  });
 }
 async function requestPermsCommand(
   msg: Discord.Message,
