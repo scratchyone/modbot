@@ -1359,6 +1359,7 @@ const waitforupdate = {
 import StableHorde from '@zeldafan0225/stable_horde';
 const stable_horde = new StableHorde({
   cache_interval: 1000 * 10,
+  default_token: process.env.STABLE_HORDE_TOKEN,
   cache: {
     generations_check: 1500,
   },
