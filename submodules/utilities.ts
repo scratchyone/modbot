@@ -1527,6 +1527,8 @@ export const commandModule = {
     stablediff,
     stablediff_model,
     stablediff_list,
+    stablediff_res,
+    stablediff_hd,
     suggestion,
     color,
     prefix,
@@ -1542,7 +1544,6 @@ export const commandModule = {
     waitforupdate,
     randommember,
     datapack,
-    stablediff_hd,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
