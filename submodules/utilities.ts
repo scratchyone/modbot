@@ -1382,7 +1382,7 @@ const stablediff_list = {
 };
 const stablediff_model = {
   name: 'stablediff_model',
-  syntax: 'stablediff_model <model: word> <prompt: string>',
+  syntax: 'stablediff_model <model: string> prompt <prompt: string>',
   explanation: 'Generate an image with StableDiffusion',
   permissions: () => true,
   version: 2,
