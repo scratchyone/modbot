@@ -1490,7 +1490,7 @@ const stablediff = {
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
-            .setDescription(`Prompt: ${prompt}`)
+            .setDescription(`Prompt: ${cmd.prompt}`)
             .setColor('#397cd1')
             .setImage('attachment://SPOILER_image.webp'),
         ],
