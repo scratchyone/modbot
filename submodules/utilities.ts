@@ -1424,7 +1424,7 @@ const stablediff_model = {
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
-            .setDescription(`Prompt: ${cmd.prompt}`)
+            .setDescription(`Prompt: ${prompt}`)
             .setColor('#397cd1')
             .setURL(url),
         ],
