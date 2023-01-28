@@ -1449,7 +1449,7 @@ const stablediff = {
     const generation = await stable_horde.postAsyncGenerate({
       prompt: cmd.prompt,
       censor_nsfw: true,
-      models: ['stable_diffusion_2.1'],
+      models: ['stable_diffusion'],
       r2: true,
     });
     const msg = await ctx.msg.dbReply(
