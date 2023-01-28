@@ -1394,50 +1394,79 @@ const stablediff_model = {
       models: [cmd.model],
       r2: true,
     });
-    const msg = await ctx.msg.dbReply(
-      Utils.embed('[?] seconds remaining', 'tip', 'Generating Image')
-    );
-    function check_finished(id: string, callback: () => void) {
-      stable_horde.getGenerationCheck(id).then((check) => {
-        if (check.finished) callback();
-        else {
-          msg.edit(
-            Utils.embed(
-              `${check.wait_time} seconds remaining, #${check.queue_position} in queue`,
-              'tip',
-              'Generating Image'
-            )
-          );
-          setTimeout(() => check_finished(id, callback), 2000);
-        }
-      });
-    }
-    check_finished(generation.id || '', async () => {
-      const image = await stable_horde.getGenerationStatus(generation.id || '');
-      const url = image.generations?.[0].img;
-      if (!url)
-        throw new util_functions.BotError(
-          'user',
-          'Failed to get image from stablehorde'
-        );
-      const image_blob = await (await fetch(url)).arrayBuffer();
-      const attachment = new Discord.MessageAttachment(
-        Buffer.from(image_blob),
-        'SPOILER_image.webp'
-      );
-      await msg.channel.send({
-        embeds: [
-          new Discord.MessageEmbed()
-            .setTitle('StableDiffusion Generation')
-            .setDescription(`Prompt: ${prompt}`)
-            .setColor('#397cd1'),
-        ],
-        files: [attachment],
-      });
-      await msg.delete();
-    });
+    generate(generation, ctx, prompt);
   },
 };
+const stablediff_hd = {
+  name: 'stablediff_hd',
+  syntax: 'stablediff_hd/sdh <prompt: string>',
+  explanation: 'Generate an HD image with StableDiffusion',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: { prompt: string }) => {
+    const generation = await stable_horde.postAsyncGenerate({
+      prompt: cmd.prompt,
+      censor_nsfw: true,
+      models: ['stable_diffusion'],
+      r2: true,
+      params: {
+        post_processing: [
+          StableHorde.ModelGenerationInputPostProcessingTypes.RealESRGAN_x4plus,
+        ],
+      },
+    });
+    generate(generation, ctx, cmd.prompt);
+  },
+};
+
+async function generate(
+  generation: Pick<StableHorde.RequestAsync, keyof StableHorde.RequestAsync>,
+  ctx: Types.Context,
+  prompt: string
+) {
+  const msg = await ctx.msg.dbReply(
+    Utils.embed('[?] seconds remaining', 'tip', 'Generating Image')
+  );
+  function check_finished(id: string, callback: () => void) {
+    stable_horde.getGenerationCheck(id).then((check) => {
+      if (check.finished) callback();
+      else {
+        msg.edit(
+          Utils.embed(
+            `${check.wait_time} seconds remaining, #${check.queue_position} in queue`,
+            'tip',
+            'Generating Image'
+          )
+        );
+        setTimeout(() => check_finished(id, callback), 2000);
+      }
+    });
+  }
+  check_finished(generation.id || '', async () => {
+    const image = await stable_horde.getGenerationStatus(generation.id || '');
+    const url = image.generations?.[0].img;
+    if (!url)
+      throw new util_functions.BotError(
+        'user',
+        'Failed to get image from stablehorde'
+      );
+    const image_blob = await (await fetch(url)).arrayBuffer();
+    const attachment = new Discord.MessageAttachment(
+      Buffer.from(image_blob),
+      'SPOILER_image.webp'
+    );
+    await msg.channel.send({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('StableDiffusion Generation')
+          .setDescription(`Prompt: ${prompt}`)
+          .setColor('#397cd1'),
+      ],
+      files: [attachment],
+    });
+    await msg.delete();
+  });
+}
 
 const stablediff = {
   name: 'stablediff',
@@ -1454,48 +1483,7 @@ const stablediff = {
       models: ['stable_diffusion'],
       r2: true,
     });
-    const msg = await ctx.msg.dbReply(
-      Utils.embed('[?] seconds remaining', 'tip', 'Generating Image')
-    );
-    function check_finished(id: string, callback: () => void) {
-      stable_horde.getGenerationCheck(id).then((check) => {
-        if (check.finished) callback();
-        else {
-          msg.edit(
-            Utils.embed(
-              `${check.wait_time} seconds remaining, #${check.queue_position} in queue`,
-              'tip',
-              'Generating Image'
-            )
-          );
-          setTimeout(() => check_finished(id, callback), 2000);
-        }
-      });
-    }
-    check_finished(generation.id || '', async () => {
-      const image = await stable_horde.getGenerationStatus(generation.id || '');
-      const url = image.generations?.[0].img;
-      if (!url)
-        throw new util_functions.BotError(
-          'user',
-          'Failed to get image from stablehorde'
-        );
-      const image_blob = await (await fetch(url)).arrayBuffer();
-      const attachment = new Discord.MessageAttachment(
-        Buffer.from(image_blob),
-        'SPOILER_image.webp'
-      );
-      await msg.channel.send({
-        embeds: [
-          new Discord.MessageEmbed()
-            .setTitle('StableDiffusion Generation')
-            .setDescription(`Prompt: ${cmd.prompt}`)
-            .setColor('#397cd1'),
-        ],
-        files: [attachment],
-      });
-      await msg.delete();
-    });
+    generate(generation, ctx, cmd.prompt);
   },
 };
 
