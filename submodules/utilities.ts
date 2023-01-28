@@ -1382,18 +1382,14 @@ const stablediff_list = {
 };
 const stablediff_model = {
   name: 'stablediff_model',
-  syntax: 'stablediff_model <model: string> prompt <prompt: string>',
+  syntax: 'stablediff_model <model: string>',
   explanation: 'Generate an image with StableDiffusion',
   permissions: () => true,
   version: 2,
-  responder: async (
-    ctx: Types.Context,
-    cmd: { prompt: string; model: string }
-  ) => {
-    if (!cmd.prompt)
-      throw new util_functions.BotError('user', 'You must provide a prompt!');
+  responder: async (ctx: Types.Context, cmd: { model: string }) => {
+    const prompt = await util_functions.ask('What prompt?', 40000, ctx.msg);
     const generation = await stable_horde.postAsyncGenerate({
-      prompt: cmd.prompt,
+      prompt: prompt,
       censor_nsfw: true,
       models: [cmd.model],
       r2: true,
