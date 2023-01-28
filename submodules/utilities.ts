@@ -1364,6 +1364,78 @@ const stable_horde = new StableHorde({
     generations_check: 1500,
   },
 });
+const stablediff_list = {
+  name: 'stablediff_list',
+  syntax: 'stablediff_list',
+  explanation: 'List all StableDiffusion models',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context) => {
+    const models = await stable_horde.getModels();
+    const embed = Utils.embed(
+      models.map((m) => `${m.name} - ${m.}`).join('\n'),
+      'tip',
+      'StableDiffusion Models'
+    );
+    await ctx.msg.dbReply(embed);
+  },
+};
+const stablediff_model = {
+  name: 'stablediff_model',
+  syntax: 'stablediff_model <model: word> <prompt: string>',
+  explanation: 'Generate an image with StableDiffusion',
+  permissions: () => true,
+  version: 2,
+  responder: async (
+    ctx: Types.Context,
+    cmd: { prompt: string; model: string }
+  ) => {
+    if (!cmd.prompt)
+      throw new util_functions.BotError('user', 'You must provide a prompt!');
+    const generation = await stable_horde.postAsyncGenerate({
+      prompt: cmd.prompt,
+      censor_nsfw: true,
+      models: [cmd.model],
+      r2: true,
+    });
+    const msg = await ctx.msg.dbReply(
+      Utils.embed('[?] seconds remaining', 'tip', 'Generating Image')
+    );
+    function check_finished(id: string, callback: () => void) {
+      stable_horde.getGenerationCheck(id).then((check) => {
+        if (check.finished) callback();
+        else {
+          msg.edit(
+            Utils.embed(
+              `${check.wait_time} seconds remaining`,
+              'tip',
+              'Generating Image'
+            )
+          );
+          setTimeout(() => check_finished(id, callback), 2000);
+        }
+      });
+    }
+    check_finished(generation.id || '', async () => {
+      const image = await stable_horde.getGenerationStatus(generation.id || '');
+      const url = image.generations?.[0].img;
+      if (!url)
+        throw new util_functions.BotError(
+          'user',
+          'Failed to get image from stablehorde'
+        );
+      await msg.edit({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle('StableDiffusion Generation')
+            .setDescription(`Prompt: ${cmd.prompt}`)
+            .setColor('#397cd1'),
+        ],
+        content: `||${url}||`,
+      });
+    });
+  },
+};
 
 const stablediff = {
   name: 'stablediff',
@@ -1377,6 +1449,7 @@ const stablediff = {
     const generation = await stable_horde.postAsyncGenerate({
       prompt: cmd.prompt,
       censor_nsfw: true,
+      models: ['stable_diffusion_2.1'],
       r2: true,
     });
     const msg = await ctx.msg.dbReply(
