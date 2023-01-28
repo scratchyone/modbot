@@ -1483,9 +1483,9 @@ const stablediff = {
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${cmd.prompt}`)
-            .setColor('#397cd1'),
+            .setColor('#397cd1')
+            .setURL(url),
         ],
-        content: `||${url}||`,
       });
     });
   },
