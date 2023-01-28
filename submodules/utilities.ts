@@ -1437,8 +1437,8 @@ const stablediff_res = {
         post_processing: [
           StableHorde.ModelGenerationInputPostProcessingTypes.RealESRGAN_x4plus,
         ],
-        width: Math.round(parseInt(cmd.width) / 4),
-        height: Math.round(parseInt(cmd.height) / 4),
+        width: Math.ceil(Math.round(parseInt(cmd.width) / 4) / 64) * 64,
+        height: Math.ceil(Math.round(parseInt(cmd.height) / 4) / 64) * 64,
       },
     });
     generate(generation, ctx, cmd.prompt);
