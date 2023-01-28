@@ -1373,7 +1373,7 @@ const stablediff_list = {
   responder: async (ctx: Types.Context) => {
     const models = await stable_horde.getModels();
     const embed = Utils.embed(
-      models.map((m) => `${m.name} - ${m.}`).join('\n'),
+      models.map((m) => `${m.name}`).join('\n'),
       'tip',
       'StableDiffusion Models'
     );
