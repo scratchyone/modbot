@@ -1426,7 +1426,7 @@ const stablediff_model = {
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${prompt}`)
             .setColor('#397cd1')
-            .setURL(url),
+            .setImage(url),
         ],
       });
     });
@@ -1480,7 +1480,7 @@ const stablediff = {
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${cmd.prompt}`)
             .setColor('#397cd1')
-            .setURL(url),
+            .setImage(url),
         ],
       });
     });
