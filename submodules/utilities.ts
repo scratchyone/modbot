@@ -1503,6 +1503,8 @@ export const commandModule = {
     owo,
     poll,
     stablediff,
+    stablediff_model,
+    stablediff_list,
     suggestion,
     color,
     prefix,
