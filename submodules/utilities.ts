@@ -1430,8 +1430,7 @@ const stablediff_model = {
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${prompt}`)
-            .setColor('#397cd1')
-            .setImage('attachment://SPOILER_image.webp'),
+            .setColor('#397cd1'),
         ],
         files: [attachment],
       });
@@ -1491,8 +1490,7 @@ const stablediff = {
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${cmd.prompt}`)
-            .setColor('#397cd1')
-            .setImage('attachment://SPOILER_image.webp'),
+            .setColor('#397cd1'),
         ],
         files: [attachment],
       });
