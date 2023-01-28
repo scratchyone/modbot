@@ -1356,6 +1356,67 @@ const waitforupdate = {
     });
   },
 };
+import StableHorde from '@zeldafan0225/stable_horde';
+const stable_horde = new StableHorde({
+  cache_interval: 1000 * 10,
+  cache: {
+    generations_check: 1500,
+  },
+});
+
+const stablediff = {
+  name: 'stablediff',
+  syntax: 'stablediff/sd <prompt: string>',
+  explanation: 'Generate an image with StableDiffusion',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: { prompt: string }) => {
+    if (!cmd.prompt)
+      throw new util_functions.BotError('user', 'You must provide a prompt!');
+    const generation = await stable_horde.postAsyncGenerate({
+      prompt: cmd.prompt,
+      censor_nsfw: true,
+      r2: true,
+    });
+    const msg = await ctx.msg.dbReply(
+      Utils.embed('[?] seconds remaining', 'tip', 'Generating Image')
+    );
+    function check_finished(id: string, callback: () => void) {
+      stable_horde.getGenerationCheck(id).then((check) => {
+        if (check.finished) callback();
+        else {
+          msg.edit(
+            Utils.embed(
+              `${check.wait_time} seconds remaining`,
+              'tip',
+              'Generating Image'
+            )
+          );
+          setTimeout(() => check_finished(id, callback), 2000);
+        }
+      });
+    }
+    check_finished(generation.id || '', async () => {
+      const image = await stable_horde.getGenerationStatus(generation.id || '');
+      const url = image.generations?.[0].img;
+      if (!url)
+        throw new util_functions.BotError(
+          'user',
+          'Failed to get image from stablehorde'
+        );
+      await msg.edit({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle('StableDiffusion Generation')
+            .setDescription(`Prompt: ${cmd.prompt}`)
+            .setImage(url)
+            .setColor('#397cd1'),
+        ],
+      });
+    });
+  },
+};
+
 export const commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
@@ -1367,6 +1428,7 @@ export const commandModule = {
     about,
     owo,
     poll,
+    stablediff,
     suggestion,
     color,
     prefix,
