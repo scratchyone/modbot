@@ -1420,14 +1420,20 @@ const stablediff_model = {
           'user',
           'Failed to get image from stablehorde'
         );
+      const image_blob = await (await fetch(url)).arrayBuffer();
+      const attachment = new Discord.MessageAttachment(
+        Buffer.from(image_blob),
+        'SPOILER_image.webp'
+      );
       await msg.edit({
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${prompt}`)
             .setColor('#397cd1')
-            .setImage(url),
+            .setImage('attachment://SPOILER_image.webp'),
         ],
+        files: [attachment],
       });
     });
   },
@@ -1474,14 +1480,20 @@ const stablediff = {
           'user',
           'Failed to get image from stablehorde'
         );
+      const image_blob = await (await fetch(url)).arrayBuffer();
+      const attachment = new Discord.MessageAttachment(
+        Buffer.from(image_blob),
+        'SPOILER_image.webp'
+      );
       await msg.edit({
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
-            .setDescription(`Prompt: ${cmd.prompt}`)
+            .setDescription(`Prompt: ${prompt}`)
             .setColor('#397cd1')
-            .setImage(url),
+            .setImage('attachment://SPOILER_image.webp'),
         ],
+        files: [attachment],
       });
     });
   },
