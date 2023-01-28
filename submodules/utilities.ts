@@ -1516,6 +1516,7 @@ export const commandModule = {
     waitforupdate,
     randommember,
     datapack,
+    stablediff_hd,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {
