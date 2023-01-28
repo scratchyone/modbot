@@ -1403,7 +1403,7 @@ const stablediff_model = {
         else {
           msg.edit(
             Utils.embed(
-              `${check.wait_time} seconds remaining`,
+              `${check.wait_time} seconds remaining, #${check.queue_position} in queue`,
               'tip',
               'Generating Image'
             )
@@ -1464,7 +1464,7 @@ const stablediff = {
         else {
           msg.edit(
             Utils.embed(
-              `${check.wait_time} seconds remaining`,
+              `${check.wait_time} seconds remaining, #${check.queue_position} in queue`,
               'tip',
               'Generating Image'
             )
