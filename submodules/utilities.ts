@@ -1418,6 +1418,32 @@ const stablediff_hd = {
     generate(generation, ctx, cmd.prompt);
   },
 };
+const stablediff_res = {
+  name: 'stablediff_res',
+  syntax: 'stablediff_res/sdr <width: word> <height: word> <prompt: string>',
+  explanation: 'Generate an HD image with StableDiffusion',
+  permissions: () => true,
+  version: 2,
+  responder: async (
+    ctx: Types.Context,
+    cmd: { prompt: string; width: string; height: string }
+  ) => {
+    const generation = await stable_horde.postAsyncGenerate({
+      prompt: cmd.prompt,
+      censor_nsfw: true,
+      models: ['stable_diffusion'],
+      r2: true,
+      params: {
+        post_processing: [
+          StableHorde.ModelGenerationInputPostProcessingTypes.RealESRGAN_x4plus,
+        ],
+        width: Math.round(parseInt(cmd.width) / 4),
+        height: Math.round(parseInt(cmd.height) / 4),
+      },
+    });
+    generate(generation, ctx, cmd.prompt);
+  },
+};
 
 async function generate(
   generation: Pick<StableHorde.RequestAsync, keyof StableHorde.RequestAsync>,
