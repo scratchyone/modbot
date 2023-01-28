@@ -1410,9 +1410,9 @@ const stablediff = {
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
             .setDescription(`Prompt: ${cmd.prompt}`)
-            .setImage(url)
             .setColor('#397cd1'),
         ],
+        content: `||${url}||`,
       });
     });
   },
