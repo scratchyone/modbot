@@ -1382,7 +1382,7 @@ const stablediff_list = {
 };
 const stablediff_model = {
   name: 'stablediff_model',
-  syntax: 'stablediff_model <model: string>',
+  syntax: 'stablediff_model/sdm <model: string>',
   explanation: 'Generate an image with StableDiffusion',
   permissions: () => true,
   version: 2,
@@ -1425,7 +1425,7 @@ const stablediff_model = {
         Buffer.from(image_blob),
         'SPOILER_image.webp'
       );
-      await msg.edit({
+      await msg.channel.send({
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
@@ -1435,6 +1435,7 @@ const stablediff_model = {
         ],
         files: [attachment],
       });
+      await msg.delete();
     });
   },
 };
@@ -1485,7 +1486,7 @@ const stablediff = {
         Buffer.from(image_blob),
         'SPOILER_image.webp'
       );
-      await msg.edit({
+      await msg.channel.send({
         embeds: [
           new Discord.MessageEmbed()
             .setTitle('StableDiffusion Generation')
@@ -1495,6 +1496,7 @@ const stablediff = {
         ],
         files: [attachment],
       });
+      await msg.delete();
     });
   },
 };
