@@ -829,14 +829,15 @@ const about = {
       pj = (await import('../package.json', { assert: { type: 'json' } }))
         .version;
     } catch (e) {
-      pj = '?.?.?';
+      //
     }
+    const version = pj ? ` v${pj}` : '';
     await ctx.msg.dbReply({
       embeds: [
         new Discord.MessageEmbed()
           .setTitle('About ModBot')
           .setDescription(
-            `ModBot v${pj} is in ${
+            `ModBot${version} is in ${
               [...ctx.client.guilds.cache.values()].length
             } servers, with ${
               [...ctx.client.channels.cache.values()].filter(
