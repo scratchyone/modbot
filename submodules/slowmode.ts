@@ -29,7 +29,7 @@ const slowmodeCommand = {
       ));
       const time = await util_functions.ask(
         'How long should the slowmode be? Must be more than 30 seconds',
-        20000,
+        30000,
         msg
       );
       try {

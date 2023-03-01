@@ -544,7 +544,7 @@ const prefix = {
     if (cmd.action == 'add') {
       const prefix = await util_functions.ask(
         'What should the prefix be?',
-        20000,
+        30000,
         msg
       );
       if (prefix === process.env.BOT_PREFIX)
@@ -565,7 +565,7 @@ const prefix = {
     if (cmd.action == 'remove') {
       const prefix = await util_functions.ask(
         'What prefix do you want to remove?',
-        20000,
+        30000,
         msg
       );
       if (prefix === process.env.BOT_PREFIX)

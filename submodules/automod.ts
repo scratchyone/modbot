@@ -35,14 +35,14 @@ const automod = {
         );
       const channelname = await util_functions.ask(
         'What should the AutoMod punishment log channel be named?',
-        10000,
+        30000,
         msg
       );
       const channelViewRole = msg.guild.roles.cache.get(
         (
           await util_functions.ask(
             'What role should be able to see it?',
-            10000,
+            30000,
             msg
           )
         )
@@ -129,7 +129,7 @@ const automod = {
         );
       const triggerName = await util_functions.ask(
         'What should the trigger be named?',
-        10000,
+        30000,
         msg
       );
       const triggerRegex = await util_functions.ask(
@@ -161,7 +161,7 @@ const automod = {
       } else if (punishment === 2) {
         const muteDur = await util_functions.ask(
           'How long should the user be muted?',
-          10000,
+          30000,
           msg
         );
         punishments = [
@@ -192,7 +192,7 @@ const automod = {
     } else if (cmd.action === 'remove') {
       const triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to remove?',
-        10000,
+        30000,
         msg
       );
       const res = await prisma.automod_triggers.deleteMany({
@@ -221,7 +221,7 @@ const automod = {
     } else if (cmd.action === 'inspect') {
       const triggerName = await util_functions.ask(
         'What is the name of the trigger you would like to inspect?',
-        10000,
+        30000,
         msg
       );
       const trigger = await prisma.automod_triggers.findFirst({
