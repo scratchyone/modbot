@@ -2585,6 +2585,41 @@ function reminderEmbed(
     ],
   };
 }
+function uptime(): string {
+  function format(s: number) {
+    const days = Math.floor(s / (60 * 60 * 24));
+    const hours = Math.floor((s % (60 * 60 * 24)) / (60 * 60));
+    const minutes = Math.floor((s % (60 * 60)) / 60);
+    const seconds = Math.floor(s % 60);
+    const parts = [
+      { name: 'day', value: days },
+      { name: 'hour', value: hours },
+      { name: 'minute', value: minutes },
+    ];
+    function pluralize(name: string, value: number): string {
+      return value === 1 ? value + ' ' + name : value + ' ' + name + 's';
+    }
+    function stringify_parts(
+      parts: { name: string; value: number }[]
+    ): string[] {
+      return parts
+        .filter((p) => p.value > 0)
+        .map((p) => pluralize(p.name, p.value));
+    }
+    function join_parts(parts: string[]): string {
+      if (parts.length === 0) return '0 seconds';
+      if (parts.length === 1) return parts[0];
+      if (parts.length === 2) return `${parts[0]}, and ${parts[1]}`;
+      return join_parts([`${parts[0]}, ${parts[1]}`, ...parts.slice(2)]);
+    }
+    const parts_strings = stringify_parts(parts);
+    const combined_parts = join_parts(parts_strings);
+    return combined_parts;
+  }
+
+  const uptime = process.uptime();
+  return format(uptime);
+}
 client.on('ready', async () => {
   if (!client.user) {
     log.error('No client user!');
@@ -2594,14 +2629,26 @@ client.on('ready', async () => {
   processDeferredOnStart(client);
   //
   //
-  const sp = () => {
+  const sp = async () => {
     if (!client.user) return;
+    let pj;
+    // Get version, or unknown if package.json doesn't exist (Might not exist during rebuilds)
+    try {
+      pj = (await import('./package.json', { assert: { type: 'json' } }))
+        .default.version;
+    } catch (e) {
+      console.error(e);
+    }
+    const version = pj ? ` | v${pj}` : '';
+
     client.user.setPresence({
       activities: [
         {
           name: `${process.env.BOT_PREFIX || 'm: '}help | in ${
             client.guilds.cache.size
-          } servers with ${client.users.cache.size} users`,
+          } servers with ${
+            client.users.cache.size
+          } users${version} | running for ${uptime()}`,
           type: 'PLAYING',
           url: 'https://github.com/scratchyone/modbot',
         },
@@ -2609,7 +2656,7 @@ client.on('ready', async () => {
     });
   };
   sp();
-  setInterval(sp, 1000 * 60 * 60);
+  setInterval(sp, 1000 * 30);
 
   // This will (very) slowly consume more and more memory without ever releasing it.
   // TODO: Make this a rolling log.

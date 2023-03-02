@@ -827,9 +827,9 @@ const about = {
     // Get version, or unknown if package.json doesn't exist (Might not exist during rebuilds)
     try {
       pj = (await import('../package.json', { assert: { type: 'json' } }))
-        .version;
+        .default.version;
     } catch (e) {
-      //
+      console.error(e);
     }
     const version = pj ? ` v${pj}` : '';
     await ctx.msg.dbReply({
