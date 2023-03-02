@@ -1600,7 +1600,15 @@ const ask = {
       },
     ];
     const answer = (await queryChatGPT(followupQuery)).content;
-    await ctx.msg.dbReply(Utils.embed(answer, 'tip', 'Answer from ModBot'));
+    await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('Answer from ModBot')
+          .setDescription(answer)
+          .setColor(util_functions.COLORS.tip)
+          .setFooter('Wolfram Alpha Query: ' + query),
+      ],
+    });
   },
 };
 interface ChatGPTMessage {
