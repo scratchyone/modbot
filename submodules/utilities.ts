@@ -21,6 +21,8 @@ import MDTT from 'mdtt';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { LogBit } from 'logbit';
+const log = new LogBit('Utilities');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -1513,12 +1515,110 @@ const stablediff = {
     generate(generation, ctx, cmd.prompt);
   },
 };
+import nodefetch from 'node-fetch';
+const ask = {
+  name: 'ask',
+  syntax: 'ask <question: string>',
+  explanation: 'Ask a question to the bot',
+  permissions: (msg: util_functions.EMessage) =>
+    ['740752830423629834', '687070937178177710'].includes(
+      msg.guild?.id || ''
+    ) && process.env.OPENAI_KEY,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: { question: string }) => {
+    if (!cmd.question)
+      throw new util_functions.BotError('user', 'You must provide a question!');
+    await ctx.msg.channel.sendTyping();
+    const initialQuery: ChatGPTMessage[] = [
+      {
+        role: 'system',
+        content:
+          'You are an AI tool designed to answer questions. When first asked, you will respond with a single Wolfram Alpha query and nothing else. Wolfram Alpha queries should be simple, and should primarily consist of keywords.',
+      },
+      {
+        role: 'user',
+        content:
+          'Please respond with a Wolfram Alpha query for this question: ' +
+          cmd.question,
+      },
+    ];
+    const query = (await queryChatGPT(initialQuery)).content;
+    log.debug('ChatGPT generated query:', query);
+    let alpha_result = '';
+    try {
+      const res = (await (
+        await nodefetch(
+          'http://api.wolframalpha.com/v2/query?appid=' +
+            process.env.WOLFRAMALPHA_KEY +
+            '&input=' +
+            encodeURIComponent(query) +
+            '&format=plaintext&output=json&podindex=2'
+        )
+      ).json()) as any;
+      alpha_result = res.queryresult.pods[0].subpods[0].plaintext;
+    } catch (e) {}
+    if (!alpha_result) {
+      log.debug('Wolfram Alpha returned no result');
+      const followupQuery: ChatGPTMessage[] = [
+        {
+          role: 'system',
+          content:
+            "You are an AI tool designed to answer questions. Please explain to your user that Wolfram Alpha didn't have an answer for that topic, and therefore you have no data to use to answer their question. Suggest that they try rephrasing their question.",
+        },
+      ];
+      const answer = (await queryChatGPT(followupQuery)).content;
+      await ctx.msg.dbReply(Utils.embed(answer, 'error', 'Answer from ModBot'));
+      return;
+    }
+
+    log.debug('Wolfram Alpha returned result:', alpha_result);
+    const followupQuery: ChatGPTMessage[] = [
+      {
+        role: 'system',
+        content:
+          "You are an AI tool designed to answer questions. You will be given a Wolfram Alpha response and will use it to answer a user's question.",
+      },
+      {
+        role: 'system',
+        content: `Here's the Wolfram Alpha response to the prompt ${query}:\n${alpha_result}`,
+      },
+      {
+        role: 'user',
+        content: cmd.question,
+      },
+    ];
+    const answer = (await queryChatGPT(followupQuery)).content;
+    await ctx.msg.dbReply(Utils.embed(answer, 'tip', 'Answer from ModBot'));
+  },
+};
+interface ChatGPTMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+async function queryChatGPT(chat: ChatGPTMessage[]): Promise<ChatGPTMessage> {
+  const responses = (await (
+    await nodefetch('https://api.openai.com/v1/chat/completions', {
+      headers: {
+        Authorization: 'Bearer ' + process.env.OPENAI_KEY,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: chat,
+      }),
+    })
+  ).json()) as any;
+  const response = responses.choices[0].message as ChatGPTMessage;
+  return response;
+}
 
 export const commandModule = {
   title: 'Utilities',
   description: 'Helpful utility commands',
   commands: [
     invite,
+    ask,
     userpic,
     ping,
     cat,

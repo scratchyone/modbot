@@ -53,7 +53,7 @@ export const COLORS = {
  */
 export function embed(
   text: string,
-  type: 'success' | 'warning' | 'tip',
+  type: 'success' | 'warning' | 'tip' | 'error',
   title?: string
 ): { embeds: Discord.MessageEmbed[] } {
   return {
@@ -61,14 +61,22 @@ export function embed(
       new Discord.MessageEmbed()
         .setTitle(
           title == undefined
-            ? { success: 'Success!', warning: 'Warning!', tip: 'Tip!' }[type]
+            ? {
+                success: 'Success!',
+                warning: 'Warning!',
+                tip: 'Tip!',
+                error: 'Error!',
+              }[type]
             : title
         )
         .setDescription(text)
         .setColor(
-          { success: '#1dbb4f', warning: '#d8ae2b', tip: '#397cd1' }[
-            type
-          ] as Discord.ColorResolvable
+          {
+            success: '#1dbb4f',
+            warning: '#d8ae2b',
+            tip: '#397cd1',
+            error: COLORS.error,
+          }[type] as Discord.ColorResolvable
         ),
     ],
   };

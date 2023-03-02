@@ -1413,13 +1413,13 @@ const main_commands = {
                 process.env.WOLFRAMALPHA_KEY +
                 '&input=' +
                 encodeURIComponent(cmd.text) +
-                '&format=plaintext&output=json'
+                '&format=plaintext&output=json&podindex=2'
             )
           ).json()) as any;
           log.debug("Wolfram Alpha's response:", res);
           ctx.store.set(
             `alpha.${cmd.text}`,
-            res.queryresult.pods[1].subpods[0].plaintext
+            res.queryresult.pods[0].subpods[0].plaintext
           );
           ctx.msg.dbReply({
             embeds: [
