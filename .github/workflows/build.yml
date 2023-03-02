@@ -16,7 +16,7 @@ on:
 env:
   REGISTRY: ghcr.io
   REGISTRY_USERNAME: scratchyone
-  IMAGE_NAME: scratchyone/modbot:1.0.0
+  IMAGE_NAME: scratchyone/modbot
 
 jobs:
   build-and-push-image:
@@ -47,5 +47,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
