@@ -1533,7 +1533,7 @@ const ask = {
       {
         role: 'system',
         content:
-          'You are an AI tool designed to answer questions. When first asked, you will respond with a single Wolfram Alpha query and nothing else. Wolfram Alpha queries should be simple, and should primarily consist of keywords.',
+          'You are an AI tool designed to answer questions. When first asked, you will respond exclusively with a single Wolfram Alpha query and nothing else. Wolfram Alpha queries should be simple, and should primarily consist of keywords. Do not say anything except for the query.',
       },
       {
         role: 'user',
@@ -1563,11 +1563,23 @@ const ask = {
         {
           role: 'system',
           content:
-            "You are an AI tool designed to answer questions. Please explain to your user that Wolfram Alpha didn't have an answer for that topic, and therefore you have no data to use to answer their question. Suggest that they try rephrasing their question.",
+            'You are an AI tool designed to answer questions. Please answer the users question to the best of your abilities, but make sure they know that since Wolfram Alpha lacked data on this topic, your response may not be reliable.',
+        },
+        {
+          role: 'user',
+          content: cmd.question,
         },
       ];
       const answer = (await queryChatGPT(followupQuery)).content;
-      await ctx.msg.dbReply(Utils.embed(answer, 'error', 'Answer from ModBot'));
+      await ctx.msg.dbReply({
+        embeds: [
+          new Discord.MessageEmbed()
+            .setTitle('Answer from ModBot')
+            .setDescription(answer)
+            .setColor(util_functions.COLORS.warning)
+            .setFooter('Wolfram Alpha Query: ' + query),
+        ],
+      });
       return;
     }
 
