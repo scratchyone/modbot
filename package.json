@@ -6,11 +6,11 @@
   "type": "module",
   "scripts": {
     "test": "npm run clear && npm run eslint && npm run tsc && npm run clear",
-    "tsc": "copyfiles package.json knexfile.js build && tsc",
+    "tsc": "copyfiles package.json build && tsc",
     "eslint": "eslint . --ext .js,.ts",
     "build": "npm run clear && npm run tsc",
     "dev": "nodemon ./main.ts",
-    "clear": "del-cli build/ commands.js"
+    "clear": "del-cli build/"
   },
   "author": "",
   "license": "ISC",
