@@ -32,7 +32,7 @@ const store = new KeyValueStore();
 // Initialize knex.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const knex = Knex(
-  Object.values((await import('./knexfile.cjs')).default)[0] as any
+  Object.values((await import('./knexfile.mjs')).default)[0] as any
 );
 // Give the knex instance to objection.
 Model.knex(knex);
