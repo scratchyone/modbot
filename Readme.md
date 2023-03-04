@@ -16,7 +16,8 @@ AUTHOR_NAME # Optional, name of the author of the bot, used in m: about command
 BUCKET_NAME # Optional, name of Google Cloud Storage bucket
 BOT_PREFIX # Optional, change default prefix
 LOG_LEVEL # Optional, change default log level
-WOLFRAMALPHA_KEY # WorldFramAlpha API key, required for m: alpha command
+WOLFRAMALPHA_KEY # WolframAlpha API key, required for m: alpha command
+OPENAI_KEY # OpenAI API key, required for m: ask command
 ```
 
 Then start the bot with:
