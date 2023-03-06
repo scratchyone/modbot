@@ -19,7 +19,7 @@
     "@prisma/client": "^4.11.0",
     "@scratchyone/command_parser": "^3.0.0",
     "@sentry/node": "^7.40.0",
-    "@sentry/tracing": "^7.40.0",
+    "@sentry/tracing": "^7.41.0",
     "@sentry/types": "^7.40.0",
     "@tsconfig/node12": "^1.0.11",
     "@types/color": "^3.0.3",
