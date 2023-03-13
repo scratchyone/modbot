@@ -178,7 +178,7 @@ function checkChannelsThingCanTalkInAlways(
 import parse_duration from 'parse-duration';
 const mute = {
   name: 'mute',
-  syntax: 'mute <user: user_id> [duration: word]',
+  syntax: 'mute <user: user_id> [duration: word] [reason: string]',
   explanation: 'Mute a user',
   long_explanation:
     'Mute a user. [DURATION] is an optional duration in the form `5m`',
@@ -186,7 +186,11 @@ const mute = {
     msg.member?.permissions.has('MANAGE_ROLES'),
   responder: async (
     msg: util_functions.EMessage,
-    cmd: { user: string; duration: string | undefined },
+    cmd: {
+      user: string;
+      duration: string | undefined;
+      reason: string | undefined;
+    },
     client: Discord.Client
   ) => {
     if (!msg.guild) return;
@@ -239,14 +243,44 @@ const mute = {
           );
           await Types.LogChannel.tryToLog(
             msg,
-            `Muted ${mutee} for ${cmd.duration}`
+            `Muted ${mutee} for ${cmd.duration}${
+              cmd.reason ? ` for the following reason: ${cmd.reason}` : ''
+            }`
           );
         } else {
           await msg.channel.send(
             util_functions.desc_embed(`Muted ${mutee} indefinitely`)
           );
-          await Types.LogChannel.tryToLog(msg, `Muted ${mutee} indefinitely`);
+          await Types.LogChannel.tryToLog(
+            msg,
+            `Muted ${mutee} indefinitely${
+              cmd.reason ? ` for the following reason: ${cmd.reason}` : ''
+            }`
+          );
         }
+        try {
+          await mutee!.send({
+            embeds: [
+              new Discord.MessageEmbed()
+                .setAuthor({
+                  name: msg.guild.name,
+                  iconURL: msg.guild.iconURL() || undefined,
+                })
+                .setColor(util_functions.COLORS.warning)
+                .setTitle(`Muted in ${msg.guild.name}`)
+                .setDescription(
+                  `You have been muted ${
+                    cmd.duration && parse_duration(cmd.duration, 's')
+                      ? `for ${cmd.duration}.`
+                      : 'indefinitely.'
+                  }`
+                )
+                .addFields(
+                  cmd.reason ? [{ name: 'Reason:', value: cmd.reason }] : []
+                ),
+            ],
+          });
+        } catch (e) {}
         const userCanTalkIn = checkChannelsThingCanTalkIn(msg.guild, mutee!);
         if (userCanTalkIn.length > 0) {
           if (
