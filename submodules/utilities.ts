@@ -70,21 +70,24 @@ const invite = {
 // Edit a poll message with an updated image
 async function reRenderPoll(message: Discord.Message | Discord.PartialMessage) {
   try {
+    // Extract the reactions from the message
+    const reactions = message.reactions.cache.values();
+
+    // Filter the reactions to find the ones with emojis '👍' and '👎', count and subtract 1
+    const upCount =
+      ([...reactions].filter((r) => r.emoji.name == '👍')[0].count || 1) - 1;
+    const downCount =
+      ([...reactions].filter((r) => r.emoji.name == '👎')[0].count || 1) - 1;
+
+    // Create a new MediaGen instance and generate the poll image with the updated counts
+    const pollImage = new Types.MediaGen().generatePoll({
+      up: upCount,
+      down: downCount,
+    });
+
+    // Update the message with the new poll image
     await message.edit({
-      embeds: [
-        message.embeds[0].setImage(
-          new Types.MediaGen().generatePoll({
-            up:
-              ([...message.reactions.cache.values()].filter(
-                (r) => r.emoji.name == '👍'
-              )[0].count || 1) - 1,
-            down:
-              ([...message.reactions.cache.values()].filter(
-                (r) => r.emoji.name == '👎'
-              )[0].count || 1) - 1,
-          })
-        ),
-      ],
+      embeds: [message.embeds[0].setImage(pollImage)],
     });
   } catch (e) {
     console.log(e);
@@ -615,7 +618,14 @@ const userpic = {
   syntax: 'userpic',
   explanation: 'Get a nice message',
   permissions: () => true,
-  responder: async (msg: util_functions.EMessage) => {
+  version: 2,
+  responder: async (c: Types.Context) => {
+    const msg = c.msg;
+    c.store.addOrCreate(
+      `rateLimits.gptFun.${c.msg.guild?.id}`,
+      1,
+      60 * 60 * 1000
+    );
     msg.channel.sendTyping();
     const canvas = Canvas.createCanvas(700, 250);
     const ctx = canvas.getContext('2d');
@@ -633,23 +643,42 @@ const userpic = {
     const get_random = function (list: Array<string>) {
       return list[Math.floor(Math.random() * list.length)];
     };
-    const messages = [
-      `${name}, you're cool`,
-      `I like you, ${name}`,
-      `I hope you have a good day, ${name}`,
-      `${name} is a cool name!`,
-      `${name} is a good person`,
-      `${name}, you're neat`,
-      `I hope you're having a good day, ${name}`,
-      `Hi ${name}!`,
-      `You're nice, ${name}`,
-      `${name} is epic!`,
-      `${name} is super poggers`,
-      `${name} is the opposite of weirdchamp`,
-      `I wish I was as cool as you, ${name}`,
-      `I think we could get along well, ${name}`,
-    ];
-    const message = get_random(messages);
+    let message = '';
+    if ((c.store.get(`rateLimits.gptFun.${c.msg.member?.id}`) || 0) > 4) {
+      const messages = [
+        `${name}, you're cool`,
+        `I like you, ${name}`,
+        `I hope you have a good day, ${name}`,
+        `${name} is a cool name!`,
+        `${name} is a good person`,
+        `${name}, you're neat`,
+        `I hope you're having a good day, ${name}`,
+        `Hi ${name}!`,
+        `You're nice, ${name}`,
+        `${name} is epic!`,
+        `${name} is super poggers`,
+        `${name} is the opposite of weirdchamp`,
+        `I wish I was as cool as you, ${name}`,
+        `I think we could get along well, ${name}`,
+      ];
+      message = get_random(messages);
+    } else {
+      message = (
+        await queryChatGPT([
+          {
+            role: 'system',
+            content:
+              'You are a helpful assistant. Do not use the words "cute", "pretty", "handsome", or "beautiful".',
+          },
+          {
+            role: 'user',
+            content: `Please respond with a short and nice yet funny compliment for someone named "${
+              c.msg.member?.user.username || '???'
+            }".`,
+          },
+        ])
+      ).content;
+    }
     const size = 1100 / message.length;
     ctx.font = size + 'px Consolas';
     ctx.fillText(message, canvas.width / 2, canvas.height / 1.8);
@@ -1516,6 +1545,7 @@ const stablediff = {
   },
 };
 import nodefetch from 'node-fetch';
+import { ChatGPTMessage, queryChatGPT } from '../util_functions.js';
 const ask = {
   name: 'ask',
   syntax: 'ask <question: string>',
@@ -1611,27 +1641,6 @@ const ask = {
     });
   },
 };
-interface ChatGPTMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-async function queryChatGPT(chat: ChatGPTMessage[]): Promise<ChatGPTMessage> {
-  const responses = (await (
-    await nodefetch('https://api.openai.com/v1/chat/completions', {
-      headers: {
-        Authorization: 'Bearer ' + process.env.OPENAI_KEY,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: chat,
-      }),
-    })
-  ).json()) as any;
-  const response = responses.choices[0].message as ChatGPTMessage;
-  return response;
-}
 
 export const commandModule = {
   title: 'Utilities',
