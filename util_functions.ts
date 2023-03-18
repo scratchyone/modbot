@@ -12,6 +12,7 @@ import { Defer } from './defer.js';
 import { PrismaClient } from '@prisma/client';
 import { RawGuildData, RawMessageData } from 'discord.js/typings/rawDataTypes';
 const prisma = new PrismaClient();
+import nodefetch from 'node-fetch';
 
 /**
  * Get a random int in a range
