@@ -524,14 +524,40 @@ const main_commands = {
         undoStack.push(
           async () => await Types.Reminder.query().delete().where('id', id)
         );
-        await ctx.msg.dbReply(
-          util_functions.embed(
-            `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
-            'success',
-            'Set Reminder!'
-          )
-        );
-
+        if (
+          (ctx.store.get(`rateLimits.gptFun.${ctx.msg.member?.id}`) || 0) > 4
+        ) {
+          await ctx.msg.dbReply(
+            util_functions.embed(
+              `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
+              'success',
+              'Set Reminder!'
+            )
+          );
+        } else {
+          ctx.store.addOrCreate(
+            `rateLimits.gptFun.${ctx.msg.member?.id}`,
+            1,
+            60 * 60 * 1000
+          );
+          const funMessage = await util_functions.queryChatGPT([
+            {
+              role: 'system',
+              content: 'You are a helpful assistant.',
+            },
+            {
+              role: 'user',
+              content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${cmd.duration} with the text "${cmd.text}".`,
+            },
+          ]);
+          await ctx.msg.dbReply(
+            util_functions.embed(
+              `${funMessage}\n\nYou can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
+              'success',
+              'Set Reminder!'
+            )
+          );
+        }
         return undoStack;
       },
     },

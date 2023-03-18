@@ -622,7 +622,7 @@ const userpic = {
   responder: async (c: Types.Context) => {
     const msg = c.msg;
     c.store.addOrCreate(
-      `rateLimits.gptFun.${c.msg.guild?.id}`,
+      `rateLimits.gptFun.${c.msg.member?.id}`,
       1,
       60 * 60 * 1000
     );
@@ -677,7 +677,7 @@ const userpic = {
             }".`,
           },
         ])
-      ).content;
+      ).content.replace('"', '');
     }
     const size = 1100 / message.length;
     ctx.font = size + 'px Consolas';
