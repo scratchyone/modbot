@@ -669,7 +669,7 @@ const userpic = {
             {
               role: 'system',
               content:
-                'You are a helpful assistant. Do not use the words "cute", "pretty", "handsome", or "beautiful". You are encouraged, but not required, to make use of the words "hot, "sexy", and "desirable".',
+                'You are a helpful assistant. Do not use the words "cute", "pretty", "handsome", or "beautiful". Please reference "sex appeal". You are encouraged, but not required, to make use of the words "hot, "sexy", and "desirable".',
             },
             {
               role: 'user',
