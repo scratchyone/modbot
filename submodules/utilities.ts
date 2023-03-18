@@ -644,39 +644,44 @@ const userpic = {
       return list[Math.floor(Math.random() * list.length)];
     };
     let message = '';
+    const messages = [
+      `${name}, you're cool`,
+      `I like you, ${name}`,
+      `I hope you have a good day, ${name}`,
+      `${name} is a cool name!`,
+      `${name} is a good person`,
+      `${name}, you're neat`,
+      `I hope you're having a good day, ${name}`,
+      `Hi ${name}!`,
+      `You're nice, ${name}`,
+      `${name} is epic!`,
+      `${name} is super poggers`,
+      `${name} is the opposite of weirdchamp`,
+      `I wish I was as cool as you, ${name}`,
+      `I think we could get along well, ${name}`,
+    ];
     if ((c.store.get(`rateLimits.gptFun.${c.msg.member?.id}`) || 0) > 4) {
-      const messages = [
-        `${name}, you're cool`,
-        `I like you, ${name}`,
-        `I hope you have a good day, ${name}`,
-        `${name} is a cool name!`,
-        `${name} is a good person`,
-        `${name}, you're neat`,
-        `I hope you're having a good day, ${name}`,
-        `Hi ${name}!`,
-        `You're nice, ${name}`,
-        `${name} is epic!`,
-        `${name} is super poggers`,
-        `${name} is the opposite of weirdchamp`,
-        `I wish I was as cool as you, ${name}`,
-        `I think we could get along well, ${name}`,
-      ];
       message = get_random(messages);
     } else {
       message = (
-        await queryChatGPT([
+        await queryChatGPT(
+          [
+            {
+              role: 'system',
+              content:
+                'You are a helpful assistant. Do not use the words "cute", "pretty", "handsome", or "beautiful".',
+            },
+            {
+              role: 'user',
+              content: `Please respond with a short and nice yet funny compliment for someone named "${
+                c.msg.member?.user.username || '???'
+              }".`,
+            },
+          ],
           {
-            role: 'system',
-            content:
-              'You are a helpful assistant. Do not use the words "cute", "pretty", "handsome", or "beautiful".',
-          },
-          {
-            role: 'user',
-            content: `Please respond with a short and nice yet funny compliment for someone named "${
-              c.msg.member?.user.username || '???'
-            }".`,
-          },
-        ])
+            defaultOnFailure: get_random(messages),
+          }
+        )
       ).content.replace('"', '');
     }
     const size = 1100 / message.length;

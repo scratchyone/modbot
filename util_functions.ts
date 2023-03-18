@@ -604,22 +604,43 @@ export interface ChatGPTMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
+export interface ChatGPTQueryOptions {
+  defaultOnFailure?: string;
+}
 export async function queryChatGPT(
-  chat: ChatGPTMessage[]
+  chat: ChatGPTMessage[],
+  options: ChatGPTQueryOptions = {}
 ): Promise<ChatGPTMessage> {
-  const responses = (await (
-    await nodefetch('https://api.openai.com/v1/chat/completions', {
-      headers: {
-        Authorization: 'Bearer ' + process.env.OPENAI_KEY,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: chat,
-      }),
-    })
-  ).json()) as any;
-  const response = responses.choices[0].message as ChatGPTMessage;
-  return response;
+  try {
+    const responses = (await (
+      await nodefetch('https://api.openai.com/v1/chat/completions', {
+        headers: {
+          Authorization: 'Bearer ' + process.env.OPENAI_KEY,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: chat,
+        }),
+      })
+    ).json()) as any;
+    const response = responses.choices[0].message as ChatGPTMessage;
+    if (
+      (!response || !response.content) &&
+      options.defaultOnFailure !== undefined
+    )
+      return {
+        role: 'assistant',
+        content: options.defaultOnFailure,
+      };
+    return response;
+  } catch (e) {
+    if (options.defaultOnFailure !== undefined)
+      return {
+        role: 'assistant',
+        content: options.defaultOnFailure,
+      };
+    else throw e;
+  }
 }

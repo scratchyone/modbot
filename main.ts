@@ -407,14 +407,15 @@ const main_commands = {
     {
       name: 'reminder',
       syntax:
-        'reminder/rm/remind/remindme [action: "add"] <duration: duration> <text: string>',
+        'reminder/rm/remind/remindme [action: "add"] <duration: word> <text: string>',
       explanation: 'Set a reminder',
       version: 2,
       permissions: () => true,
       responder: async (
         ctx: Types.Context,
-        cmd: { duration: number; text: string }
+        cmd: { duration: string; text: string }
       ): Promise<Array<() => void> | undefined> => {
+        const durationMs = parse(cmd.duration, 'ms');
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
         let id = nanoid(5);
@@ -496,7 +497,7 @@ const main_commands = {
             }
           }
         }
-        if (cmd.duration > 1000 * 60 * 60 * 24 * 365 * 50)
+        if (durationMs > 1000 * 60 * 60 * 24 * 365 * 50)
           throw new util_functions.BotError(
             'user',
             'Cannot set reminders more than 50 years in the future'
@@ -506,7 +507,7 @@ const main_commands = {
             author: ctx.msg.author.id,
             id,
             text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
-            time: moment().add(cmd.duration, 'ms').unix(),
+            time: moment().add(durationMs, 'ms').unix(),
           },
         });
         await util_functions.schedule_event(
@@ -519,7 +520,7 @@ const main_commands = {
             id,
             uniqueId: createdReminder.uniqueId,
           },
-          cmd.duration + 'ms'
+          durationMs + 'ms'
         );
         undoStack.push(
           async () => await Types.Reminder.query().delete().where('id', id)
@@ -540,16 +541,21 @@ const main_commands = {
             1,
             60 * 60 * 1000
           );
-          const funMessage = await util_functions.queryChatGPT([
+          const funMessage = await util_functions.queryChatGPT(
+            [
+              {
+                role: 'system',
+                content: 'You are a helpful assistant.',
+              },
+              {
+                role: 'user',
+                content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${cmd.duration} with the text "${cmd.text}".`,
+              },
+            ],
             {
-              role: 'system',
-              content: 'You are a helpful assistant.',
-            },
-            {
-              role: 'user',
-              content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${cmd.duration} with the text "${cmd.text}".`,
-            },
-          ]);
+              defaultOnFailure: 'Reminder created!',
+            }
+          );
           await ctx.msg.dbReply(
             util_functions.embed(
               `${funMessage.content}\n\nYou can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
