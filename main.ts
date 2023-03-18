@@ -552,7 +552,7 @@ const main_commands = {
           ]);
           await ctx.msg.dbReply(
             util_functions.embed(
-              `${funMessage}\n\nYou can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
+              `${funMessage.content}\n\nYou can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
               'success',
               'Set Reminder!'
             )
