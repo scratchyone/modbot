@@ -407,15 +407,25 @@ const main_commands = {
     {
       name: 'reminder',
       syntax:
-        'reminder/rm/remind/remindme [action: "add"] <duration: word> <text: string>',
+        'reminder/rm/remind/remindme [action: "add"] <duration: duration> <text: string>',
       explanation: 'Set a reminder',
       version: 2,
       permissions: () => true,
       responder: async (
         ctx: Types.Context,
-        cmd: { duration: string; text: string }
+        cmd: { duration: number; text: string }
       ): Promise<Array<() => void> | undefined> => {
-        const durationMs = parse(cmd.duration, 'ms');
+        const grammar = parseCommandGrammar(
+          'reminder/rm/remind/remindme [action: "add"] <duration: word> <text: string>'
+        );
+        const parsed = await matchCommand(
+          grammar,
+          ctx.msg.content.replace(ctx.prefix, ''),
+          ParserTypes,
+          ctx
+        );
+        const durationText = parsed.duration;
+        console.log(durationText);
         if (!ctx.msg.guild) return;
         const undoStack: Array<() => void> = [];
         let id = nanoid(5);
@@ -497,7 +507,7 @@ const main_commands = {
             }
           }
         }
-        if (durationMs > 1000 * 60 * 60 * 24 * 365 * 50)
+        if (cmd.duration > 1000 * 60 * 60 * 24 * 365 * 50)
           throw new util_functions.BotError(
             'user',
             'Cannot set reminders more than 50 years in the future'
@@ -507,7 +517,7 @@ const main_commands = {
             author: ctx.msg.author.id,
             id,
             text: await util_functions.cleanPings(cmd.text, ctx.msg.guild),
-            time: moment().add(durationMs, 'ms').unix(),
+            time: moment().add(cmd.duration, 'ms').unix(),
           },
         });
         await util_functions.schedule_event(
@@ -520,7 +530,7 @@ const main_commands = {
             id,
             uniqueId: createdReminder.uniqueId,
           },
-          durationMs + 'ms'
+          cmd.duration + 'ms'
         );
         undoStack.push(
           async () => await Types.Reminder.query().delete().where('id', id)
@@ -549,7 +559,7 @@ const main_commands = {
               },
               {
                 role: 'user',
-                content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${cmd.duration} with the text "${cmd.text}".`,
+                content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}".`,
               },
             ],
             {
