@@ -9,6 +9,7 @@ import Discord, {
   Snowflake,
   User,
 } from 'discord.js';
+import { throttle } from 'throttle-typescript';
 import { EGuild, Prefix, Context } from '../types.js';
 import * as Types from '../types.js';
 import { Defer } from '../defer.js';
@@ -594,25 +595,29 @@ const prefix = {
     }
   },
 };
+// Define a command object that lists all of the bot's prefixes for a given server
 const prefixlist = {
   name: 'prefix',
   syntax: 'prefix list',
   explanation: 'List bot prefixes',
-  permissions: () => true,
+  permissions: () => true, // This command has no specific permission requirements
+  // This function handles the command logic
   responder: async (msg: util_functions.EMessage) => {
-    if (!msg.guild) return;
+    if (!msg.guild) return; // If the message isn't a server message, exit the function
+    // Construct and send an embed with the server's prefixes
     msg.dbReply(
       util_functions.desc_embed(
         [
-          ...(await Prefix.query().where('server', msg.guild.id)),
-          { server: msg.guild.id, prefix: process.env.BOT_PREFIX } as Prefix,
+          ...(await Prefix.query().where('server', msg.guild.id)), // Get all prefixes for the given server from the database
+          { server: msg.guild.id, prefix: process.env.BOT_PREFIX } as Prefix, // Add the globally-defined bot prefix to the list
         ]
-          .map((p: Prefix) => `\`${p.prefix}\``)
-          .join('\n')
+          .map((p: Prefix) => `\`${p.prefix}\``) // Format each prefix string with backticks for better readability/style
+          .join('\n') // Join the list of prefixes with newlines for better readability
       )
     );
   },
 };
+
 const userpic = {
   name: 'userpic',
   syntax: 'userpic',
@@ -1276,6 +1281,103 @@ const setservername = {
     await Types.LogChannel.tryToLog(ctx.msg, `Set server name to ${cmd.name}`);
   },
 };
+const gpt4 = {
+  name: 'gpt4',
+  syntax: 'gpt4 <text: string>',
+  explanation: 'Prompt GPT-4 to generate text',
+  permissions: (msg: util_functions.EMessage) => true,
+  version: 2,
+  responder: async (
+    ctx: Types.Context,
+    cmd: { text: string; prompt: string }
+  ) => {
+    if (!ctx.msg.guild) return;
+    async function generateAndRespond() {
+      const message = await ctx.msg.reply(
+        util_functions.embed('Generating...', 'tip', "GPT-4's Response")
+      );
+      let data = '';
+      async function updateMessage() {
+        await message.edit(
+          util_functions.embed(data, 'tip', "GPT-4's Response")
+        );
+      }
+      const updateThrottled = throttle(updateMessage, 500);
+      await util_functions.queryChatGPTStreaming(
+        [
+          {
+            role: 'system',
+            content: cmd.prompt || 'You are an Assistant.',
+          },
+          {
+            role: 'user',
+            content: cmd.text,
+          },
+        ],
+        'gpt-4',
+        async (delta) => {
+          if ('choices' in delta) {
+            data += delta.choices[0].delta.content || '';
+            await updateThrottled();
+          } else {
+            data = delta.error.message;
+            await message.edit(
+              util_functions.embed(data, 'error', 'GPT-4 Error')
+            );
+          }
+        }
+      );
+      setTimeout(async () => {
+        updateMessage();
+        await message.react('👍');
+      }, 500);
+    }
+    if ((ctx.msg.member?.id || '') !== '234020040830091265') {
+      const react_message = await ctx.msg.dbReply({
+        ...util_functions.embed(
+          'Due to the high cost of GPT-4, this command requires approval from the bot owner.',
+          'tip',
+          'Confirmation Required'
+        ),
+        content: '<@234020040830091265>',
+        components: [
+          new Discord.MessageActionRow().addComponents(
+            new Discord.MessageButton()
+              .setCustomId('gpt4_confirm')
+              .setLabel('Approve')
+              .setStyle('SUCCESS'),
+            new Discord.MessageButton()
+              .setCustomId('gpt4_deny')
+              .setLabel('Deny')
+              .setStyle('DANGER')
+          ),
+        ],
+      });
+      const collector = react_message.createMessageComponentCollector({
+        componentType: 'BUTTON',
+        max: 1,
+        filter: (i) => i.user.id === '234020040830091265',
+      });
+      collector.on('collect', async (i) => {
+        if (i.customId == 'gpt4_confirm') {
+          await i.update({ components: [] });
+          await generateAndRespond();
+        } else if (i.customId == 'gpt4_deny') {
+          await i.update({ components: [] });
+          await react_message.edit({
+            ...util_functions.embed(
+              'GPT-4 request denied by bot owner.',
+              'error',
+              'Request Denied'
+            ),
+          });
+        }
+      });
+    } else {
+      generateAndRespond();
+    }
+  },
+};
 const embed = {
   name: 'embed',
   syntax: 'embed <action: "create" | "edit">',
@@ -1679,6 +1781,7 @@ export const commandModule = {
     waitforupdate,
     randommember,
     datapack,
+    gpt4,
   ],
   cog: async (client: Discord.Client) => {
     client.on('messageReactionAdd', async (reaction, user) => {

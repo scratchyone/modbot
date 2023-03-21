@@ -644,3 +644,90 @@ export async function queryChatGPT(
     else throw e;
   }
 }
+
+export type ChatGPTStreamingDelta =
+  | ChatGPTStreamingDeltaContent
+  | ChatGPTStreamingDeltaError;
+export interface ChatGPTStreamingDeltaContent {
+  choices: {
+    delta: {
+      content?: string;
+      role?: 'user' | 'assistant' | 'system';
+    };
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    finish_reason: 'null' | 'stop';
+  }[];
+  created: number;
+  idd: string;
+  model: string;
+  object: 'chat.completion.chunk';
+}
+export interface ChatGPTStreamingDeltaError {
+  error: {
+    message: string;
+  };
+}
+
+/**
+ * Query OpenAI's GPT-3.5 Turbo or GPT-4 model with a chat message to generate a streaming response
+ * @param chat - An array of chat messages to feed to the model
+ * @param model - Which GPT model to use. Can be either 'gpt-3.5-turbo' or 'gpt-4'.
+ * @param apiKey - Your OpenAI API key
+ * @param onMessage - A callback function to handle the response from the API
+ */
+export async function queryChatGPTStreaming(
+  chat: ChatGPTMessage[],
+  model: 'gpt-3.5-turbo' | 'gpt-4',
+  onMessage: (arg0: ChatGPTStreamingDelta) => void
+): Promise<void> {
+  console.log(chat);
+  // Make a POST request to the OpenAI API to get a response from the specified GPT model
+  const data = await nodefetch('https://api.openai.com/v1/chat/completions', {
+    headers: {
+      // Set the Authorization header to contain the API key
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      Authorization: 'Bearer ' + process.env.OPENAI_KEY,
+      // Set the Content-Type header to indicate that we are sending JSON data
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+    // Send a JSON payload containing the model, whether to use streaming mode or not, and the array of chat messages
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: chat,
+    }),
+  });
+  // Create and return a new promise that will be resolved when the API indicates that the streaming is complete
+  await new Promise<void>((resolve, reject) => {
+    // Listen for incoming data from the API
+    data.body?.on('data', (chunk) => {
+      // Split the chunk into individual lines, remove any empty or whitespace lines
+      const lines = chunk
+        .toString()
+        .split('\n')
+        .filter((line: string) => line.trim() !== '');
+      // Iterate over each line of the response
+      for (const line of lines) {
+        // Remove the prefix 'data: ' from the line
+        const message = line.replace(/^data: /, '');
+
+        if (message === '[DONE]') {
+          // If the message is [DONE], resolve the Promise to indicate that the streaming is complete
+          resolve();
+        }
+
+        try {
+          // Try to JSON parse the message into a ChatGPTStreamingDelta object
+          const delta: ChatGPTStreamingDelta = JSON.parse(message);
+          // Call the callback function with the ChatGPTStreamingDelta object
+          onMessage(delta);
+        } catch (error) {
+          // Reject the promise when an error occurs
+          reject('Could not JSON parse stream message');
+        }
+      }
+    });
+  });
+}
