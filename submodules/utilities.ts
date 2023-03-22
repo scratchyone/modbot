@@ -1302,7 +1302,7 @@ const gpt4 = {
           util_functions.embed(data, 'tip', "GPT-4's Response")
         );
       }
-      const updateThrottled = throttle(updateMessage, 500);
+      const updateThrottled = throttle(updateMessage, 1000);
       await util_functions.queryChatGPTStreaming(
         [
           {

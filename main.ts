@@ -536,7 +536,8 @@ const main_commands = {
           async () => await Types.Reminder.query().delete().where('id', id)
         );
         if (
-          (ctx.store.get(`rateLimits.gptFun.${ctx.msg.member?.id}`) || 0) > 4
+          (ctx.store.get(`rateLimits.gptFun.${ctx.msg.member?.id}`) || 0) > 4 ||
+          new Date() > new Date('2023-03-31')
         ) {
           await ctx.msg.dbReply(
             util_functions.embed(
