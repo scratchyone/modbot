@@ -245,6 +245,49 @@ const pfp = {
     });
   },
 };
+const restrict = {
+  name: 'restrict',
+  syntax: 'restrict',
+  explanation: 'Write a message opposite the RESTRICT Act',
+  permissions: () => true,
+  version: 2,
+  responder: async (ctx: Types.Context, cmd: { user: string }) => {
+    if (!ctx.msg.guild) return;
+    if ((ctx.store.get(`rateLimits.restrict.${ctx.msg.member?.id}`) || 0) > 2) {
+      throw new util_functions.BotError(
+        'user',
+        'You have reached the rate limit for this command'
+      );
+    }
+    ctx.store.addOrCreate(
+      `rateLimits.restrict.${ctx.msg.member?.id}`,
+      1,
+      60 * 60 * 1000
+    );
+    const m = await ctx.msg.dbReply({
+      embeds: [
+        new Discord.MessageEmbed()
+          .setTitle('RESTRICT Act')
+          .setDescription(
+            'Here is a message to send to your senator opposing the RESTRICT Act.'
+          ),
+      ],
+      content: (
+        await util_functions.queryChatGPT([
+          {
+            role: 'system',
+            content: 'You are a helpful assistant.',
+          },
+          {
+            role: 'user',
+            content: `Please improve this message to my senator:
+	I'm writing to encourage you to vote against S.686, the RESTRICT Act. Not only is restricting American access to social media sites a clear violation of our first amendment rights, the current language in this bill is an extreme governmental overreach, with overly harsh penalties for anybody who chooses to access these banned sites. The federal government should not be censoring internet access based on nothing more than the whims of a committee. Overall, this bill is an attack on our free speech rights and should not be allowed to pass.`,
+          },
+        ])
+      ).content,
+    });
+  },
+};
 const pick = {
   name: 'pick',
   syntax: 'pick <items: string>',
