@@ -264,7 +264,8 @@ const restrict = {
       1,
       60 * 60 * 1000
     );
-    const m = await ctx.msg.dbReply({
+    ctx.msg.channel.sendTyping();
+    await ctx.msg.dbReply({
       embeds: [
         new Discord.MessageEmbed()
           .setTitle('RESTRICT Act')
@@ -1798,6 +1799,7 @@ export const commandModule = {
   commands: [
     invite,
     ask,
+    restrict,
     userpic,
     ping,
     cat,
