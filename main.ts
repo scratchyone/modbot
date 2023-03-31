@@ -536,8 +536,7 @@ const main_commands = {
           async () => await Types.Reminder.query().delete().where('id', id)
         );
         if (
-          (ctx.store.get(`rateLimits.gptFun.${ctx.msg.member?.id}`) || 0) > 4 ||
-          new Date() > new Date('2023-03-31')
+          (ctx.store.get(`rateLimits.gptFun.${ctx.msg.member?.id}`) || 0) > 4 || new Date() < new Date('2023-04-01') || new Date() >= new Date('2023-04-02')
         ) {
           await ctx.msg.dbReply(
             util_functions.embed(
@@ -556,11 +555,11 @@ const main_commands = {
             [
               {
                 role: 'system',
-                content: 'You are a helpful assistant.',
+                content: 'You are a rude and mean assistant.',
               },
               {
                 role: 'user',
-                content: `Please respond with a short and nice yet fun response for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}".`,
+                content: `Please respond with a short, funny, and mean response for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}".`,
               },
             ],
             {
