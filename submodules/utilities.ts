@@ -253,7 +253,10 @@ const restrict = {
   version: 2,
   responder: async (ctx: Types.Context, cmd: { user: string }) => {
     if (!ctx.msg.guild) return;
-    if ((ctx.store.get(`rateLimits.restrict.${ctx.msg.member?.id}`) || 0) > 2) {
+    if (
+      ((ctx.store.get(`rateLimits.restrict.${ctx.msg.member?.id}`) as number) ||
+        0) > 2
+    ) {
       throw new util_functions.BotError(
         'user',
         'You have reached the rate limit for this command'
@@ -709,7 +712,10 @@ const userpic = {
       `I wish I was as cool as you, ${name}`,
       `I think we could get along well, ${name}`,
     ];
-    if ((c.store.get(`rateLimits.gptFun.${c.msg.member?.id}`) || 0) > 4) {
+    if (
+      ((c.store.get(`rateLimits.gptFun.${c.msg.member?.id}`) as number) || 0) >
+      4
+    ) {
       message = get_random(messages);
     } else {
       message = (

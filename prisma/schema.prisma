@@ -215,3 +215,8 @@ model timerevents {
 
   @@id([timestamp, event])
 }
+
+model lastFmAccounts {
+  discordUser String @id
+  lastFmUser  String @unique
+}
