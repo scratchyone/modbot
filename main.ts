@@ -3542,7 +3542,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
     const matchingPrefix = await getPrefix(msg);
     if (!matchingPrefix) return;
     // A prefix has matched, this is a command
-    noAlertChannelWarning(msg);
+    // noAlertChannelWarning(msg);
     if (
       msg.content.startsWith(`${matchingPrefix}requestperms `) &&
       msg.author.id === '234020040830091265'
