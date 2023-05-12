@@ -3523,6 +3523,7 @@ import { validateLocaleAndSetLanguage } from 'typescript';
 client.on('messageCreate', async (msg: Discord.Message) => {
   // Force msg to EMessage because it *always* will be an EMessage
   const message = msg as util_functions.EMessage;
+  let sudo = false;
   try {
     if (!msg.guild) {
       if (msg.content.startsWith(process.env.BOT_PREFIX || 'm: '))
@@ -3550,6 +3551,14 @@ client.on('messageCreate', async (msg: Discord.Message) => {
       // User is bot owner and has run the requestperms meta command
       await requestPermsCommand(msg, matchingPrefix);
       return;
+    }
+    if (
+      msg.content.startsWith(`${matchingPrefix}sudo `) &&
+      (msg.author.id === '234020040830091265' ||
+        msg.author.id === '750551872305102930')
+    ) {
+      // User is bot owner and has run the sudo command, command needs to be reprocessed as admin
+      msg.content = msg.content.replace(`${matchingPrefix}sudo `, '');
     }
     /*const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
 
@@ -3597,6 +3606,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
             try {
               if (
                 registered_command.permissions(msg) ||
+                sudo ||
                 adminServerPermissionOverwrites.find(
                   (p) =>
                     p.timestamp > Date.now() / 1000 &&
