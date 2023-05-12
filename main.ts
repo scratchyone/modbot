@@ -2569,18 +2569,91 @@ const main_commands = {
             })
             .filter((n) => n.cmds.length);
           //.chunk_inefficient(25);
-          ctx.msg.dbReply({
-            embeds: [
-              new Discord.MessageEmbed()
-                .setTitle(util_functions.fillStringVars('Help for __botName__'))
-                .setColor(util_functions.COLORS.decorate)
-                .setDescription(
-                  '<> means required, [] means optional. Type `' +
-                    ctx.prefix +
-                    'help <NAME>` to get help for a specific command module or command'
-                )
-                .addFields(chunks),
-            ],
+          let page = 0;
+          const genMessage: (
+            mode: 'standard' | 'ended'
+          ) => Discord.MessageOptions = (mode) => {
+            let current_page: { name: string; value: string }[] = [];
+            const pages = [];
+            for (const chunk of chunks) {
+              if (
+                [...current_page, chunk]
+                  .map((n) => n.name + '\n' + n.value)
+                  .join('\n')
+                  .split('\n').length > 20 &&
+                current_page.length
+              ) {
+                pages.push(current_page);
+                current_page = [chunk];
+              } else {
+                current_page.push(chunk);
+              }
+            }
+            if (current_page.length) pages.push(current_page);
+            return {
+              embeds: [
+                new Discord.MessageEmbed()
+                  .setTitle(
+                    util_functions.fillStringVars('Help for __botName__')
+                  )
+                  .setColor(util_functions.COLORS.decorate)
+                  .setDescription(
+                    '<> means required, [] means optional. Type `' +
+                      ctx.prefix +
+                      'help <NAME>` to get help for a specific command module or command'
+                  )
+                  .addFields(pages[page]),
+              ],
+              components:
+                mode === 'standard'
+                  ? [
+                      new Discord.MessageActionRow().addComponents(
+                        ...[
+                          ...(page > 0
+                            ? [
+                                new Discord.MessageButton()
+                                  .setCustomId('help:prev')
+                                  .setLabel('<')
+                                  .setStyle('PRIMARY'),
+                              ]
+                            : []),
+                          new Discord.MessageButton()
+                            .setCustomId('help:page')
+                            .setLabel(`Page ${page + 1}/${pages.length}`)
+                            .setStyle('SECONDARY')
+                            .setDisabled(true),
+                          ...(page < pages.length - 1
+                            ? [
+                                new Discord.MessageButton()
+                                  .setCustomId('help:next')
+                                  .setLabel('>')
+                                  .setStyle('PRIMARY'),
+                              ]
+                            : []),
+                        ]
+                      ),
+                    ]
+                  : [],
+            };
+          };
+          const helpMsg = await ctx.msg.dbReply(genMessage('standard'));
+          const collector = helpMsg.createMessageComponentCollector({
+            filter: (i) => i.user.id === ctx.msg.author.id,
+            time: 1000 * 60 * 5,
+          });
+          collector.on('collect', async (i) => {
+            if (i.customId === 'help:next') {
+              page++;
+              await helpMsg.edit(genMessage('standard'));
+            }
+            if (i.customId === 'help:prev') {
+              page--;
+              await helpMsg.edit(genMessage('standard'));
+            }
+            await i.deferUpdate();
+          });
+          collector.on('end', async () => {
+            await helpMsg.edit(genMessage('ended'));
           });
         }
       },
