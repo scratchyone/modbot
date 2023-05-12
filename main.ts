@@ -3559,6 +3559,7 @@ client.on('messageCreate', async (msg: Discord.Message) => {
     ) {
       // User is bot owner and has run the sudo command, command needs to be reprocessed as admin
       msg.content = msg.content.replace(`${matchingPrefix}sudo `, '');
+      sudo = true;
     }
     /*const parser = new nearley.Parser(nearley.Grammar.fromCompiled(commands));
 
