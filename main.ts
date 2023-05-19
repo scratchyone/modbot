@@ -540,11 +540,6 @@ const main_commands = {
             `rateLimits.gptFun.${ctx.msg.member?.id}`
           ) as number) || 0) <= 4
         ) {
-          ctx.store.addOrCreate(
-            `rateLimits.gptFun.${ctx.msg.member?.id}`,
-            1,
-            60 * 60 * 1000
-          );
           if (
             new Date() >= new Date('2023-04-01') &&
             new Date() < new Date('2023-04-02')
@@ -614,6 +609,13 @@ const main_commands = {
         }
         if (funMessage.startsWith('"')) funMessage = funMessage.slice(1);
         if (funMessage.endsWith('"')) funMessage = funMessage.slice(0, -1);
+        if (funMessage)
+          ctx.store.addOrCreate(
+            `rateLimits.gptFun.${ctx.msg.member?.id}`,
+            1,
+            60 * 60 * 1000
+          );
+
         await ctx.msg.dbReply(
           util_functions.embed(
             `${funMessage ? `${funMessage}\n\n` : ''}You can cancel it with \`${
