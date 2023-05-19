@@ -534,49 +534,97 @@ const main_commands = {
         undoStack.push(
           async () => await Types.Reminder.query().delete().where('id', id)
         );
+        let funMessage = '';
         if (
           ((ctx.store.get(
             `rateLimits.gptFun.${ctx.msg.member?.id}`
-          ) as number) || 0) > 4 ||
-          new Date() < new Date('2023-04-01') ||
-          new Date() >= new Date('2023-04-02')
+          ) as number) || 0) <= 4
         ) {
-          await ctx.msg.dbReply(
-            util_functions.embed(
-              `You can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
-              'success',
-              'Set Reminder!'
-            )
-          );
-        } else {
           ctx.store.addOrCreate(
             `rateLimits.gptFun.${ctx.msg.member?.id}`,
             1,
             60 * 60 * 1000
           );
-          const funMessage = await util_functions.queryChatGPT(
-            [
-              {
-                role: 'system',
-                content: 'You are a rude and mean assistant.',
-              },
-              {
-                role: 'user',
-                content: `Please respond with a short, funny, and mean response for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}".`,
-              },
-            ],
-            {
-              defaultOnFailure: 'Reminder created!',
-            }
-          );
-          await ctx.msg.dbReply(
-            util_functions.embed(
-              `${funMessage.content}\n\nYou can cancel it with \`${ctx.prefix}reminder cancel ${id}\`, or somebody else can run \`${ctx.prefix}reminder copy ${id}\` to also get reminded`,
-              'success',
-              'Set Reminder!'
-            )
-          );
+          if (
+            new Date() >= new Date('2023-04-01') &&
+            new Date() < new Date('2023-04-02')
+          )
+            funMessage = (
+              await util_functions.queryChatGPT(
+                [
+                  {
+                    role: 'system',
+                    content: 'You are a rude and mean assistant.',
+                  },
+                  {
+                    role: 'user',
+                    content: `Please respond with a short, funny, and mean response for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}".`,
+                  },
+                ],
+                {
+                  defaultOnFailure: 'Reminder created!',
+                }
+              )
+            ).content;
+          if (
+            new Date() >= new Date('2023-05-18') &&
+            new Date() < new Date('2023-06-09') &&
+            Math.random() < 0.2
+          )
+            funMessage = (
+              await util_functions.queryChatGPT(
+                [
+                  {
+                    role: 'system',
+                    content:
+                      'You are a helpful assistant. For your information, the album "Stick Season (Deluxe)" by Noah Kahan releases on June 9th, and can be presaved at https://presave.umusic.com/noah-kahan',
+                  },
+                  {
+                    role: 'user',
+                    content: `Please respond with a short, funny, absurd segue into a promotion to pre-save Stick Season (Deluxe) for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}". i.e. "speaking of etc, what about" or a bad pun or something else that clearly shows you are trying too hard.`,
+                  },
+                ],
+                {
+                  defaultOnFailure: 'Reminder created!',
+                }
+              )
+            ).content;
+          if (
+            new Date() >= new Date('2023-06-09') &&
+            new Date() < new Date('2023-06-10')
+          )
+            funMessage = (
+              await util_functions.queryChatGPT(
+                [
+                  {
+                    role: 'system',
+                    content:
+                      'You are a helpful assistant. For your information, the album "Stick Season (Deluxe)" by Noah Kahan released TODAY June 9th',
+                  },
+                  {
+                    role: 'user',
+                    content: `Please respond with a short, funny, absurd segue into a promotion to listen Stick Season (Deluxe) for somebody trying to set a reminder in ${durationText} with the text "${cmd.text}". i.e. "speaking of etc, what about" or a bad pun or something else that clearly shows you are trying too hard. mention the fact that it released today`,
+                  },
+                ],
+                {
+                  defaultOnFailure: 'Reminder created!',
+                }
+              )
+            ).content;
         }
+        if (funMessage.startsWith('"')) funMessage = funMessage.slice(1);
+        if (funMessage.endsWith('"')) funMessage = funMessage.slice(0, -1);
+        await ctx.msg.dbReply(
+          util_functions.embed(
+            `${funMessage ? `${funMessage}\n\n` : ''}You can cancel it with \`${
+              ctx.prefix
+            }reminder cancel ${id}\`, or somebody else can run \`${
+              ctx.prefix
+            }reminder copy ${id}\` to also get reminded`,
+            'success',
+            'Set Reminder!'
+          )
+        );
         return undoStack;
       },
     },
