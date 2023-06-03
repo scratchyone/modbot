@@ -606,6 +606,8 @@ export interface ChatGPTMessage {
 }
 export interface ChatGPTQueryOptions {
   defaultOnFailure?: string;
+  model?: 'gpt-3.5-turbo' | 'gpt-4';
+  temp?: number;
 }
 export async function queryChatGPT(
   chat: ChatGPTMessage[],
@@ -620,8 +622,9 @@ export async function queryChatGPT(
         },
         method: 'POST',
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: options.model || 'gpt-3.5-turbo',
           messages: chat,
+          temperature: options.temp,
         }),
       })
     ).json()) as any;

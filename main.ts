@@ -80,6 +80,8 @@ function sleep(ms: number) {
 }
 import * as anonchannels from './anonchannels.js';
 import * as util_functions from './util_functions.js';
+const doCommandHistory: Map<string, util_functions.ChatGPTMessage[]> =
+  new Map();
 const client = new Discord.Client({
   partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
   intents: 65407,
@@ -203,6 +205,110 @@ const main_commands = {
               )
             );
           else await ctx.msg.channel.send(util_functions.embed('', 'success'));
+        } catch (e) {
+          throw new util_functions.BotError('user', e.toString());
+        }
+      },
+    },
+    {
+      name: 'do',
+      syntax: 'do <text: string>',
+      explanation: 'Do anything in the server',
+      version: 2,
+      permissions: (msg: Discord.Message) =>
+        msg.author.id === '234020040830091265' && msg.member,
+      responder: async (ctx: Types.Context, cmd: { text: string }) => {
+        // This is done to allow accessing discord even in compiled TS where it will be renamed
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+        const discord = Discord;
+        const guild = ctx.msg.guild;
+        const channel = ctx.msg.channel;
+        const msg = ctx.msg;
+        try {
+          await ctx.msg.channel.sendTyping();
+          const replyTo = ctx.msg.reference?.messageId;
+          log.debug(`Reply to: ${replyTo}`);
+          const history = doCommandHistory.get(replyTo || '') || [];
+          log.debug(`History: ${JSON.stringify(history, null, 2)}`);
+          const initialQuery: util_functions.ChatGPTMessage[] = [
+            {
+              role: 'system',
+              content: `You are a code assistant. You will exclusively respond with a single code block and no other commentary. You will write only JavaScript code. The user will give you a task, and you will write the code to complete that task. Your code runs inside of a async block and can use \`await\`. You are writing code that uses the Discord.JS library. You have access to the following variables:
+\`discord\`: The core Discord.JS library import
+\`msg\`: A Discord.JS \`Message\` object of the user's message
+\`channel\`: A Discord.JS \`Channel\` object of the channel of the user's message
+\`guild\`: A Discord.JS \`Guild\` object of the guild the user is in.
+
+Your code must eventually return a string, which will be shown to the user.`,
+            },
+            ...(history.length
+              ? [
+                  {
+                    role: 'user',
+                    content:
+                      'CHAT HISTORY:\n' +
+                      history
+                        .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+                        .join('\n'),
+                  } as util_functions.ChatGPTMessage,
+                ]
+              : []),
+            {
+              role: 'user',
+              content: cmd.text,
+            },
+          ];
+          log.debug(`Initial query: ${JSON.stringify(initialQuery, null, 2)}`);
+          let code = (
+            await util_functions.queryChatGPT(initialQuery, {
+              model: 'gpt-4',
+              temp: 0.4,
+            })
+          ).content;
+          log.debug(`ChatGPT generated code: ${JSON.stringify(code, null, 2)}`);
+
+          // Remove markdown code formatting from the input
+          if (code.startsWith('```js')) code = code.substring(5);
+          if (code.startsWith('```javascript')) code = code.substring(13);
+          if (code.startsWith('```')) code = code.substring(3);
+          if (code.startsWith('`')) code = code.substring(1);
+          if (code.endsWith('```')) code = code.slice(0, -3);
+          if (code.endsWith('`')) code = code.slice(0, -1);
+
+          const wrappedCode = `(async () => {${code}})`;
+
+          log.debug(`Wrapped code: ${wrappedCode}`);
+          // Define arrow function with eval
+          const func = eval(wrappedCode);
+          // Run created arrow function
+          let funcResult;
+          try {
+            funcResult = await func();
+          } catch (e) {
+            ctx.msg.channel.send(
+              util_functions.embed(
+                util_functions.truncate(e.toString(), 4096),
+                'warning'
+              )
+            );
+            return;
+          }
+          log.debug(`Function result: ${JSON.stringify(funcResult, null, 2)}`);
+          let responseMessage;
+          if (funcResult)
+            responseMessage = await ctx.msg.channel.send(
+              util_functions.embed(funcResult, 'success')
+            );
+          else
+            responseMessage = await ctx.msg.channel.send(
+              util_functions.embed('', 'success')
+            );
+          const newHistory: util_functions.ChatGPTMessage[] = [
+            ...history,
+            { role: 'user', content: cmd.text },
+            { role: 'assistant', content: funcResult },
+          ];
+          doCommandHistory.set(responseMessage.id, newHistory);
         } catch (e) {
           throw new util_functions.BotError('user', e.toString());
         }
