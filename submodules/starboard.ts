@@ -27,7 +27,28 @@ async function genSBMessage(message: Discord.Message, count: number) {
   } catch (e) {
     log.warn('Failed to fetch starboard message author');
   }
-  let desc = message.content;
+  let desc = '';
+  if (message.reference?.messageId) {
+    const replyTo = await message.channel.messages.fetch(
+      message.reference.messageId
+    );
+    let replyToContent = replyTo.content;
+    if (replyTo.content.length == 0) {
+      if (replyTo.embeds.length > 0) {
+        replyToContent += replyTo.embeds[0].description;
+      } else if (replyTo.attachments.size > 0) {
+        replyToContent += '[Attachment]';
+      }
+    }
+    if (replyToContent.length > 100) {
+      replyToContent = replyToContent.substring(0, 100) + '...';
+    }
+
+    desc += `> **Replying to ${replyTo.member?.displayName}**${
+      replyToContent ? `: ${replyToContent}` : ''
+    }\n`;
+  }
+  desc += message.content;
   if (message.embeds.length) {
     if (desc) {
       desc += '\n\n';
