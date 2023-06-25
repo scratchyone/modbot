@@ -72,13 +72,12 @@ const invite = {
 async function reRenderPoll(message: Discord.Message | Discord.PartialMessage) {
   try {
     // Extract the reactions from the message
-    const reactions = message.reactions.cache.values();
-
+    const reactions = [...message.reactions.cache.values()];
     // Filter the reactions to find the ones with emojis '👍' and '👎', count and subtract 1
-    const upCount =
-      ([...reactions].filter((r) => r.emoji.name == '👍')[0].count || 1) - 1;
-    const downCount =
-      ([...reactions].filter((r) => r.emoji.name == '👎')[0].count || 1) - 1;
+    const upReact = reactions.filter((r) => r.emoji.name == '👍')[0];
+    const upCount = (upReact ? upReact.count || 1 : 1) - 1;
+    const downReact = reactions.filter((r) => r.emoji.name == '👎')[0];
+    const downCount = (downReact ? downReact.count || 1 : 1) - 1;
 
     // Create a new MediaGen instance and generate the poll image with the updated counts
     const pollImage = new Types.MediaGen().generatePoll({
